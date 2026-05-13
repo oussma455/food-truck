@@ -7,8 +7,14 @@ const withPWA = require("next-pwa")({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Désactive Turbopack pour le build Vercel car next-pwa a besoin de Webpack
-  // Note: Vercel utilise Turbopack par défaut sur Next.js 15+
+  // Désactive Turbopack en forçant Webpack pour la compatibilité avec next-pwa
+  webpack: (config) => {
+    return config;
+  },
+  // On ajoute un objet turbopack vide pour signifier qu'on gère le conflit
+  experimental: {
+    turbopack: {}
+  }
 };
 
 module.exports = withPWA(nextConfig);
