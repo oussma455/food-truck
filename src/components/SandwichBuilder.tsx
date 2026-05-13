@@ -163,22 +163,40 @@ export default function SandwichBuilder() {
                 <h2 className="text-2xl font-serif mt-1">{currentCategory.name}</h2>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 {currentCategory.options.map((option) => (
                   <button
                     key={option.id}
                     onClick={() => handleOptionToggle(option)}
                     className={cn(
-                      "premium-card p-5 text-left transition-all duration-300 flex justify-between items-center group",
-                      isOptionSelected(option.id) ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]" : "hover:border-primary/50"
+                      "premium-card overflow-hidden text-left transition-all duration-300 flex flex-col group relative",
+                      isOptionSelected(option.id) ? "border-primary bg-primary/5 shadow-[0_0_20px_rgba(212,175,55,0.15)]" : "hover:border-primary/50"
                     )}
                   >
-                    <div>
-                      <p className="font-semibold text-lg">{option.name}</p>
-                      {option.price > 0 && <p className="text-primary text-sm font-medium">+ {option.price.toFixed(2)}€</p>}
-                    </div>
-                    <div className={cn("w-6 h-6 rounded-full border border-primary flex items-center justify-center transition-all duration-500", isOptionSelected(option.id) ? "bg-primary text-background scale-110" : "text-transparent scale-100")}>
-                      <Check size={14} strokeWidth={3} />
+                    {option.image && (
+                      <div className="w-full h-32 overflow-hidden relative">
+                        <img 
+                          src={option.image} 
+                          alt={option.name} 
+                          className={cn(
+                            "w-full h-full object-cover transition-transform duration-700",
+                            isOptionSelected(option.id) ? "scale-110" : "group-hover:scale-110"
+                          )}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+                      </div>
+                    )}
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <p className="font-semibold text-sm leading-tight mb-1">{option.name}</p>
+                        {option.price > 0 && <p className="text-primary text-[10px] font-bold">+ {option.price.toFixed(2)}€</p>}
+                      </div>
+                      <div className={cn(
+                        "absolute top-2 right-2 w-6 h-6 rounded-full border border-primary flex items-center justify-center transition-all duration-500 z-10", 
+                        isOptionSelected(option.id) ? "bg-primary text-background scale-110" : "bg-black/40 text-transparent scale-100 backdrop-blur-sm"
+                      )}>
+                        <Check size={12} strokeWidth={4} />
+                      </div>
                     </div>
                   </button>
                 ))}
