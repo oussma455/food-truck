@@ -52,29 +52,17 @@ export default function SandwichBuilder() {
       if (isSelected) {
         setConfig({ ...config, sauces: config.sauces.filter((s) => s.id !== option.id) });
       } else {
-        // Suppression de la limite de 2 pour les sauces
         setConfig({ ...config, sauces: [...config.sauces, option] });
       }
-    } else if (catId === "extras") {
-      const isSelected = config.extras.find((e) => e.id === option.id);
+    } else {
+      const key = catId as keyof ExtendedConfig;
+      const currentList = (config[key] as Option[]) || [];
+      const isSelected = currentList.find((item) => item.id === option.id);
+      
       if (isSelected) {
-        setConfig({ ...config, extras: config.extras.filter((e) => e.id !== option.id) });
+        setConfig({ ...config, [key]: currentList.filter((item) => item.id !== option.id) });
       } else {
-        setConfig({ ...config, extras: [...config.extras, option] });
-      }
-    } else if (catId === "drinks") {
-      const isSelected = config.drinks.find((d) => d.id === option.id);
-      if (isSelected) {
-        setConfig({ ...config, drinks: config.drinks.filter((d) => d.id !== option.id) });
-      } else {
-        setConfig({ ...config, drinks: [...config.drinks, option] });
-      }
-    } else if (catId === "desserts") {
-      const isSelected = config.desserts.find((d) => d.id === option.id);
-      if (isSelected) {
-        setConfig({ ...config, desserts: config.desserts.filter((d) => d.id !== option.id) });
-      } else {
-        setConfig({ ...config, desserts: [...config.desserts, option] });
+        setConfig({ ...config, [key]: [...currentList, option] });
       }
     }
   };
@@ -85,8 +73,8 @@ export default function SandwichBuilder() {
     if (catId === "meat") return config.meat?.id === optionId;
     if (catId === "sauces") return config.sauces.some((s) => s.id === optionId);
     if (catId === "extras") return config.extras.some((e) => e.id === optionId);
-    if (catId === "drinks") return config.drinks.some((d) => d.id === optionId);
-    if (catId === "desserts") return config.desserts.some((d) => d.id === optionId);
+    if (catId === "drinks") return (config.drinks || []).some((d) => d.id === optionId);
+    if (catId === "desserts") return (config.desserts || []).some((d) => d.id === optionId);
     return false;
   };
 
@@ -109,14 +97,14 @@ export default function SandwichBuilder() {
     if (config.bread) total += config.bread.price;
     if (config.meat) total += config.meat.price;
     
-    // Logique sauces : 2 gratuites (chaque sauce est à 0.50€ dans data.ts)
+    // Logique sauces : 2 gratuites (chaque sauce est à 0.50€)
     const totalSaucePrice = config.sauces.reduce((acc, s) => acc + s.price, 0);
-    const sauceDiscount = Math.min(totalSaucePrice, 1.0); // Max 1€ de remise (2 sauces)
+    const sauceDiscount = Math.min(totalSaucePrice, 1.0); 
     total += (totalSaucePrice - sauceDiscount);
 
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
-    total += config.drinks.reduce((acc, d) => acc + d.price, 0);
-    total += config.desserts.reduce((acc, d) => acc + d.price, 0);
+    total += (config.drinks || []).reduce((acc, d) => acc + d.price, 0);
+    total += (config.desserts || []).reduce((acc, d) => acc + d.price, 0);
     
     if (loyaltyPoints >= 9) return 0;
     return total;
