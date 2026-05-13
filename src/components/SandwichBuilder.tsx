@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SANDWICH_CATEGORIES } from "@/lib/data";
 import { SandwichConfig, Option } from "@/types";
@@ -20,6 +20,15 @@ export default function SandwichBuilder() {
   });
   const [orderInfo, setOrderInfo] = useState({ name: "", phone: "", payment: "on_site" as "online" | "on_site" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+
+  // Charger les points de fidélité au chargement du récapitulatif
+  useEffect(() => {
+    if (step === SANDWICH_CATEGORIES.length && orderInfo.phone) {
+      const history = JSON.parse(localStorage.getItem(`loyalty_${orderInfo.phone}`) || "0");
+      setLoyaltyPoints(history);
+    }
+  }, [step, orderInfo.phone]);
 
   const currentCategory = SANDWICH_CATEGORIES[step];
 
@@ -81,6 +90,12 @@ export default function SandwichBuilder() {
     if (config.meat) total += config.meat.price;
     total += config.sauces.reduce((acc, s) => acc + s.price, 0);
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
+    
+    // Si 9 commandes déjà faites, la 10ème est offerte
+    if (loyaltyPoints >= 9) {
+      return 0;
+    }
+    
     return total;
   };
 
@@ -101,7 +116,12 @@ export default function SandwichBuilder() {
     setIsSubmitting(true);
     // Simulation d'envoi à Supabase
     setTimeout(() => {
-      alert("Commande envoyée avec succès !");
+      // Mise à jour de la fidélité
+      const newPoints = loyaltyPoints >= 9 ? 0 : loyaltyPoints + 1;
+      localStorage.setItem(`loyalty_${orderInfo.phone}`, JSON.stringify(newPoints));
+      
+      alert(loyaltyPoints >= 9 ? "Félicitations ! Votre commande est OFFERTE !" : "Commande envoyée avec succès !");
+      
       setIsSubmitting(false);
       setStep(0);
       setConfig({ sauces: [], extras: [] });
@@ -235,7 +255,14 @@ export default function SandwichBuilder() {
               </div>
 
               <div className="premium-card p-6 mb-8 bg-secondary/30">
-                <h3 className="text-sm font-bold text-primary uppercase tracking-widest mb-4">Votre Sélection</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-bold text-primary uppercase tracking-widest">Votre Sélection</h3>
+                  {loyaltyPoints > 0 && (
+                    <span className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-full border border-primary/30">
+                      {loyaltyPoints}/9 commandes
+                    </span>
+                  )}
+                </div>
                 <ul className="space-y-3">
                   <li className="flex justify-between text-sm">
                     <span className="text-gray-400 italic">Pain</span>
@@ -262,10 +289,18 @@ export default function SandwichBuilder() {
                 </ul>
 
                 <div className="mt-6 pt-4 border-t border-gray-800 flex justify-between items-center">
-                  <span className="text-lg font-serif">Total Gourmet</span>
-                  <span className="text-2xl font-bold text-primary">
-                    {calculateTotal().toFixed(2)}€
+                  <span className="text-lg font-serif">
+                    {loyaltyPoints >= 9 ? "Total (OFFERT !)" : "Total Gourmet"}
                   </span>
+                  <span className={cn(
+                    "text-2xl font-bold text-primary",
+                    loyaltyPoints >= 9 && "line-through opacity-50 text-lg"
+                  )}>
+                    {loyaltyPoints >= 9 ? (10 + (config.bread?.price || 0) + (config.meat?.price || 0) + config.sauces.reduce((acc, s) => acc + s.price, 0) + config.extras.reduce((acc, e) => acc + e.price, 0)).toFixed(2) : calculateTotal().toFixed(2)}€
+                  </span>
+                  {loyaltyPoints >= 9 && (
+                    <span className="text-2xl font-bold text-green-500 ml-2">0.00€</span>
+                  )}
                 </div>
               </div>
 
