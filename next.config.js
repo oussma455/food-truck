@@ -7,14 +7,7 @@ const withPWA = require("next-pwa")({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Désactive Turbopack en forçant Webpack pour la compatibilité avec next-pwa
-  webpack: (config) => {
-    return config;
-  },
-  // On ajoute un objet turbopack vide pour signifier qu'on gère le conflit
-  experimental: {
-    turbopack: {}
-  }
+  // next-pwa gère sa propre configuration webpack
 };
 
 module.exports = withPWA(nextConfig);
