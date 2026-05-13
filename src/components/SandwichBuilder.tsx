@@ -181,40 +181,25 @@ export default function SandwichBuilder() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3">
                 {currentCategory.options.map((option) => (
                   <button
                     key={option.id}
                     onClick={() => handleOptionToggle(option)}
                     className={cn(
-                      "premium-card overflow-hidden text-left transition-all duration-500 flex flex-col group relative",
-                      isOptionSelected(option.id) ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-[0_0_30px_rgba(212,175,55,0.1)]" : "hover:border-primary/40"
+                      "premium-card p-5 text-left transition-all duration-500 flex justify-between items-center group relative",
+                      isOptionSelected(option.id) ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-[0_0_20px_rgba(212,175,55,0.1)]" : "hover:border-primary/40"
                     )}
                   >
-                    {option.image && (
-                      <div className="w-full h-28 overflow-hidden relative">
-                        <img 
-                          src={option.image} 
-                          alt={option.name} 
-                          className={cn(
-                            "w-full h-full object-cover transition-transform duration-1000",
-                            isOptionSelected(option.id) ? "scale-110" : "group-hover:scale-110"
-                          )}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
-                      </div>
-                    )}
-                    <div className="p-3 flex-1 flex flex-col justify-between">
-                      <p className={cn("font-bold text-xs leading-tight transition-colors", isOptionSelected(option.id) ? "text-primary" : "text-gray-300")}>{option.name}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-[10px] text-gray-500 font-mono">+{option.price.toFixed(2)}€</span>
-                        <div className={cn(
-                          "w-5 h-5 rounded-full border border-primary flex items-center justify-center transition-all duration-500", 
-                          isOptionSelected(option.id) ? "bg-primary text-background scale-110 rotate-[360deg]" : "bg-black/40 text-transparent scale-100"
-                        )}>
-                          <Check size={10} strokeWidth={4} />
-                        </div>
-                      </div>
+                    <div className="flex flex-col">
+                      <p className={cn("font-bold text-sm uppercase tracking-widest transition-colors", isOptionSelected(option.id) ? "text-primary" : "text-gray-300")}>{option.name}</p>
+                      {option.price > 0 && <span className="text-[10px] text-gray-500 font-mono mt-1">+{option.price.toFixed(2)}€</span>}
+                    </div>
+                    <div className={cn(
+                      "w-6 h-6 rounded-full border border-primary flex items-center justify-center transition-all duration-500", 
+                      isOptionSelected(option.id) ? "bg-primary text-background scale-110 rotate-[360deg]" : "bg-black/40 text-transparent scale-100"
+                    )}>
+                      <Check size={12} strokeWidth={4} />
                     </div>
                   </button>
                 ))}
