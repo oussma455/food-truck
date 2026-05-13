@@ -240,14 +240,16 @@ function OrderCard({
             <XCircle size={18} />
           </button>
 
-          {/* Bouton Bannir (Si impayé et en attente) */}
-          {order.status === "pending" && order.payment_status === "unpaid" && (
+          {/* Bouton Bannir (Toujours visible si la commande n'est pas payée) */}
+          {order.payment_status === "unpaid" && (
             <button
               onClick={() => onBlacklist(order.client_phone)}
-              className="p-3 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-all"
-              title="Bannir le client"
+              className="p-3 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-all group relative"
             >
               <Trash2 size={18} />
+              <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[8px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                BANNIER (NON VENU)
+              </span>
             </button>
           )}
 
