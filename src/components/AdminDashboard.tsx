@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import { Order } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, CheckCircle2 } from "lucide-react";
+import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, CheckCircle2, PhoneCall, Plus } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import ManualOrderModal from "./ManualOrderModal";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -48,11 +49,16 @@ const MOCK_ORDERS: Order[] = [
 
 export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   const updateStatus = (id: string, newStatus: Order["status"]) => {
     setOrders(
       orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
     );
+  };
+
+  const handleOrderCreated = (newOrder: Order) => {
+    setOrders([newOrder, ...orders]);
   };
 
   const cancelOrder = (id: string) => {
@@ -76,7 +82,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white p-4 md:p-8">
-      <header className="flex justify-between items-center mb-8 border-b border-gray-800 pb-6">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-800 pb-6">
         <div>
           <h1 className="text-3xl font-serif font-bold text-primary">
             Gourmet Admin
@@ -88,13 +94,24 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-        <button 
-          onClick={handleLogout}
-          className="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-sm"
-        >
-          <LogOut size={18} />
-          Déconnexion
-        </button>
+
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <button 
+            onClick={() => setIsOrderModalOpen(true)}
+            className="flex-1 md:flex-none premium-gradient text-background px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+          >
+            <PhoneCall size={18} />
+            Prendre Commande
+          </button>
+          
+          <button 
+            onClick={handleLogout}
+            className="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-sm ml-auto"
+          >
+            <LogOut size={18} />
+            <span className="hidden md:inline">Déconnexion</span>
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -162,6 +179,12 @@ export default function AdminDashboard() {
           </AnimatePresence>
         </div>
       </div>
+
+      <ManualOrderModal 
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        onOrderCreated={handleOrderCreated}
+      />
     </div>
   );
 }
@@ -221,6 +244,18 @@ function OrderCard({
           <div className="flex justify-between text-xs">
             <span className="text-primary font-bold uppercase tracking-widest">Extras</span>
             <span className="text-gray-300 text-right max-w-[120px]">{order.config.extras.map((e) => e.name).join(", ")}</span>
+          </div>
+        )}
+        {order.config.drinks && order.config.drinks.length > 0 && (
+          <div className="flex justify-between text-xs">
+            <span className="text-primary font-bold uppercase tracking-widest">Boissons</span>
+            <span className="text-gray-300 text-right max-w-[120px]">{order.config.drinks.map((d) => d.name).join(", ")}</span>
+          </div>
+        )}
+        {order.config.desserts && order.config.desserts.length > 0 && (
+          <div className="flex justify-between text-xs">
+            <span className="text-primary font-bold uppercase tracking-widest">Desserts</span>
+            <span className="text-gray-300 text-right max-w-[120px]">{order.config.desserts.map((d) => d.name).join(", ")}</span>
           </div>
         )}
       </div>

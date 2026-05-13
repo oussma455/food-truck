@@ -16,6 +16,8 @@ export interface SandwichConfig {
   meat?: Option;
   sauces: Option[];
   extras: Option[];
+  drinks?: Option[];
+  desserts?: Option[];
 }
 
 export interface Order {
