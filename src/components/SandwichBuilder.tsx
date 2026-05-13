@@ -51,7 +51,8 @@ export default function SandwichBuilder() {
       const isSelected = config.sauces.find((s) => s.id === option.id);
       if (isSelected) {
         setConfig({ ...config, sauces: config.sauces.filter((s) => s.id !== option.id) });
-      } else if (config.sauces.length < 2) {
+      } else {
+        // Suppression de la limite de 2 pour les sauces
         setConfig({ ...config, sauces: [...config.sauces, option] });
       }
     } else if (catId === "extras") {
@@ -107,7 +108,12 @@ export default function SandwichBuilder() {
     let total = 10;
     if (config.bread) total += config.bread.price;
     if (config.meat) total += config.meat.price;
-    total += config.sauces.reduce((acc, s) => acc + s.price, 0);
+    
+    // Logique sauces : 2 gratuites (chaque sauce est à 0.50€ dans data.ts)
+    const totalSaucePrice = config.sauces.reduce((acc, s) => acc + s.price, 0);
+    const sauceDiscount = Math.min(totalSaucePrice, 1.0); // Max 1€ de remise (2 sauces)
+    total += (totalSaucePrice - sauceDiscount);
+
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
     total += config.drinks.reduce((acc, d) => acc + d.price, 0);
     total += config.desserts.reduce((acc, d) => acc + d.price, 0);

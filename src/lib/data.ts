@@ -5,9 +5,9 @@ export const SANDWICH_CATEGORIES: Category[] = [
     id: "bread",
     name: "Choisissez votre pain",
     options: [
-      { id: "b1", name: "Baguette Tradition", price: 0, image: "https://images.unsplash.com/photo-1597079910443-60c43fc4f729?q=80&w=400&auto=format&fit=crop" },
-      { id: "b2", name: "Pain Brioché", price: 1.5, image: "https://images.unsplash.com/photo-1601054704854-1a2e79dac4d3?q=80&w=400&auto=format&fit=crop" },
-      { id: "b3", name: "Pain Complet", price: 0.5, image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop" },
+      { id: "b1", name: "Baguette Tradition", price: 0, image: "https://images.unsplash.com/photo-1589476993333-f55b84301219?q=80&w=400&auto=format&fit=crop" },
+      { id: "b2", name: "Pain Pita", price: 0, image: "https://images.unsplash.com/photo-1555990201-9040375a034b?q=80&w=400&auto=format&fit=crop" },
+      { id: "b3", name: "Pain Brioché VIP", price: 1.5, image: "https://images.unsplash.com/photo-1601054704854-1a2e79dac4d3?q=80&w=400&auto=format&fit=crop" },
     ],
   },
   {
@@ -15,19 +15,21 @@ export const SANDWICH_CATEGORIES: Category[] = [
     name: "Choisissez votre viande",
     options: [
       { id: "m1", name: "Bœuf Effiloché (12h)", price: 5, image: "https://images.unsplash.com/photo-1558030006-450675393462?q=80&w=400&auto=format&fit=crop" },
-      { id: "m2", name: "Poulet Mariné", price: 4, image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=400&auto=format&fit=crop" },
-      { id: "m3", name: "Falafel Maison", price: 3.5, image: "https://images.unsplash.com/photo-1593001874117-c99c800e3eb7?q=80&w=400&auto=format&fit=crop" },
-      { id: "m4", name: "Steak Boucher", price: 4.5, image: "https://images.unsplash.com/photo-1546241072-48010ad2862c?q=80&w=400&auto=format&fit=crop" },
+      { id: "m2", name: "Poulet Grillé Mariné", price: 4, image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=400&auto=format&fit=crop" },
+      { id: "m3", name: "Falafel Maison (Veggie)", price: 3.5, image: "https://images.unsplash.com/photo-1593001874117-c99c800e3eb7?q=80&w=400&auto=format&fit=crop" },
+      { id: "m4", name: "Steak Boucher Frais", price: 4.5, image: "https://images.unsplash.com/photo-1546241072-48010ad2862c?q=80&w=400&auto=format&fit=crop" },
     ],
   },
   {
     id: "sauces",
-    name: "Choisissez vos sauces (max 2)",
+    name: "Sauces (2 gratuites, puis +0.50€)",
     options: [
-      { id: "s1", name: "Maison Truffée", price: 0.5, image: "https://images.unsplash.com/photo-1470004914212-05527e49370b?q=80&w=400&auto=format&fit=crop" },
-      { id: "s2", name: "Algérienne", price: 0, image: "https://images.unsplash.com/photo-1585325701956-60dd9c8553bc?q=80&w=400&auto=format&fit=crop" },
-      { id: "s3", name: "Mayo-Ail", price: 0, image: "https://images.unsplash.com/photo-1512485600893-b08ec1d59b1d?q=80&w=400&auto=format&fit=crop" },
-      { id: "s4", name: "BBQ Fumée", price: 0, image: "https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?q=80&w=400&auto=format&fit=crop" },
+      { id: "s1", name: "Algérienne", price: 0.5, image: "https://images.unsplash.com/photo-1544436484-99594f2046bc?q=80&w=400&auto=format&fit=crop" },
+      { id: "s2", name: "Blanche (Ail & Fines Herbes)", price: 0.5, image: "https://images.unsplash.com/photo-1571275225791-03002ee44665?q=80&w=400&auto=format&fit=crop" },
+      { id: "s3", name: "Samouraï", price: 0.5, image: "https://images.unsplash.com/photo-1563513307168-a73c4016f5ee?q=80&w=400&auto=format&fit=crop" },
+      { id: "s4", name: "BBQ Fumée", price: 0.5, image: "https://images.unsplash.com/photo-1529663297267-17361be89418?q=80&w=400&auto=format&fit=crop" },
+      { id: "s5", name: "Mayo-Moutarde", price: 0.5, image: "https://images.unsplash.com/photo-1512485600893-b08ec1d59b1d?q=80&w=400&auto=format&fit=crop" },
+      { id: "s6", name: "Maison Truffée", price: 0.5, image: "https://images.unsplash.com/photo-1470004914212-05527e49370b?q=80&w=400&auto=format&fit=crop" },
     ],
   },
   {
