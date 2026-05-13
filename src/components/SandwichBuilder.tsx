@@ -21,6 +21,7 @@ interface ExtendedConfig extends SandwichConfig {
 export default function SandwichBuilder() {
   const [step, setStep] = useState(0);
   const [config, setConfig] = useState<ExtendedConfig>({
+    formula: undefined,
     sauces: [],
     extras: [],
     drinks: [],
@@ -43,7 +44,9 @@ export default function SandwichBuilder() {
   const handleOptionToggle = (option: Option) => {
     const catId = currentCategory.id;
     
-    if (catId === "bread") {
+    if (catId === "formula") {
+      setConfig({ ...config, formula: option });
+    } else if (catId === "bread") {
       setConfig({ ...config, bread: option });
     } else if (catId === "meat") {
       setConfig({ ...config, meat: option });
@@ -69,6 +72,7 @@ export default function SandwichBuilder() {
 
   const isOptionSelected = (optionId: string) => {
     const catId = currentCategory.id;
+    if (catId === "formula") return config.formula?.id === optionId;
     if (catId === "bread") return config.bread?.id === optionId;
     if (catId === "meat") return config.meat?.id === optionId;
     if (catId === "sauces") return config.sauces.some((s) => s.id === optionId);
@@ -93,7 +97,8 @@ export default function SandwichBuilder() {
   };
 
   const calculateTotal = () => {
-    let total = 10;
+    let total = 10; // Prix de base sandwich
+    if (config.formula) total += config.formula.price;
     if (config.bread) total += config.bread.price;
     if (config.meat) total += config.meat.price;
     
@@ -132,7 +137,7 @@ export default function SandwichBuilder() {
       setTimeout(() => {
         setIsSubmitting(false);
         setStep(0);
-        setConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
+        setConfig({ formula: undefined, sauces: [], extras: [], drinks: [], desserts: [] });
         setOrderInfo({ name: "", phone: "", payment: "on_site" });
         setShowConfetti(false);
         alert(loyaltyPoints >= 9 ? "C'EST OFFERT ! Merci de votre fidélité." : "Commande réussie ! Bon appétit.");
@@ -264,7 +269,7 @@ export default function SandwichBuilder() {
         {step < SANDWICH_CATEGORIES.length && (
           <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/90 backdrop-blur-xl border-t border-gray-900 max-w-md mx-auto flex gap-4 z-50">
             <button onClick={prevStep} disabled={step === 0} className={cn("flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-gray-800 font-bold text-[10px] uppercase tracking-widest transition-all", step === 0 ? "opacity-0 pointer-events-none" : "hover:bg-white/5")}><ChevronLeft size={14} /> Retour</button>
-            <button onClick={nextStep} disabled={(currentCategory.id === "bread" && !config.bread) || (currentCategory.id === "meat" && !config.meat)} className="flex-[2] premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all">{step === SANDWICH_CATEGORIES.length - 1 ? "Panier" : "Suivant"} <ChevronRight size={14} /></button>
+            <button onClick={nextStep} disabled={(currentCategory.id === "formula" && !config.formula) || (currentCategory.id === "bread" && !config.bread) || (currentCategory.id === "meat" && !config.meat)} className="flex-[2] premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all">{step === SANDWICH_CATEGORIES.length - 1 ? "Panier" : "Suivant"} <ChevronRight size={14} /></button>
           </div>
         )}
       </div>

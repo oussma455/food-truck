@@ -2,6 +2,14 @@ import { Category } from "@/types";
 
 export const SANDWICH_CATEGORIES: Category[] = [
   {
+    id: "formula",
+    name: "Choisissez votre formule",
+    options: [
+      { id: "f1", name: "Sandwich Seul", price: 0 },
+      { id: "f2", name: "Menu Complet (Sandwich + Boisson + Dessert)", price: 5 },
+    ],
+  },
+  {
     id: "bread",
     name: "Choisissez votre pain",
     options: [
@@ -46,10 +54,10 @@ export const SANDWICH_CATEGORIES: Category[] = [
     id: "drinks",
     name: "Boissons Fraîches",
     options: [
-      { id: "d1", name: "Coca-Cola Classic", price: 2.5 },
-      { id: "d2", name: "Ice Tea Pêche", price: 2.5 },
-      { id: "d3", name: "Eau Minérale (50cl)", price: 1.5 },
-      { id: "d4", name: "Limonade Maison", price: 3.5 },
+      { id: "d1", name: "Coca-Cola Classic", price: 1.5 },
+      { id: "d2", name: "Ice Tea Pêche", price: 1.5 },
+      { id: "d3", name: "Eau Minérale (50cl)", price: 1 },
+      { id: "d4", name: "Limonade Maison", price: 1.5 },
     ],
   },
   {

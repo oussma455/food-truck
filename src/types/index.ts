@@ -12,6 +12,7 @@ export interface Category {
 }
 
 export interface SandwichConfig {
+  formula?: Option;
   bread?: Option;
   meat?: Option;
   sauces: Option[];

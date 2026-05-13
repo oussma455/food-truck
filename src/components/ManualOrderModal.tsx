@@ -26,6 +26,7 @@ interface ExtendedConfig extends SandwichConfig {
 export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrderModalProps) {
   const [step, setStep] = useState(0);
   const [config, setConfig] = useState<ExtendedConfig>({
+    formula: undefined,
     sauces: [],
     extras: [],
     drinks: [],
@@ -38,7 +39,9 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
   const handleOptionToggle = (option: Option) => {
     const catId = currentCategory.id;
     
-    if (catId === "bread") {
+    if (catId === "formula") {
+      setConfig({ ...config, formula: option });
+    } else if (catId === "bread") {
       setConfig({ ...config, bread: option });
     } else if (catId === "meat") {
       setConfig({ ...config, meat: option });
@@ -47,11 +50,9 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
       if (isSelected) {
         setConfig({ ...config, sauces: config.sauces.filter((s) => s.id !== option.id) });
       } else {
-        // Suppression de la limite pour permettre la tarification dynamique
         setConfig({ ...config, sauces: [...config.sauces, option] });
       }
     } else {
-      // Correction pour boissons et desserts
       const key = catId as keyof ExtendedConfig;
       const currentList = config[key] as Option[] || [];
       const isSelected = currentList.find((item) => item.id === option.id);
@@ -66,21 +67,22 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
 
   const isOptionSelected = (optionId: string) => {
     const catId = currentCategory.id;
+    if (catId === "formula") return config.formula?.id === optionId;
     if (catId === "bread") return config.bread?.id === optionId;
     if (catId === "meat") return config.meat?.id === optionId;
     if (catId === "sauces") return config.sauces.some((s) => s.id === optionId);
     if (catId === "extras") return config.extras.some((e) => e.id === optionId);
-    if (catId === "drinks") return config.drinks?.some((d) => d.id === optionId);
-    if (catId === "desserts") return config.desserts?.some((d) => d.id === optionId);
+    if (catId === "drinks") return (config.drinks || []).some((d) => d.id === optionId);
+    if (catId === "desserts") return (config.desserts || []).some((d) => d.id === optionId);
     return false;
   };
 
   const calculateTotal = () => {
     let total = 10;
+    if (config.formula) total += config.formula.price;
     if (config.bread) total += config.bread.price;
     if (config.meat) total += config.meat.price;
     
-    // Logique sauces : 2 gratuites (chaque sauce est à 0.50€)
     const totalSaucePrice = config.sauces.reduce((acc, s) => acc + s.price, 0);
     const sauceDiscount = Math.min(totalSaucePrice, 1.0); 
     total += (totalSaucePrice - sauceDiscount);
@@ -92,8 +94,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
   };
 
   const handleSubmit = () => {
-    if (!config.bread || !config.meat) {
-      alert("La commande est incomplète (Pain et Viande obligatoires)");
+    if (!config.formula || !config.bread || !config.meat) {
+      alert("Commande incomplète (Formule, Pain et Viande obligatoires)");
       return;
     }
 
@@ -102,6 +104,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
       client_name: clientInfo.name || "Client Téléphone",
       client_phone: clientInfo.phone || "Non renseigné",
       config: {
+        formula: config.formula,
         bread: config.bread,
         meat: config.meat,
         sauces: config.sauces,
@@ -118,9 +121,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
 
     onOrderCreated(newOrder);
     onClose();
-    // Reset state
     setStep(0);
-    setConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
+    setConfig({ formula: undefined, sauces: [], extras: [], drinks: [], desserts: [] });
     setClientInfo({ name: "Client Téléphone", phone: "" });
   };
 
@@ -145,7 +147,6 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
 
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Left side: Options */}
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-end mb-4">
@@ -173,59 +174,23 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
                 </div>
 
                 <div className="flex gap-2 mt-6">
-                  <button 
-                    onClick={() => setStep(Math.max(0, step - 1))} 
-                    disabled={step === 0}
-                    className="flex-1 p-2 border border-gray-800 rounded-lg text-xs uppercase font-bold tracking-widest disabled:opacity-30"
-                  >
-                    Précédent
-                  </button>
-                  <button 
-                    onClick={() => setStep(Math.min(SANDWICH_CATEGORIES.length - 1, step + 1))}
-                    disabled={step === SANDWICH_CATEGORIES.length - 1}
-                    className="flex-1 p-2 bg-primary/10 border border-primary/30 text-primary rounded-lg text-xs uppercase font-bold tracking-widest disabled:opacity-30"
-                  >
-                    Suivant
-                  </button>
+                  <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} className="flex-1 p-2 border border-gray-800 rounded-lg text-xs uppercase font-bold tracking-widest disabled:opacity-30">Précédent</button>
+                  <button onClick={() => setStep(Math.min(SANDWICH_CATEGORIES.length - 1, step + 1))} disabled={step === SANDWICH_CATEGORIES.length - 1} className="flex-1 p-2 bg-primary/10 border border-primary/30 text-primary rounded-lg text-xs uppercase font-bold tracking-widest disabled:opacity-30">Suivant</button>
                 </div>
               </div>
             </div>
 
-            {/* Right side: Summary and Client Info */}
             <div className="space-y-6">
               <div className="bg-secondary/30 rounded-xl p-5 border border-gray-800/50">
                 <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest mb-4">Récapitulatif</h4>
                 <ul className="space-y-2 text-xs">
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">Pain:</span>
-                    <span className={config.bread ? "text-white" : "text-red-500/50 italic"}>{config.bread?.name || "Non choisi"}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">Viande:</span>
-                    <span className={config.meat ? "text-white" : "text-red-500/50 italic"}>{config.meat?.name || "Non choisi"}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-500">Sauces:</span>
-                    <span className="text-white text-right">{config.sauces.map(s => s.name).join(", ") || "Aucune"}</span>
-                  </li>
-                  {config.extras.length > 0 && (
-                    <li className="flex justify-between">
-                      <span className="text-gray-500">Extras:</span>
-                      <span className="text-white text-right">{config.extras.map(e => e.name).join(", ")}</span>
-                    </li>
-                  )}
-                  {config.drinks.length > 0 && (
-                    <li className="flex justify-between">
-                      <span className="text-gray-500">Boissons:</span>
-                      <span className="text-white text-right">{config.drinks.map(d => d.name).join(", ")}</span>
-                    </li>
-                  )}
-                  {config.desserts.length > 0 && (
-                    <li className="flex justify-between">
-                      <span className="text-gray-500">Desserts:</span>
-                      <span className="text-white text-right">{config.desserts.map(d => d.name).join(", ")}</span>
-                    </li>
-                  )}
+                  <li className="flex justify-between"><span className="text-gray-500">Formule:</span><span className={config.formula ? "text-white" : "text-red-500/50 italic"}>{config.formula?.name || "Non choisi"}</span></li>
+                  <li className="flex justify-between"><span className="text-gray-500">Pain:</span><span className={config.bread ? "text-white" : "text-red-500/50 italic"}>{config.bread?.name || "Non choisi"}</span></li>
+                  <li className="flex justify-between"><span className="text-gray-500">Viande:</span><span className={config.meat ? "text-white" : "text-red-500/50 italic"}>{config.meat?.name || "Non choisi"}</span></li>
+                  <li className="flex justify-between"><span className="text-gray-500">Sauces:</span><span className="text-white text-right">{config.sauces.map(s => s.name).join(", ") || "Aucune"}</span></li>
+                  {config.extras.length > 0 && <li className="flex justify-between"><span className="text-gray-500">Extras:</span><span className="text-white text-right">{config.extras.map(e => e.name).join(", ")}</span></li>}
+                  {(config.drinks || []).length > 0 && <li className="flex justify-between"><span className="text-gray-500">Boissons:</span><span className="text-white text-right">{config.drinks?.map(d => d.name).join(", ")}</span></li>}
+                  {(config.desserts || []).length > 0 && <li className="flex justify-between"><span className="text-gray-500">Desserts:</span><span className="text-white text-right">{config.desserts?.map(d => d.name).join(", ")}</span></li>}
                 </ul>
                 <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center">
                   <span className="font-serif font-bold">Total</span>
@@ -236,33 +201,15 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
               <div className="space-y-4">
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Nom du client</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex: Client Téléphone" 
-                    className="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm outline-none focus:border-primary transition-all"
-                    value={clientInfo.name}
-                    onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })}
-                  />
+                  <input type="text" placeholder="Ex: Client Téléphone" className="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm outline-none focus:border-primary transition-all" value={clientInfo.name} onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Téléphone</label>
-                  <input 
-                    type="tel" 
-                    placeholder="06..." 
-                    className="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm outline-none focus:border-primary transition-all"
-                    value={clientInfo.phone}
-                    onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
-                  />
+                  <input type="tel" placeholder="06..." className="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm outline-none focus:border-primary transition-all" value={clientInfo.phone} onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })} />
                 </div>
               </div>
 
-              <button 
-                onClick={handleSubmit}
-                className="w-full premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all mt-4"
-              >
-                <Plus size={18} />
-                Valider la commande
-              </button>
+              <button onClick={handleSubmit} className="w-full premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all mt-4"><Plus size={18} />Valider la commande</button>
             </div>
           </div>
         </div>
