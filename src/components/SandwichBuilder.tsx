@@ -12,17 +12,24 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Étendre le type pour inclure boissons et desserts
+interface ExtendedConfig extends SandwichConfig {
+  drinks: Option[];
+  desserts: Option[];
+}
+
 export default function SandwichBuilder() {
   const [step, setStep] = useState(0);
-  const [config, setConfig] = useState<SandwichConfig>({
+  const [config, setConfig] = useState<ExtendedConfig>({
     sauces: [],
     extras: [],
+    drinks: [],
+    desserts: [],
   });
   const [orderInfo, setOrderInfo] = useState({ name: "", phone: "", payment: "on_site" as "online" | "on_site" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
-  // Charger les points de fidélité au chargement du récapitulatif
   useEffect(() => {
     if (step === SANDWICH_CATEGORIES.length && orderInfo.phone) {
       const history = JSON.parse(localStorage.getItem(`loyalty_${orderInfo.phone}`) || "0");
@@ -33,40 +40,51 @@ export default function SandwichBuilder() {
   const currentCategory = SANDWICH_CATEGORIES[step];
 
   const handleOptionToggle = (option: Option) => {
-    if (currentCategory.id === "bread") {
+    const catId = currentCategory.id;
+    
+    if (catId === "bread") {
       setConfig({ ...config, bread: option });
-    } else if (currentCategory.id === "meat") {
+    } else if (catId === "meat") {
       setConfig({ ...config, meat: option });
-    } else if (currentCategory.id === "sauces") {
+    } else if (catId === "sauces") {
       const isSelected = config.sauces.find((s) => s.id === option.id);
       if (isSelected) {
-        setConfig({
-          ...config,
-          sauces: config.sauces.filter((s) => s.id !== option.id),
-        });
+        setConfig({ ...config, sauces: config.sauces.filter((s) => s.id !== option.id) });
       } else if (config.sauces.length < 2) {
         setConfig({ ...config, sauces: [...config.sauces, option] });
       }
-    } else if (currentCategory.id === "extras") {
+    } else if (catId === "extras") {
       const isSelected = config.extras.find((e) => e.id === option.id);
       if (isSelected) {
-        setConfig({
-          ...config,
-          extras: config.extras.filter((e) => e.id !== option.id),
-        });
+        setConfig({ ...config, extras: config.extras.filter((e) => e.id !== option.id) });
       } else {
         setConfig({ ...config, extras: [...config.extras, option] });
+      }
+    } else if (catId === "drinks") {
+      const isSelected = config.drinks.find((d) => d.id === option.id);
+      if (isSelected) {
+        setConfig({ ...config, drinks: config.drinks.filter((d) => d.id !== option.id) });
+      } else {
+        setConfig({ ...config, drinks: [...config.drinks, option] });
+      }
+    } else if (catId === "desserts") {
+      const isSelected = config.desserts.find((d) => d.id === option.id);
+      if (isSelected) {
+        setConfig({ ...config, desserts: config.desserts.filter((d) => d.id !== option.id) });
+      } else {
+        setConfig({ ...config, desserts: [...config.desserts, option] });
       }
     }
   };
 
   const isOptionSelected = (optionId: string) => {
-    if (currentCategory.id === "bread") return config.bread?.id === optionId;
-    if (currentCategory.id === "meat") return config.meat?.id === optionId;
-    if (currentCategory.id === "sauces")
-      return config.sauces.some((s) => s.id === optionId);
-    if (currentCategory.id === "extras")
-      return config.extras.some((e) => e.id === optionId);
+    const catId = currentCategory.id;
+    if (catId === "bread") return config.bread?.id === optionId;
+    if (catId === "meat") return config.meat?.id === optionId;
+    if (catId === "sauces") return config.sauces.some((s) => s.id === optionId);
+    if (catId === "extras") return config.extras.some((e) => e.id === optionId);
+    if (catId === "drinks") return config.drinks.some((d) => d.id === optionId);
+    if (catId === "desserts") return config.desserts.some((d) => d.id === optionId);
     return false;
   };
 
@@ -85,17 +103,15 @@ export default function SandwichBuilder() {
   };
 
   const calculateTotal = () => {
-    let total = 10; // Base price
+    let total = 10; // Base price for sandwich
     if (config.bread) total += config.bread.price;
     if (config.meat) total += config.meat.price;
     total += config.sauces.reduce((acc, s) => acc + s.price, 0);
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
+    total += config.drinks.reduce((acc, d) => acc + d.price, 0);
+    total += config.desserts.reduce((acc, d) => acc + d.price, 0);
     
-    // Si 9 commandes déjà faites, la 10ème est offerte
-    if (loyaltyPoints >= 9) {
-      return 0;
-    }
-    
+    if (loyaltyPoints >= 9) return 0;
     return total;
   };
 
@@ -105,40 +121,31 @@ export default function SandwichBuilder() {
       return;
     }
 
-    // Vérification de la blacklist locale (simulation)
     const blacklist = JSON.parse(localStorage.getItem("blacklisted_phones") || "[]");
     if (orderInfo.payment === "on_site" && blacklist.includes(orderInfo.phone)) {
-      alert("Désolé, suite à des commandes non honorées, vous devez obligatoirement payer en ligne pour commander.");
+      alert("Paiement en ligne obligatoire pour vous.");
       setOrderInfo({ ...orderInfo, payment: "online" });
       return;
     }
 
     setIsSubmitting(true);
-    // Simulation d'envoi à Supabase
     setTimeout(() => {
-      // Mise à jour de la fidélité
       const newPoints = loyaltyPoints >= 9 ? 0 : loyaltyPoints + 1;
       localStorage.setItem(`loyalty_${orderInfo.phone}`, JSON.stringify(newPoints));
-      
-      alert(loyaltyPoints >= 9 ? "Félicitations ! Votre commande est OFFERTE !" : "Commande envoyée avec succès !");
-      
+      alert(loyaltyPoints >= 9 ? "OFFERT !" : "Succès !");
       setIsSubmitting(false);
       setStep(0);
-      setConfig({ sauces: [], extras: [] });
+      setConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
       setOrderInfo({ name: "", phone: "", payment: "on_site" });
     }, 1500);
   };
 
   return (
-    <div className="max-w-md mx-auto min-h-screen flex flex-col p-6 bg-background text-foreground pb-24">
+    <div className="max-w-md mx-auto min-h-screen flex flex-col p-6 bg-background text-foreground pb-32">
       <header className="mb-8 pt-4 text-center">
-        <h1 className="text-3xl font-serif font-bold text-primary mb-2">
-          Gourmet Truck
-        </h1>
+        <h1 className="text-3xl font-serif font-bold text-primary mb-2">Gourmet Truck</h1>
         <div className="premium-gradient h-[1px] w-24 mx-auto mb-2 opacity-50" />
-        <p className="text-gray-400 text-sm italic tracking-wide">
-          L'excellence à chaque bouchée
-        </p>
+        <p className="text-gray-400 text-sm italic tracking-wide">L'excellence à chaque bouchée</p>
       </header>
 
       <div className="flex-1 flex flex-col">
@@ -152,12 +159,8 @@ export default function SandwichBuilder() {
               className="flex-1"
             >
               <div className="mb-6">
-                <span className="text-[10px] text-primary font-bold tracking-[0.2em] uppercase">
-                  Étape {step + 1} / {SANDWICH_CATEGORIES.length}
-                </span>
-                <h2 className="text-2xl font-serif mt-1">
-                  {currentCategory.name}
-                </h2>
+                <span className="text-[10px] text-primary font-bold tracking-[0.2em] uppercase">Étape {step + 1} / {SANDWICH_CATEGORIES.length}</span>
+                <h2 className="text-2xl font-serif mt-1">{currentCategory.name}</h2>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
@@ -167,27 +170,14 @@ export default function SandwichBuilder() {
                     onClick={() => handleOptionToggle(option)}
                     className={cn(
                       "premium-card p-5 text-left transition-all duration-300 flex justify-between items-center group",
-                      isOptionSelected(option.id)
-                        ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]"
-                        : "hover:border-primary/50"
+                      isOptionSelected(option.id) ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(212,175,55,0.1)]" : "hover:border-primary/50"
                     )}
                   >
                     <div>
                       <p className="font-semibold text-lg">{option.name}</p>
-                      {option.price > 0 && (
-                        <p className="text-primary text-sm font-medium">
-                          + {option.price.toFixed(2)}€
-                        </p>
-                      )}
+                      {option.price > 0 && <p className="text-primary text-sm font-medium">+ {option.price.toFixed(2)}€</p>}
                     </div>
-                    <div
-                      className={cn(
-                        "w-6 h-6 rounded-full border border-primary flex items-center justify-center transition-all duration-500",
-                        isOptionSelected(option.id)
-                          ? "bg-primary text-background scale-110"
-                          : "text-transparent scale-100"
-                      )}
-                    >
+                    <div className={cn("w-6 h-6 rounded-full border border-primary flex items-center justify-center transition-all duration-500", isOptionSelected(option.id) ? "bg-primary text-background scale-110" : "text-transparent scale-100")}>
                       <Check size={14} strokeWidth={3} />
                     </div>
                   </button>
@@ -195,170 +185,61 @@ export default function SandwichBuilder() {
               </div>
             </motion.div>
           ) : (
-            <motion.div
-              key="summary"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex-1"
-            >
+            <motion.div key="summary" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex-1">
               <h2 className="text-2xl font-serif mb-6">Finalisez votre commande</h2>
               
               <div className="space-y-5 mb-8">
                 <div>
                   <label className="text-[10px] text-primary uppercase font-bold tracking-widest block mb-2">Votre Prénom</label>
-                  <input 
-                    type="text" 
-                    value={orderInfo.name}
-                    onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})}
-                    placeholder="Ex: Jean"
-                    className="w-full bg-secondary/50 border border-gray-800 p-4 rounded-xl focus:border-primary outline-none transition-all placeholder:text-gray-600"
-                  />
+                  <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="Ex: Jean" className="w-full bg-secondary/50 border border-gray-800 p-4 rounded-xl focus:border-primary outline-none transition-all placeholder:text-gray-600" />
                 </div>
                 <div>
                   <label className="text-[10px] text-primary uppercase font-bold tracking-widest block mb-2">Téléphone</label>
-                  <input 
-                    type="tel" 
-                    value={orderInfo.phone}
-                    onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})}
-                    placeholder="06 00 00 00 00"
-                    className="w-full bg-secondary/50 border border-gray-800 p-4 rounded-xl focus:border-primary outline-none transition-all placeholder:text-gray-600"
-                  />
+                  <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="06 00 00 00 00" className="w-full bg-secondary/50 border border-gray-800 p-4 rounded-xl focus:border-primary outline-none transition-all placeholder:text-gray-600" />
                 </div>
                 <div>
                   <label className="text-[10px] text-primary uppercase font-bold tracking-widest block mb-2">Mode de paiement</label>
                   <div className="grid grid-cols-2 gap-4">
-                    <button 
-                      onClick={() => setOrderInfo({...orderInfo, payment: "online"})}
-                      className={cn(
-                        "p-4 rounded-xl border text-sm font-bold transition-all",
-                        orderInfo.payment === "online" ? "border-primary bg-primary/10 text-primary" : "border-gray-800 text-gray-400"
-                      )}
-                    >
-                      💳 En ligne
-                    </button>
-                    <button 
-                      onClick={() => setOrderInfo({...orderInfo, payment: "on_site"})}
-                      className={cn(
-                        "p-4 rounded-xl border text-sm font-bold transition-all",
-                        orderInfo.payment === "on_site" ? "border-primary bg-primary/10 text-primary" : "border-gray-800 text-gray-400"
-                      )}
-                    >
-                      💰 Sur place
-                    </button>
+                    <button onClick={() => setOrderInfo({...orderInfo, payment: "online"})} className={cn("p-4 rounded-xl border text-sm font-bold transition-all", orderInfo.payment === "online" ? "border-primary bg-primary/10 text-primary" : "border-gray-800 text-gray-400")}>💳 En ligne</button>
+                    <button onClick={() => setOrderInfo({...orderInfo, payment: "on_site"})} className={cn("p-4 rounded-xl border text-sm font-bold transition-all", orderInfo.payment === "on_site" ? "border-primary bg-primary/10 text-primary" : "border-gray-800 text-gray-400")}>💰 Sur place</button>
                   </div>
-                  {orderInfo.payment === "on_site" && calculateTotal() > 25 && (
-                    <p className="text-[11px] text-red-400 mt-2 italic font-medium">
-                      * Paiement en ligne obligatoire au-dessus de 25€ pour éviter les commandes fantômes.
-                    </p>
-                  )}
                 </div>
               </div>
 
               <div className="premium-card p-6 mb-8 bg-secondary/30">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm font-bold text-primary uppercase tracking-widest">Votre Sélection</h3>
-                  {loyaltyPoints > 0 && (
-                    <span className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-full border border-primary/30">
-                      {loyaltyPoints}/9 commandes
-                    </span>
-                  )}
+                  {loyaltyPoints > 0 && <span className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-full border border-primary/30">{loyaltyPoints}/9 commandes</span>}
                 </div>
-                <ul className="space-y-3">
-                  <li className="flex justify-between text-sm">
-                    <span className="text-gray-400 italic">Pain</span>
-                    <span className="font-medium">{config.bread?.name}</span>
-                  </li>
-                  <li className="flex justify-between text-sm">
-                    <span className="text-gray-400 italic">Viande</span>
-                    <span className="font-medium">{config.meat?.name}</span>
-                  </li>
-                  <li className="flex justify-between text-sm">
-                    <span className="text-gray-400 italic">Sauces</span>
-                    <span className="font-medium text-right max-w-[150px]">
-                      {config.sauces.map((s) => s.name).join(", ") || "Aucune"}
-                    </span>
-                  </li>
-                  {config.extras.length > 0 && (
-                    <li className="flex justify-between text-sm">
-                      <span className="text-gray-400 italic">Suppléments</span>
-                      <span className="font-medium text-right max-w-[150px]">
-                        {config.extras.map((e) => e.name).join(", ")}
-                      </span>
-                    </li>
-                  )}
+                <ul className="space-y-3 text-sm">
+                  <li className="flex justify-between"><span className="text-gray-400 italic">Sandwich</span><span className="font-medium">{config.bread?.name} + {config.meat?.name}</span></li>
+                  {config.drinks.length > 0 && <li className="flex justify-between"><span className="text-gray-400 italic">Boissons</span><span className="font-medium text-right max-w-[150px]">{config.drinks.map(d => d.name).join(", ")}</span></li>}
+                  {config.desserts.length > 0 && <li className="flex justify-between"><span className="text-gray-400 italic">Desserts</span><span className="font-medium text-right max-w-[150px]">{config.desserts.map(d => d.name).join(", ")}</span></li>}
                 </ul>
 
                 <div className="mt-6 pt-4 border-t border-gray-800 flex justify-between items-center">
-                  <span className="text-lg font-serif">
-                    {loyaltyPoints >= 9 ? "Total (OFFERT !)" : "Total Gourmet"}
-                  </span>
-                  <span className={cn(
-                    "text-2xl font-bold text-primary",
-                    loyaltyPoints >= 9 && "line-through opacity-50 text-lg"
-                  )}>
-                    {loyaltyPoints >= 9 ? (10 + (config.bread?.price || 0) + (config.meat?.price || 0) + config.sauces.reduce((acc, s) => acc + s.price, 0) + config.extras.reduce((acc, e) => acc + e.price, 0)).toFixed(2) : calculateTotal().toFixed(2)}€
-                  </span>
-                  {loyaltyPoints >= 9 && (
-                    <span className="text-2xl font-bold text-green-500 ml-2">0.00€</span>
-                  )}
+                  <span className="text-lg font-serif">{loyaltyPoints >= 9 ? "Total (OFFERT !)" : "Total Gourmet"}</span>
+                  <div className="text-right">
+                    <span className={cn("text-2xl font-bold text-primary", loyaltyPoints >= 9 && "line-through opacity-50 text-lg")}>
+                      {(10 + (config.bread?.price || 0) + (config.meat?.price || 0) + config.sauces.reduce((acc, s) => acc + s.price, 0) + config.extras.reduce((acc, e) => acc + e.price, 0) + config.drinks.reduce((acc, d) => acc + d.price, 0) + config.desserts.reduce((acc, d) => acc + d.price, 0)).toFixed(2)}€
+                    </span>
+                    {loyaltyPoints >= 9 && <span className="text-2xl font-bold text-green-500 ml-2 block">0.00€</span>}
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <button 
-                  onClick={handleSubmitOrder}
-                  disabled={isSubmitting || (orderInfo.payment === "on_site" && calculateTotal() > 25)}
-                  className="w-full premium-gradient text-background font-bold py-4 rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-3 transition-transform active:scale-95 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <div className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <ShoppingCart size={20} />
-                      <span className="tracking-widest uppercase text-sm">
-                        {orderInfo.payment === "online" ? "Payer et Commander" : "Confirmer la commande"}
-                      </span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => setStep(0)}
-                  disabled={isSubmitting}
-                  className="w-full bg-transparent border border-gray-800 text-gray-500 py-3 rounded-xl text-xs uppercase tracking-widest font-bold hover:text-gray-300 transition-colors"
-                >
-                  Modifier ma sélection
-                </button>
+                <button onClick={handleSubmitOrder} disabled={isSubmitting || (orderInfo.payment === "on_site" && calculateTotal() > 25)} className="w-full premium-gradient text-background font-bold py-4 rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 tracking-widest uppercase text-sm">{isSubmitting ? <div className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" /> : <><ShoppingCart size={20} />{orderInfo.payment === "online" ? "Payer et Commander" : "Confirmer la commande"}</>}</button>
+                <button onClick={() => setStep(0)} disabled={isSubmitting} className="w-full bg-transparent border border-gray-800 text-gray-500 py-3 rounded-xl text-xs uppercase tracking-widest font-bold">Modifier ma sélection</button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {step < SANDWICH_CATEGORIES.length && (
-          <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-md border-t border-gray-900 max-w-md mx-auto flex gap-4">
-            <button
-              onClick={prevStep}
-              disabled={step === 0}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-gray-800 transition-all font-bold text-xs uppercase tracking-widest",
-                step === 0 ? "opacity-0 pointer-events-none" : "opacity-100"
-              )}
-            >
-              <ChevronLeft size={16} />
-              Retour
-            </button>
-            <button
-              onClick={nextStep}
-              disabled={
-                (currentCategory.id === "bread" && !config.bread) ||
-                (currentCategory.id === "meat" && !config.meat)
-              }
-              className={cn(
-                "flex-[2] premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 disabled:opacity-30 transition-all shadow-lg shadow-primary/10 uppercase text-xs tracking-widest"
-              )}
-            >
-              {step === SANDWICH_CATEGORIES.length - 1 ? "Voir le panier" : "Suivant"}
-              <ChevronRight size={16} />
-            </button>
+          <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-md border-t border-gray-900 max-w-md mx-auto flex gap-4 z-50">
+            <button onClick={prevStep} disabled={step === 0} className={cn("flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-gray-800 font-bold text-xs uppercase tracking-widest", step === 0 ? "opacity-0 pointer-events-none" : "opacity-100")}><ChevronLeft size={16} />Retour</button>
+            <button onClick={nextStep} disabled={(currentCategory.id === "bread" && !config.bread) || (currentCategory.id === "meat" && !config.meat)} className="flex-[2] premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest shadow-lg shadow-primary/10">{step === SANDWICH_CATEGORIES.length - 1 ? "Voir le panier" : "Suivant"}<ChevronRight size={16} /></button>
           </div>
         )}
       </div>
