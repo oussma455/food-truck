@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SANDWICH_CATEGORIES } from "@/lib/data";
 import { SandwichConfig, Option } from "@/types";
-import { ChevronRight, ChevronLeft, ShoppingCart, Check } from "lucide-react";
+import { ChevronRight, ChevronLeft, ShoppingCart, Check, Star, Award } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -29,6 +29,7 @@ export default function SandwichBuilder() {
   const [orderInfo, setOrderInfo] = useState({ name: "", phone: "", payment: "on_site" as "online" | "on_site" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     if (step === SANDWICH_CATEGORIES.length && orderInfo.phone) {
@@ -103,7 +104,7 @@ export default function SandwichBuilder() {
   };
 
   const calculateTotal = () => {
-    let total = 10; // Base price for sandwich
+    let total = 10;
     if (config.bread) total += config.bread.price;
     if (config.meat) total += config.meat.price;
     total += config.sauces.reduce((acc, s) => acc + s.price, 0);
@@ -132,20 +133,29 @@ export default function SandwichBuilder() {
     setTimeout(() => {
       const newPoints = loyaltyPoints >= 9 ? 0 : loyaltyPoints + 1;
       localStorage.setItem(`loyalty_${orderInfo.phone}`, JSON.stringify(newPoints));
-      alert(loyaltyPoints >= 9 ? "OFFERT !" : "Succès !");
-      setIsSubmitting(false);
-      setStep(0);
-      setConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
-      setOrderInfo({ name: "", phone: "", payment: "on_site" });
+      setShowConfetti(true);
+      
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setStep(0);
+        setConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
+        setOrderInfo({ name: "", phone: "", payment: "on_site" });
+        setShowConfetti(false);
+        alert(loyaltyPoints >= 9 ? "C'EST OFFERT ! Merci de votre fidélité." : "Commande réussie ! Bon appétit.");
+      }, 3000);
     }, 1500);
   };
 
   return (
-    <div className="max-w-md mx-auto min-h-screen flex flex-col p-6 bg-background text-foreground pb-32">
+    <div className="max-w-md mx-auto min-h-screen flex flex-col p-6 bg-background text-foreground pb-32 relative overflow-hidden">
+      <AnimatePresence>
+        {showConfetti && <Confetti />}
+      </AnimatePresence>
+
       <header className="mb-8 pt-4 text-center">
-        <h1 className="text-3xl font-serif font-bold text-primary mb-2">Gourmet Truck</h1>
+        <h1 className="text-3xl font-serif font-bold text-primary mb-2 italic">Gourmet Truck</h1>
         <div className="premium-gradient h-[1px] w-24 mx-auto mb-2 opacity-50" />
-        <p className="text-gray-400 text-sm italic tracking-wide">L'excellence à chaque bouchée</p>
+        <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold">L'art du sandwich premium</p>
       </header>
 
       <div className="flex-1 flex flex-col">
@@ -158,9 +168,11 @@ export default function SandwichBuilder() {
               exit={{ opacity: 0, x: -20 }}
               className="flex-1"
             >
-              <div className="mb-6">
-                <span className="text-[10px] text-primary font-bold tracking-[0.2em] uppercase">Étape {step + 1} / {SANDWICH_CATEGORIES.length}</span>
-                <h2 className="text-2xl font-serif mt-1">{currentCategory.name}</h2>
+              <div className="mb-6 flex justify-between items-end">
+                <div>
+                  <span className="text-[10px] text-primary font-bold tracking-[0.2em] uppercase">Sélection {step + 1}/{SANDWICH_CATEGORIES.length}</span>
+                  <h2 className="text-2xl font-serif mt-1">{currentCategory.name}</h2>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -169,33 +181,33 @@ export default function SandwichBuilder() {
                     key={option.id}
                     onClick={() => handleOptionToggle(option)}
                     className={cn(
-                      "premium-card overflow-hidden text-left transition-all duration-300 flex flex-col group relative",
-                      isOptionSelected(option.id) ? "border-primary bg-primary/5 shadow-[0_0_20px_rgba(212,175,55,0.15)]" : "hover:border-primary/50"
+                      "premium-card overflow-hidden text-left transition-all duration-500 flex flex-col group relative",
+                      isOptionSelected(option.id) ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-[0_0_30px_rgba(212,175,55,0.1)]" : "hover:border-primary/40"
                     )}
                   >
                     {option.image && (
-                      <div className="w-full h-32 overflow-hidden relative">
+                      <div className="w-full h-28 overflow-hidden relative">
                         <img 
                           src={option.image} 
                           alt={option.name} 
                           className={cn(
-                            "w-full h-full object-cover transition-transform duration-700",
+                            "w-full h-full object-cover transition-transform duration-1000",
                             isOptionSelected(option.id) ? "scale-110" : "group-hover:scale-110"
                           )}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
                       </div>
                     )}
-                    <div className="p-4 flex-1 flex flex-col justify-between">
-                      <div>
-                        <p className="font-semibold text-sm leading-tight mb-1">{option.name}</p>
-                        {option.price > 0 && <p className="text-primary text-[10px] font-bold">+ {option.price.toFixed(2)}€</p>}
-                      </div>
-                      <div className={cn(
-                        "absolute top-2 right-2 w-6 h-6 rounded-full border border-primary flex items-center justify-center transition-all duration-500 z-10", 
-                        isOptionSelected(option.id) ? "bg-primary text-background scale-110" : "bg-black/40 text-transparent scale-100 backdrop-blur-sm"
-                      )}>
-                        <Check size={12} strokeWidth={4} />
+                    <div className="p-3 flex-1 flex flex-col justify-between">
+                      <p className={cn("font-bold text-xs leading-tight transition-colors", isOptionSelected(option.id) ? "text-primary" : "text-gray-300")}>{option.name}</p>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-[10px] text-gray-500 font-mono">+{option.price.toFixed(2)}€</span>
+                        <div className={cn(
+                          "w-5 h-5 rounded-full border border-primary flex items-center justify-center transition-all duration-500", 
+                          isOptionSelected(option.id) ? "bg-primary text-background scale-110 rotate-[360deg]" : "bg-black/40 text-transparent scale-100"
+                        )}>
+                          <Check size={10} strokeWidth={4} />
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -203,64 +215,111 @@ export default function SandwichBuilder() {
               </div>
             </motion.div>
           ) : (
-            <motion.div key="summary" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex-1">
-              <h2 className="text-2xl font-serif mb-6">Finalisez votre commande</h2>
+            <motion.div key="summary" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
+              <h2 className="text-2xl font-serif mb-6 text-center">Votre Expérience</h2>
               
-              <div className="space-y-5 mb-8">
-                <div>
-                  <label className="text-[10px] text-primary uppercase font-bold tracking-widest block mb-2">Votre Prénom</label>
-                  <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="Ex: Jean" className="w-full bg-secondary/50 border border-gray-800 p-4 rounded-xl focus:border-primary outline-none transition-all placeholder:text-gray-600" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-primary uppercase font-bold tracking-widest block mb-2">Téléphone</label>
-                  <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="06 00 00 00 00" className="w-full bg-secondary/50 border border-gray-800 p-4 rounded-xl focus:border-primary outline-none transition-all placeholder:text-gray-600" />
-                </div>
-                <div>
-                  <label className="text-[10px] text-primary uppercase font-bold tracking-widest block mb-2">Mode de paiement</label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => setOrderInfo({...orderInfo, payment: "online"})} className={cn("p-4 rounded-xl border text-sm font-bold transition-all", orderInfo.payment === "online" ? "border-primary bg-primary/10 text-primary" : "border-gray-800 text-gray-400")}>💳 En ligne</button>
-                    <button onClick={() => setOrderInfo({...orderInfo, payment: "on_site"})} className={cn("p-4 rounded-xl border text-sm font-bold transition-all", orderInfo.payment === "on_site" ? "border-primary bg-primary/10 text-primary" : "border-gray-800 text-gray-400")}>💰 Sur place</button>
+              {/* VIP Loyalty Card */}
+              <div className="mb-8 relative group">
+                <div className="absolute inset-0 bg-primary/10 blur-xl rounded-2xl group-hover:bg-primary/20 transition-all" />
+                <div className="relative bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] border border-primary/30 p-5 rounded-2xl shadow-2xl overflow-hidden">
+                  <div className="absolute top-[-20px] right-[-20px] w-24 h-24 bg-primary/5 rounded-full" />
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-primary font-bold text-xs uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Award size={14} />
+                        Gourmet VIP Card
+                      </h3>
+                      <p className="text-[9px] text-gray-500 mt-1 uppercase">10ème sandwich offert d'une valeur de 15€</p>
+                    </div>
+                    <Star className="text-primary/40" size={20} />
+                  </div>
+                  
+                  <div className="grid grid-cols-5 gap-3">
+                    {[...Array(10)].map((_, i) => (
+                      <div key={i} className={cn(
+                        "aspect-square rounded-lg border flex items-center justify-center transition-all duration-700",
+                        i < loyaltyPoints 
+                          ? "bg-primary border-primary text-background shadow-[0_0_10px_rgba(212,175,55,0.4)]" 
+                          : i === 9 ? "border-dashed border-primary/50 text-primary/50" : "border-gray-800 bg-black/40 text-gray-800"
+                      )}>
+                        {i < loyaltyPoints ? <Check size={14} strokeWidth={4} /> : i === 9 ? <Star size={12} /> : <span className="text-[10px] font-bold">{i + 1}</span>}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              <div className="premium-card p-6 mb-8 bg-secondary/30">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm font-bold text-primary uppercase tracking-widest">Votre Sélection</h3>
-                  {loyaltyPoints > 0 && <span className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-full border border-primary/30">{loyaltyPoints}/9 commandes</span>}
+              <div className="space-y-4 mb-8">
+                <div className="relative">
+                  <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="Votre Nom" className="w-full bg-secondary/30 border border-gray-800 p-4 rounded-xl focus:border-primary outline-none transition-all placeholder:text-gray-700 text-sm font-medium" />
                 </div>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex justify-between"><span className="text-gray-400 italic">Sandwich</span><span className="font-medium">{config.bread?.name} + {config.meat?.name}</span></li>
-                  {config.drinks.length > 0 && <li className="flex justify-between"><span className="text-gray-400 italic">Boissons</span><span className="font-medium text-right max-w-[150px]">{config.drinks.map(d => d.name).join(", ")}</span></li>}
-                  {config.desserts.length > 0 && <li className="flex justify-between"><span className="text-gray-400 italic">Desserts</span><span className="font-medium text-right max-w-[150px]">{config.desserts.map(d => d.name).join(", ")}</span></li>}
-                </ul>
+                <div className="relative">
+                  <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="N° de Téléphone (Fidélité)" className="w-full bg-secondary/30 border border-gray-800 p-4 rounded-xl focus:border-primary outline-none transition-all placeholder:text-gray-700 text-sm font-medium" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => setOrderInfo({...orderInfo, payment: "online"})} className={cn("p-4 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all flex flex-col items-center gap-2", orderInfo.payment === "online" ? "border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,175,55,0.1)]" : "border-gray-800 text-gray-500")}>💳 CB En ligne</button>
+                  <button onClick={() => setOrderInfo({...orderInfo, payment: "on_site"})} className={cn("p-4 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all flex flex-col items-center gap-2", orderInfo.payment === "on_site" ? "border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(212,175,55,0.1)]" : "border-gray-800 text-gray-500")}>💰 Sur Place</button>
+                </div>
+              </div>
 
-                <div className="mt-6 pt-4 border-t border-gray-800 flex justify-between items-center">
-                  <span className="text-lg font-serif">{loyaltyPoints >= 9 ? "Total (OFFERT !)" : "Total Gourmet"}</span>
+              <div className="bg-secondary/20 rounded-2xl p-6 border border-gray-800 mb-8">
+                <div className="flex justify-between items-center border-b border-gray-800 pb-4 mb-4">
+                  <span className="text-xl font-serif">{loyaltyPoints >= 9 ? "Total (CADEAU)" : "Total Commande"}</span>
                   <div className="text-right">
-                    <span className={cn("text-2xl font-bold text-primary", loyaltyPoints >= 9 && "line-through opacity-50 text-lg")}>
-                      {(10 + (config.bread?.price || 0) + (config.meat?.price || 0) + config.sauces.reduce((acc, s) => acc + s.price, 0) + config.extras.reduce((acc, e) => acc + e.price, 0) + config.drinks.reduce((acc, d) => acc + d.price, 0) + config.desserts.reduce((acc, d) => acc + d.price, 0)).toFixed(2)}€
+                    <span className={cn("text-2xl font-bold text-primary transition-all", loyaltyPoints >= 9 && "line-through opacity-30 text-sm")}>
+                      {calculateTotal().toFixed(2)}€
                     </span>
-                    {loyaltyPoints >= 9 && <span className="text-2xl font-bold text-green-500 ml-2 block">0.00€</span>}
+                    {loyaltyPoints >= 9 && <span className="text-3xl font-bold text-green-500 block">0.00€</span>}
                   </div>
                 </div>
+                <button onClick={handleSubmitOrder} disabled={isSubmitting || (orderInfo.payment === "on_site" && calculateTotal() > 25)} className="w-full premium-gradient text-background font-bold py-5 rounded-2xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 tracking-[0.2em] uppercase text-xs">
+                  {isSubmitting ? <div className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" /> : <><ShoppingCart size={18} /> {orderInfo.payment === "online" ? "Payer & Commander" : "Confirmer"}</>}
+                </button>
               </div>
-
-              <div className="space-y-4">
-                <button onClick={handleSubmitOrder} disabled={isSubmitting || (orderInfo.payment === "on_site" && calculateTotal() > 25)} className="w-full premium-gradient text-background font-bold py-4 rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 tracking-widest uppercase text-sm">{isSubmitting ? <div className="w-5 h-5 border-2 border-background border-t-transparent rounded-full animate-spin" /> : <><ShoppingCart size={20} />{orderInfo.payment === "online" ? "Payer et Commander" : "Confirmer la commande"}</>}</button>
-                <button onClick={() => setStep(0)} disabled={isSubmitting} className="w-full bg-transparent border border-gray-800 text-gray-500 py-3 rounded-xl text-xs uppercase tracking-widest font-bold">Modifier ma sélection</button>
-              </div>
+              
+              <button onClick={() => setStep(0)} className="w-full text-gray-600 text-[10px] uppercase font-bold tracking-[0.2em] hover:text-primary transition-colors">Modifier la sélection</button>
             </motion.div>
           )}
         </AnimatePresence>
 
         {step < SANDWICH_CATEGORIES.length && (
-          <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-md border-t border-gray-900 max-w-md mx-auto flex gap-4 z-50">
-            <button onClick={prevStep} disabled={step === 0} className={cn("flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-gray-800 font-bold text-xs uppercase tracking-widest", step === 0 ? "opacity-0 pointer-events-none" : "opacity-100")}><ChevronLeft size={16} />Retour</button>
-            <button onClick={nextStep} disabled={(currentCategory.id === "bread" && !config.bread) || (currentCategory.id === "meat" && !config.meat)} className="flex-[2] premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest shadow-lg shadow-primary/10">{step === SANDWICH_CATEGORIES.length - 1 ? "Voir le panier" : "Suivant"}<ChevronRight size={16} /></button>
+          <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/90 backdrop-blur-xl border-t border-gray-900 max-w-md mx-auto flex gap-4 z-50">
+            <button onClick={prevStep} disabled={step === 0} className={cn("flex-1 flex items-center justify-center gap-2 py-4 rounded-xl border border-gray-800 font-bold text-[10px] uppercase tracking-widest transition-all", step === 0 ? "opacity-0 pointer-events-none" : "hover:bg-white/5")}><ChevronLeft size={14} /> Retour</button>
+            <button onClick={nextStep} disabled={(currentCategory.id === "bread" && !config.bread) || (currentCategory.id === "meat" && !config.meat)} className="flex-[2] premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all">{step === SANDWICH_CATEGORIES.length - 1 ? "Panier" : "Suivant"} <ChevronRight size={14} /></button>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function Confetti() {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">
+      {[...Array(50)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ 
+            opacity: 1, 
+            x: 0, 
+            y: 0, 
+            scale: Math.random() * 0.5 + 0.5,
+            rotate: 0 
+          }}
+          animate={{ 
+            opacity: 0, 
+            x: (Math.random() - 0.5) * 800, 
+            y: (Math.random() - 0.5) * 800,
+            rotate: Math.random() * 360,
+            scale: 0
+          }}
+          transition={{ duration: 2.5, ease: "easeOut" }}
+          className={cn(
+            "absolute w-3 h-3 rounded-sm",
+            ["bg-primary", "bg-white", "bg-yellow-600", "bg-amber-200"][Math.floor(Math.random() * 4)]
+          )}
+        />
+      ))}
     </div>
   );
 }
