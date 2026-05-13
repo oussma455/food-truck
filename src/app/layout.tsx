@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -16,8 +16,13 @@ export const metadata: Metadata = {
   title: "Gourmet Truck - Premium Sandwich",
   description: "Commandez votre sandwich gourmet en un clic",
   manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
   themeColor: "#D4AF37",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
