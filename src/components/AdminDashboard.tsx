@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Order } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, ChefHat, Bell, LogOut, Trash2 } from "lucide-react";
+import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, CheckCircle2 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -53,6 +53,12 @@ export default function AdminDashboard() {
     setOrders(
       orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
     );
+  };
+
+  const cancelOrder = (id: string) => {
+    if (window.confirm("Voulez-vous vraiment annuler cette commande ?")) {
+      setOrders(orders.filter(o => o.id !== id));
+    }
   };
 
   const addToBlacklist = (phone: string) => {
@@ -106,6 +112,7 @@ export default function AdminDashboard() {
                   key={order.id}
                   order={order}
                   onNext={() => updateStatus(order.id, "preparing")}
+                  onCancel={() => cancelOrder(order.id)}
                   onBlacklist={addToBlacklist}
                 />
               ))}
@@ -126,6 +133,7 @@ export default function AdminDashboard() {
                   key={order.id}
                   order={order}
                   onNext={() => updateStatus(order.id, "ready")}
+                  onCancel={() => cancelOrder(order.id)}
                   onBlacklist={addToBlacklist}
                 />
               ))}
@@ -146,6 +154,7 @@ export default function AdminDashboard() {
                   key={order.id}
                   order={order}
                   onNext={() => updateStatus(order.id, "completed")}
+                  onCancel={() => cancelOrder(order.id)}
                   onBlacklist={addToBlacklist}
                   isReady
                 />
@@ -160,11 +169,13 @@ export default function AdminDashboard() {
 function OrderCard({
   order,
   onNext,
+  onCancel,
   isReady,
   onBlacklist,
 }: {
   order: Order;
   onNext: () => void;
+  onCancel: () => void;
   isReady?: boolean;
   onBlacklist: (phone: string) => void;
 }) {
@@ -220,15 +231,27 @@ function OrderCard({
           <span className="text-xl font-bold text-primary">{order.total_price.toFixed(2)}€</span>
         </div>
         <div className="flex gap-2">
+          {/* Bouton Annuler (Uniquement pour les commandes non terminées) */}
+          <button
+            onClick={onCancel}
+            className="p-3 rounded-xl border border-gray-700 text-gray-500 hover:text-white hover:border-white transition-all"
+            title="Annuler la commande"
+          >
+            <XCircle size={18} />
+          </button>
+
+          {/* Bouton Bannir (Si impayé et en attente) */}
           {order.status === "pending" && order.payment_status === "unpaid" && (
             <button
               onClick={() => onBlacklist(order.client_phone)}
               className="p-3 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-all"
-              title="Bannir (Non venu)"
+              title="Bannir le client"
             >
               <Trash2 size={18} />
             </button>
           )}
+
+          {/* Bouton Action Principale */}
           <button
             onClick={onNext}
             className={cn(
@@ -240,7 +263,7 @@ function OrderCard({
           >
             {order.status === "pending" && "Lancer"}
             {order.status === "preparing" && "Prêt !"}
-            {order.status === "ready" && "Terminé"}
+            {order.status === "ready" && "Archiver"}
           </button>
         </div>
       </div>
