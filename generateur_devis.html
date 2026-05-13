@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Devis - Search Digital</title>
+    <!-- Chargement de la librairie html2pdf pour la génération du PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* Styles isolés pour éviter les conflits avec le thème WordPress */
+        #sd-quote-wrapper {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            color: #0d0b2e; /* Couleur sombre du site */
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        #sd-quote-wrapper * {
+            box-sizing: border-box;
+        }
+
+        .sd-step {
+            display: none;
+            padding: 40px;
+            animation: slideIn 0.4s ease forwards;
+        }
+
+        .sd-step.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .sd-step-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #0d0b2e;
+        }
+
+        .sd-step-subtitle {
+            color: #6b7280;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+        }
+
+        .sd-options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .sd-options-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+        }
+
+        .sd-option-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .sd-option-card:hover {
+            border-color: #2A5BFF;
+            background-color: #f8faff;
+        }
+
+        .sd-option-card.selected {
+            border-color: #2A5BFF;
+            background-color: #f0f4ff;
+        }
+
+        .sd-option-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: #2A5BFF;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .sd-option-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .sd-option-desc {
+            font-size: 0.85rem;
+            color: #6b7280;
+            display: block;
+        }
+
+        .sd-option-price {
+            display: block;
+            margin-top: 10px;
+            font-weight: 700;
+            color: #2A5BFF;
+            font-size: 0.9rem;
+        }
+
+        /* Sous-options (E-commerce) */
+        .sd-sub-options {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #e5e7eb;
+        }
+
+        .sd-option-card.selected .sd-sub-options {
+            display: block;
+        }
+
+        .sd-sub-radio {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* Navigation */
+        .sd-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .sd-btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+
+        .sd-btn-prev {
+            background: transparent;
+            color: #6b7280;
+        }
+
+        .sd-btn-prev:hover {
+            color: #0d0b2e;
+            text-decoration: underline;
+        }
+
+        .sd-btn-next {
+            background: #2A5BFF;
+            color: white;
+            box-shadow: 0 4px 14px rgba(42, 91, 255, 0.3);
+        }
+
+        .sd-btn-next:hover {
+            background: #1e45cc;
+        }
+        
+        .sd-btn-next:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Etape finale */
+        .sd-form-group {
+            margin-bottom: 20px;
+        }
+
+        .sd-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .sd-form-group input, .sd-form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        
+        .sd-form-group input:focus, .sd-form-group textarea:focus {
+            outline: none;
+            border-color: #2A5BFF;
+            box-shadow: 0 0 0 3px rgba(42, 91, 255, 0.1);
+        }
+
+        .sd-checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .sd-checkbox-group input {
+            margin-top: 4px;
+        }
+
+        .sd-summary-box {
+            background: #f8faff;
+            border: 1px solid #e1e7ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .sd-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .sd-total-val {
+            font-weight: 700;
+            color: #2A5BFF;
+            font-size: 1.3rem;
+        }
+        
+        .sd-payment-terms {
+            font-size: 0.85rem;
+            color: #059669;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* ProgressBar */
+        .sd-progress {
+            height: 6px;
+            background: #f3f4f6;
+            width: 100%;
+        }
+        .sd-progress-bar {
+            height: 100%;
+            background: #2A5BFF;
+            width: 14%;
+            transition: width 0.3s ease;
+        }
+
+        /* Template PDF (Caché sur la page) */
+        #sd-pdf-template {
+            display: none;
+            background: white;
+            color: black;
+            padding: 40px;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #2A5BFF;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .pdf-title { color: #2A5BFF; font-size: 24px; font-weight: bold; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .pdf-table th { background: #f3f4f6; text-align: left; padding: 12px; }
+        .pdf-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        .pdf-totals { text-align: right; margin-top: 20px; }
+        .pdf-footer { margin-top: 50px; font-size: 12px; color: #6b7280; text-align: center; }
+
+    </style>
+</head>
+<body>
+
+<div id="sd-quote-wrapper">
+    <div class="sd-progress"><div class="sd-progress-bar" id="sd-progress-bar"></div></div>
+
+    <!-- ETAPE 1: Secteur -->
+    <div class="sd-step active" data-step="1">
+        <div class="sd-step-title">Quel est votre secteur d'activité ?</div>
+        <div class="sd-step-subtitle">Cela nous permet de personnaliser notre approche.</div>
+        
+        <div class="sd-options-grid cols-2">
+            <div class="sd-option-card single-select" data-val="Artisanat / BTP" onclick="selectSingle(this, 'secteur')">
+                <span class="sd-option-title">Artisanat / BTP</span>
+                <span class="sd-option-desc">Plomberie, électricité, bâtiment...</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Commerce / Restauration" onclick="selectSingle(this, 'secteur')">
+                <span class="sd-option-title">Commerce / Restauration</span>
+                <span class="sd-option-desc">Boutique physique, restaurant...</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Profession Libérale" onclick="selectSingle(this, 'secteur')">
+                <span class="sd-option-title">Profession Libérale</span>
+                <span class="sd-option-desc">Avocat, médecin, notaire...</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Conseil / Service B2B" onclick="selectSingle(this, 'secteur')">
+                <span class="sd-option-title">Conseil / Service B2B</span>
+                <span class="sd-option-desc">Coach, agence, consultant...</span>
+            </div>
+        </div>
+        
+        <div class="sd-nav">
+            <div></div> <!-- Spacer -->
+            <button class="sd-btn sd-btn-next" onclick="nextStep()" id="btn-next-1" disabled>Étape suivante</button>
+        </div>
+    </div>
+
+    <!-- ETAPE 2: Type de site -->
+    <div class="sd-step" data-step="2">
+        <div class="sd-step-title">De quel type de site avez-vous besoin ?</div>
+        <div class="sd-step-subtitle">Ceci détermine la base technique de votre projet.</div>
+        
+        <div class="sd-options-grid cols-2">
+            <div class="sd-option-card single-select" data-val="Vitrine Starter" data-price="800" onclick="selectSingle(this, 'site')">
+                <span class="sd-option-title">Site Vitrine "Starter"</span>
+                <span class="sd-option-desc">Présentation simple (1 à 3 pages).</span>
+                <span class="sd-option-price">À partir de 800 €</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Corporate" data-price="1500" onclick="selectSingle(this, 'site')">
+                <span class="sd-option-title">Site Corporate</span>
+                <span class="sd-option-desc">Sur-mesure (4 à 10 pages).</span>
+                <span class="sd-option-price">À partir de 1500 €</span>
+            </div>
+            <div class="sd-option-card single-select" id="card-ecommerce" data-val="E-commerce" data-price="2500" onclick="selectSingle(this, 'site')">
+                <span class="sd-option-title">Site E-commerce</span>
+                <span class="sd-option-desc">Vente en ligne de vos produits.</span>
+                <span class="sd-option-price" id="price-ecom-label">À partir de 2500 €</span>
+                
+                <!-- Sous-options E-commerce -->
+                <div class="sd-sub-options" onclick="event.stopPropagation()">
+                    <label class="sd-sub-radio">
+                        <input type="radio" name="ecom-size" value="2500" checked onchange="updateEcomPrice(this)"> Moins de 20 produits
+                    </label>
+                    <label class="sd-sub-radio">
+                        <input type="radio" name="ecom-size" value="4000" onchange="updateEcomPrice(this)"> 20 à 100 produits
+                    </label>
+                    <label class="sd-sub-radio">
+                        <input type="radio" name="ecom-size" value="6000" onchange="updateEcomPrice(this)"> Plus de 100 produits (+ de 6000€)
+                    </label>
+                </div>
+            </div>
+            <div class="sd-option-card single-select" data-val="Aucun" data-price="0" onclick="selectSingle(this, 'site')">
+                <span class="sd-option-title">J'ai déjà un site web</span>
+                <span class="sd-option-desc">Je cherche de l'aide pour ma visibilité.</span>
+                <span class="sd-option-price">0 €</span>
+            </div>
+        </div>
+        
+        <div class="sd-nav">
+            <button class="sd-btn sd-btn-prev" onclick="prevStep()">Retour</button>
+            <button class="sd-btn sd-btn-next" onclick="nextStep()" id="btn-next-2" disabled>Étape suivante</button>
+        </div>
+    </div>
+
+    <!-- ETAPE 3: Contenu & Design -->
+    <div class="sd-step" data-step="3">
+        <div class="sd-step-title">Avez-vous besoin d'aide pour le design et le contenu ?</div>
+        <div class="sd-step-subtitle">Ces options peuvent être sélectionnées simultanément.</div>
+        
+        <div class="sd-options-grid">
+            <div class="sd-option-card multi-select" data-val="Création de Logo" data-price="300" onclick="toggleMulti(this)">
+                <span class="sd-option-title">Création de Logo & Charte graphique</span>
+                <span class="sd-option-desc">Une identité visuelle professionnelle pour votre marque.</span>
+                <span class="sd-option-price">+ 300 €</span>
+            </div>
+            <div class="sd-option-card multi-select" data-val="Rédaction Web SEO" data-price="400" onclick="toggleMulti(this)">
+                <span class="sd-option-title">Rédaction des textes (SEO)</span>
+                <span class="sd-option-desc">Vous n'avez rien à écrire, je rédige vos pages pour séduire Google et vos clients.</span>
+                <span class="sd-option-price">+ 400 €</span>
+            </div>
+            <div class="sd-option-card multi-select" id="card-multilang" data-val="Multilingue" data-price="0" onclick="toggleMulti(this)">
+                <span class="sd-option-title">Site Multilingue (FR/EN)</span>
+                <span class="sd-option-desc">Traduction et architecture internationale.</span>
+                <span class="sd-option-price">+ 30% du prix du site</span>
+            </div>
+        </div>
+        
+        <div class="sd-nav">
+            <button class="sd-btn sd-btn-prev" onclick="prevStep()">Retour</button>
+            <button class="sd-btn sd-btn-next" onclick="nextStep()">Étape suivante</button>
+        </div>
+    </div>
+
+    <!-- ETAPE 4: Fonctionnalités -->
+    <div class="sd-step" data-step="4">
+        <div class="sd-step-title">Des fonctionnalités avancées ?</div>
+        <div class="sd-step-subtitle">Sélectionnez les modules spécifiques dont vous avez besoin.</div>
+        
+        <div class="sd-options-grid cols-2">
+            <div class="sd-option-card multi-select" data-val="Prise de RDV" data-price="150" onclick="toggleMulti(this)">
+                <span class="sd-option-title">Prise de RDV / Agenda</span>
+                <span class="sd-option-desc">Idéal pour les artisans et libéraux.</span>
+                <span class="sd-option-price">+ 150 €</span>
+            </div>
+            <div class="sd-option-card multi-select" data-val="Espace Client" data-price="300" onclick="toggleMulti(this)">
+                <span class="sd-option-title">Espace Client Sécurisé</span>
+                <span class="sd-option-desc">Vos clients peuvent se connecter à un espace privé.</span>
+                <span class="sd-option-price">+ 300 €</span>
+            </div>
+        </div>
+        
+        <div class="sd-nav">
+            <button class="sd-btn sd-btn-prev" onclick="prevStep()">Retour</button>
+            <button class="sd-btn sd-btn-next" onclick="nextStep()">Étape suivante</button>
+        </div>
+    </div>
+
+    <!-- ETAPE 5: Urgence -->
+    <div class="sd-step" data-step="5">
+        <div class="sd-step-title">Quel est votre délai idéal ?</div>
+        <div class="sd-step-subtitle">Les livraisons express mobilisent des ressources supplémentaires.</div>
+        
+        <div class="sd-options-grid">
+            <div class="sd-option-card single-select" data-val="Standard" data-modifier="0" onclick="selectSingle(this, 'delai')">
+                <span class="sd-option-title">Standard (3 à 5 semaines)</span>
+                <span class="sd-option-desc">Le rythme classique pour un projet serein.</span>
+                <span class="sd-option-price">Prix normal</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Rapide" data-modifier="0.2" onclick="selectSingle(this, 'delai')">
+                <span class="sd-option-title">Rapide (Moins de 2 semaines)</span>
+                <span class="sd-option-desc">Priorité haute sur le planning.</span>
+                <span class="sd-option-price">+ 20% sur les frais de création</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Urgent" data-modifier="0.5" onclick="selectSingle(this, 'delai')">
+                <span class="sd-option-title">Urgent (Moins de 7 jours)</span>
+                <span class="sd-option-desc">Mobilisation totale jour et nuit.</span>
+                <span class="sd-option-price">+ 50% sur les frais de création</span>
+            </div>
+        </div>
+        
+        <div class="sd-nav">
+            <button class="sd-btn sd-btn-prev" onclick="prevStep()">Retour</button>
+            <button class="sd-btn sd-btn-next" onclick="nextStep()" id="btn-next-5" disabled>Étape suivante</button>
+        </div>
+    </div>
+
+    <!-- ETAPE 6: Acquisition -->
+    <div class="sd-step" data-step="6">
+        <div class="sd-step-title">Votre stratégie d'acquisition de clients</div>
+        <div class="sd-step-subtitle">Attirez de nouveaux clients tous les mois (Abonnement sans engagement long terme).</div>
+        
+        <div class="sd-options-grid cols-2">
+            <div class="sd-option-card single-select" data-val="Visibilité Locale" data-monthly="250" onclick="selectSingle(this, 'marketing')">
+                <span class="sd-option-title">Création de Fiche Google</span>
+                <span class="sd-option-desc">Apparaissez sur Google Maps.</span>
+                <span class="sd-option-price">250 € / mois</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Renforcement de visibilité" data-monthly="650" onclick="selectSingle(this, 'marketing')">
+                <span class="sd-option-title">Renforcement de visibilité (SEO)</span>
+                <span class="sd-option-desc">Remontez dans les résultats (inclut le Local).</span>
+                <span class="sd-option-price">650 € / mois</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Acquisition de clientèle" data-monthly="850" onclick="selectSingle(this, 'marketing')">
+                <span class="sd-option-title">Acquisition de clientèle (SEO + Ads)</span>
+                <span class="sd-option-desc">Acquisition maximale (budget pub non inclus).</span>
+                <span class="sd-option-price">850 € / mois</span>
+            </div>
+            <div class="sd-option-card single-select" data-val="Aucune" data-monthly="0" onclick="selectSingle(this, 'marketing')">
+                <span class="sd-option-title">Je gère ça moi-même</span>
+                <span class="sd-option-desc">Pas d'abonnement d'acquisition pour le moment.</span>
+                <span class="sd-option-price">0 € / mois</span>
+            </div>
+        </div>
+        
+        <div class="sd-nav">
+            <button class="sd-btn sd-btn-prev" onclick="prevStep()">Retour</button>
+            <button class="sd-btn sd-btn-next" onclick="nextStep()" id="btn-next-6" disabled>Finaliser</button>
+        </div>
+    </div>
+
+    <!-- ETAPE 7: Finalisation -->
+    <div class="sd-step" data-step="7">
+        <div class="sd-step-title">Votre Devis Estimatif</div>
+        <div class="sd-step-subtitle">Complétez vos informations pour télécharger le détail.</div>
+        
+        <div class="sd-summary-box">
+            <div class="sd-total-row">
+                <span>Frais de création (Paiement unique) :</span>
+                <span class="sd-total-val" id="disp-total-onetime">0 €</span>
+            </div>
+            <div class="sd-payment-terms" id="disp-total-3x" style="display:none;">
+                Soit <span id="disp-3x-val">0</span> € / mois pendant 3 mois
+            </div>
+            <hr style="border:0; border-top:1px solid #e1e7ff; margin: 15px 0;">
+            <div class="sd-total-row">
+                <span>Budget Acquisition (Mensuel) :</span>
+                <span class="sd-total-val" id="disp-total-monthly">0 € / mois</span>
+            </div>
+        </div>
+
+        <div class="sd-options-grid cols-2">
+            <div class="sd-form-group">
+                <label>Nom & Prénom *</label>
+                <input type="text" id="sd-input-name" placeholder="Jean Dupont">
+            </div>
+            <div class="sd-form-group">
+                <label>Téléphone *</label>
+                <input type="tel" id="sd-input-phone" placeholder="06 12 34 56 78">
+            </div>
+        </div>
+        
+        <div class="sd-form-group">
+            <label>Adresse E-mail *</label>
+            <input type="email" id="sd-input-email" placeholder="jean@entreprise.fr">
+        </div>
+        
+        <div class="sd-form-group">
+            <label>Site Web Actuel (Si vous en avez un)</label>
+            <input type="url" id="sd-input-url" placeholder="https://votre-site.fr">
+        </div>
+        
+        <div class="sd-form-group">
+            <label>Avez-vous une demande précise ou un commentaire ?</label>
+            <textarea id="sd-input-comment" rows="3" placeholder="Parlez-nous de votre projet..."></textarea>
+        </div>
+        
+        <div class="sd-checkbox-group">
+            <input type="checkbox" id="sd-check-3x" onchange="toggle3x()">
+            <label for="sd-check-3x" style="font-weight:normal;">Je souhaite bénéficier du paiement en 3 fois sans frais pour la création du site.</label>
+        </div>
+        
+        <div class="sd-nav">
+            <button class="sd-btn sd-btn-prev" onclick="prevStep()">Retour</button>
+            <button class="sd-btn sd-btn-next" onclick="generatePDF()">Télécharger mon devis (PDF)</button>
+        </div>
+    </div>
+</div>
+
+<!-- TEMPLATE PDF INVISIBLE -->
+<div id="sd-pdf-template">
+    <div class="pdf-header">
+        <div>
+            <div class="pdf-title">Search-Digital</div>
+            <p style="margin:5px 0; color:#6b7280;">Agence Digitale - Val-de-Marne</p>
+            <p style="margin:0; color:#6b7280;">contact@search-digital.fr | 07 61 99 15 91</p>
+        </div>
+        <div style="text-align: right;">
+            <h2 style="margin:0; color:#0d0b2e;">DEVIS ESTIMATIF</h2>
+            <p style="margin:5px 0; color:#6b7280;" id="pdf-date"></p>
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 30px; background:#f8faff; padding:15px; border-radius:8px;">
+        <h3 style="margin-top:0; color:#2A5BFF;">Informations Client</h3>
+        <p style="margin:5px 0;"><strong>Nom :</strong> <span id="pdf-name"></span></p>
+        <p style="margin:5px 0;"><strong>Email :</strong> <span id="pdf-email"></span></p>
+        <p style="margin:5px 0;"><strong>Téléphone :</strong> <span id="pdf-phone"></span></p>
+        <p style="margin:5px 0;"><strong>Secteur :</strong> <span id="pdf-secteur"></span></p>
+        <p style="margin:5px 0;"><strong>Site actuel :</strong> <span id="pdf-url"></span></p>
+    </div>
+
+    <h3 style="color:#0d0b2e;">1. Frais de Création (Paiement Unique)</h3>
+    <table class="pdf-table">
+        <thead>
+            <tr>
+                <th>Prestation</th>
+                <th style="text-align:right;">Prix Estimatif</th>
+            </tr>
+        </thead>
+        <tbody id="pdf-table-onetime">
+            <!-- Rempli en JS -->
+        </tbody>
+    </table>
+    <div class="pdf-totals" style="margin-bottom:40px;">
+        <strong style="font-size: 18px;">TOTAL CRÉATION : <span id="pdf-total-onetime" style="color:#2A5BFF;">0 €</span></strong>
+        <p id="pdf-3x-msg" style="color:#059669; margin-top:5px; display:none;"></p>
+    </div>
+
+    <h3 style="color:#0d0b2e;">2. Acquisition & Visibilité (Abonnement Mensuel)</h3>
+    <table class="pdf-table">
+        <thead>
+            <tr>
+                <th>Abonnement (Sans engagement long terme)</th>
+                <th style="text-align:right;">Mensualité</th>
+            </tr>
+        </thead>
+        <tbody id="pdf-table-monthly">
+            <!-- Rempli en JS -->
+        </tbody>
+    </table>
+    <div class="pdf-totals">
+        <strong style="font-size: 18px;">TOTAL MENSUEL : <span id="pdf-total-monthly" style="color:#2A5BFF;">0 € / mois</span></strong>
+    </div>
+    
+    <div id="pdf-comment-block" style="margin-top:40px; display:none;">
+        <h3 style="color:#0d0b2e;">Notes / Demande spécifique</h3>
+        <p id="pdf-comment" style="color:#6b7280; font-style:italic; padding:10px; border-left:3px solid #2A5BFF; background:#f9fafb;"></p>
+    </div>
+
+    <div class="pdf-footer">
+        <p>Ce document est une estimation générée automatiquement et ne constitue pas un contrat d'engagement formel.<br>Un audit précis de votre projet sera réalisé lors de notre premier appel afin d'établir un devis contractuel et définitif.</p>
+        <p>Search-Digital - Val-de-Marne</p>
+    </div>
+</div>
+
+<script>
+    let currentStep = 1;
+    const totalSteps = 7;
+    
+    // État du devis
+    const quoteData = {
+        secteur: '',
+        siteType: '',
+        siteBasePrice: 0,
+        options: [], // {name, price}
+        delaiName: '',
+        delaiModifier: 0,
+        marketingName: '',
+        marketingPrice: 0,
+        multilang: false
+    };
+
+    function updateProgress() {
+        const percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        document.getElementById('sd-progress-bar').style.width = percent + '%';
+    }
+
+    function showStep(step) {
+        document.querySelectorAll('.sd-step').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.sd-step[data-step="${step}"]`).classList.add('active');
+        currentStep = step;
+        updateProgress();
+        
+        if(step === 7) {
+            calculateTotals();
+        }
+    }
+
+    function nextStep() {
+        if (currentStep < totalSteps) {
+            showStep(currentStep + 1);
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            showStep(currentStep - 1);
+        }
+    }
+
+    // Gestion des cartes "choix unique" (Radio button style)
+    function selectSingle(element, group) {
+        // Enlever la sélection précédente dans le même groupe de cartes (même parent)
+        const parent = element.parentElement;
+        parent.querySelectorAll('.single-select').forEach(card => card.classList.remove('selected'));
+        element.classList.add('selected');
+        
+        // Mettre à jour les données
+        const val = element.getAttribute('data-val');
+        if (group === 'secteur') {
+            quoteData.secteur = val;
+            document.getElementById('btn-next-1').disabled = false;
+        } else if (group === 'site') {
+            quoteData.siteType = val;
+            quoteData.siteBasePrice = parseFloat(element.getAttribute('data-price') || 0);
+            
+            // Si c'est e-commerce, on met à jour le prix basé sur la sous-option sélectionnée
+            if(val === 'E-commerce') {
+                const checkedRadio = element.querySelector('input[type="radio"]:checked');
+                if(checkedRadio) {
+                    quoteData.siteBasePrice = parseFloat(checkedRadio.value);
+                }
+            }
+            document.getElementById('btn-next-2').disabled = false;
+        } else if (group === 'delai') {
+            quoteData.delaiName = val;
+            quoteData.delaiModifier = parseFloat(element.getAttribute('data-modifier') || 0);
+            document.getElementById('btn-next-5').disabled = false;
+        } else if (group === 'marketing') {
+            quoteData.marketingName = val;
+            quoteData.marketingPrice = parseFloat(element.getAttribute('data-monthly') || 0);
+            document.getElementById('btn-next-6').disabled = false;
+        }
+        
+        // Auto-advance si ce n'est pas le module e-commerce cliqué (pour éviter de sauter pdt qu'on choisit le nb de produits)
+        if(val !== 'E-commerce') {
+            setTimeout(() => { nextStep(); }, 350);
+        }
+    }
+
+    // Gestion de la sous-option e-commerce
+    function updateEcomPrice(radioInput) {
+        const price = radioInput.value;
+        document.getElementById('price-ecom-label').innerText = `À partir de ${price} €`;
+        const ecomCard = document.getElementById('card-ecommerce');
+        ecomCard.setAttribute('data-price', price);
+        if(ecomCard.classList.contains('selected')) {
+            quoteData.siteBasePrice = parseFloat(price);
+        }
+    }
+
+    // Gestion des cartes "choix multiple" (Checkbox style)
+    function toggleMulti(element) {
+        element.classList.toggle('selected');
+        const val = element.getAttribute('data-val');
+        const price = parseFloat(element.getAttribute('data-price') || 0);
+        
+        if (val === 'Multilingue') {
+            quoteData.multilang = element.classList.contains('selected');
+        } else {
+            if (element.classList.contains('selected')) {
+                quoteData.options.push({ name: val, price: price });
+            } else {
+                quoteData.options = quoteData.options.filter(opt => opt.name !== val);
+            }
+        }
+    }
+
+    // Calcul des totaux
+    function calculateTotals() {
+        let oneTimeTotal = quoteData.siteBasePrice;
+        
+        // 1. Ajouter les options fixes
+        let optionsTotal = 0;
+        quoteData.options.forEach(opt => {
+            optionsTotal += opt.price;
+        });
+        oneTimeTotal += optionsTotal;
+        
+        // 2. Ajouter l'option multilangue (+30% du prix du SITE seul, hors options)
+        let multilangCost = 0;
+        if (quoteData.multilang) {
+            multilangCost = quoteData.siteBasePrice * 0.30;
+            oneTimeTotal += multilangCost;
+        }
+        
+        // 3. Appliquer le modificateur d'urgence (+20% ou +50% sur le tout)
+        let urgencyCost = 0;
+        if (quoteData.delaiModifier > 0 && oneTimeTotal > 0) {
+            urgencyCost = oneTimeTotal * quoteData.delaiModifier;
+            oneTimeTotal += urgencyCost;
+        }
+        
+        const monthlyTotal = quoteData.marketingPrice;
+        
+        // Affichage UI
+        document.getElementById('disp-total-onetime').innerText = oneTimeTotal.toLocaleString('fr-FR') + ' €';
+        document.getElementById('disp-total-monthly').innerText = monthlyTotal.toLocaleString('fr-FR') + ' € / mois';
+        
+        // Gestion du 3x sans frais
+        const disp3x = document.getElementById('disp-total-3x');
+        const check3x = document.getElementById('sd-check-3x');
+        if (oneTimeTotal > 0) {
+            check3x.parentElement.style.display = 'flex';
+            if(check3x.checked) {
+                disp3x.style.display = 'block';
+                document.getElementById('disp-3x-val').innerText = Math.round(oneTimeTotal / 3).toLocaleString('fr-FR');
+            } else {
+                disp3x.style.display = 'none';
+            }
+        } else {
+            check3x.parentElement.style.display = 'none';
+            disp3x.style.display = 'none';
+            check3x.checked = false;
+        }
+        
+        // Sauvegarde pour le PDF
+        quoteData.finalOneTime = oneTimeTotal;
+        quoteData.finalMonthly = monthlyTotal;
+        quoteData.multilangCost = multilangCost;
+        quoteData.urgencyCost = urgencyCost;
+    }
+    
+    function toggle3x() {
+        calculateTotals();
+    }
+
+    // Génération du PDF
+    function generatePDF() {
+        const name = document.getElementById('sd-input-name').value;
+        const phone = document.getElementById('sd-input-phone').value;
+        const email = document.getElementById('sd-input-email').value;
+        
+        if (!name || !phone || !email) {
+            alert("Veuillez remplir vos coordonnées (Nom, Email, Téléphone) pour générer le devis.");
+            return;
+        }
+
+        // Changement d'état du bouton
+        const btn = document.querySelector('.sd-btn-next[onclick="generatePDF()"]');
+        const oldText = btn.innerText;
+        btn.innerText = "Génération en cours...";
+        btn.disabled = true;
+
+        // Préparation des données du PDF
+        document.getElementById('pdf-date').innerText = new Date().toLocaleDateString('fr-FR');
+        document.getElementById('pdf-name').innerText = name;
+        document.getElementById('pdf-email').innerText = email;
+        document.getElementById('pdf-phone').innerText = phone;
+        document.getElementById('pdf-secteur').innerText = quoteData.secteur || 'Non renseigné';
+        document.getElementById('pdf-url').innerText = document.getElementById('sd-input-url').value || 'Aucun';
+        
+        // Tableau Paiement Unique
+        const tableOnetime = document.getElementById('pdf-table-onetime');
+        tableOnetime.innerHTML = '';
+        
+        if (quoteData.siteBasePrice > 0) {
+            tableOnetime.innerHTML += `<tr><td>Création : ${quoteData.siteType}</td><td style="text-align:right;">${quoteData.siteBasePrice} €</td></tr>`;
+        }
+        
+        quoteData.options.forEach(opt => {
+            tableOnetime.innerHTML += `<tr><td>Option : ${opt.name}</td><td style="text-align:right;">${opt.price} €</td></tr>`;
+        });
+        
+        if (quoteData.multilangCost > 0) {
+            tableOnetime.innerHTML += `<tr><td>Option : Architecture Multilingue (+30%)</td><td style="text-align:right;">${Math.round(quoteData.multilangCost)} €</td></tr>`;
+        }
+        
+        if (quoteData.urgencyCost > 0) {
+            tableOnetime.innerHTML += `<tr><td>Majoration : Délai ${quoteData.delaiName} (+${quoteData.delaiModifier*100}%)</td><td style="text-align:right;">${Math.round(quoteData.urgencyCost)} €</td></tr>`;
+        }
+        
+        if (quoteData.finalOneTime === 0) {
+            tableOnetime.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#6b7280;">Aucun frais de création.</td></tr>`;
+        }
+
+        document.getElementById('pdf-total-onetime').innerText = quoteData.finalOneTime.toLocaleString('fr-FR') + ' €';
+        
+        const is3x = document.getElementById('sd-check-3x').checked;
+        const pdf3xMsg = document.getElementById('pdf-3x-msg');
+        if (is3x && quoteData.finalOneTime > 0) {
+            pdf3xMsg.style.display = 'block';
+            pdf3xMsg.innerText = `Demande de facilité de paiement : 3x sans frais de ${Math.round(quoteData.finalOneTime/3).toLocaleString('fr-FR')} € / mois acceptée sous réserve de validation.`;
+        } else {
+            pdf3xMsg.style.display = 'none';
+        }
+
+        // Tableau Mensuel
+        const tableMonthly = document.getElementById('pdf-table-monthly');
+        tableMonthly.innerHTML = '';
+        if (quoteData.marketingPrice > 0) {
+            tableMonthly.innerHTML = `<tr><td>Abonnement : ${quoteData.marketingName}</td><td style="text-align:right;">${quoteData.marketingPrice} €</td></tr>`;
+        } else {
+            tableMonthly.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#6b7280;">Aucun abonnement d'acquisition souscrit.</td></tr>`;
+        }
+        document.getElementById('pdf-total-monthly').innerText = quoteData.finalMonthly.toLocaleString('fr-FR') + ' € / mois';
+
+        // Commentaire
+        const comment = document.getElementById('sd-input-comment').value;
+        const commentBlock = document.getElementById('pdf-comment-block');
+        if(comment.trim() !== '') {
+            commentBlock.style.display = 'block';
+            document.getElementById('pdf-comment').innerText = comment;
+        } else {
+            commentBlock.style.display = 'none';
+        }
+
+        // Rendu PDF avec html2pdf
+        const element = document.getElementById('sd-pdf-template');
+        element.style.display = 'block'; // Rendre visible pour la capture
+        
+        const opt = {
+            margin:       10,
+            filename:     'Devis_Estimation_SearchDigital.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            element.style.display = 'none'; // Recacher après capture
+            
+            btn.innerText = "✓ PDF Téléchargé !";
+            btn.style.background = "#059669";
+            
+            setTimeout(() => {
+                btn.innerText = oldText;
+                btn.style.background = "#2A5BFF";
+                btn.disabled = false;
+            }, 3000);
+        });
+    }
+</script>
+
+</body>
+</html>

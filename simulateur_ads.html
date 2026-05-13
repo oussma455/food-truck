@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Google Ads Masterclass - Search Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 24px 24px; }
+        .glass-card { background: rgba(255, 255, 255, 1); border: 1px solid #e2e8f0; }
+        
+        /* Custom Range Slider */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 26px; width: 26px; border-radius: 50%; background: #2563eb; cursor: pointer; margin-top: -10px; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.5); border: 4px solid #fff; transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #e2e8f0; border-radius: 10px; }
+        input[type=range]:focus { outline: none; }
+
+        .tooltip-box { z-index: 50; }
+        
+        /* Toggle Switch Custom */
+        .toggle-checkbox:checked { transform: translateX(1.5rem); border-color: #10b981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
+        .toggle-checkbox { z-index: 1; border-color: #ef4444; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toggle-label { width: 3.5rem; height: 2rem; background-color: #ef4444; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Neon Glow & Chart Animations */
+        .neon-text { text-shadow: 0 0 20px rgba(52, 211, 153, 0.4); }
+        
+        /* Pulse Glow Animation pour le bouton d'optimisation */
+        .pulse-glow { animation: pulseGlow 2s infinite; }
+        @keyframes pulseGlow { 
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); } 
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } 
+        }
+
+        /* Boutons + et - pour les sliders */
+        .slider-btn { width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+        .slider-btn:hover { background: #e2e8f0; color: #1e293b; transform: scale(1.05); }
+        .slider-btn:active { transform: scale(0.95); }
+        
+        /* Loader Overlay & Modal */
+        #loader-overlay { backdrop-filter: blur(8px); transition: opacity 0.3s; }
+        .radar-spinner { border: 4px solid transparent; border-top-color: #3b82f6; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #lead-modal { backdrop-filter: blur(10px); transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: scale(0.95); opacity: 0; }
+        #lead-modal.active { display: flex; opacity: 1; }
+        #lead-modal.active .modal-content { transform: scale(1); opacity: 1; }
+
+        /* === STYLES POUR L'IMPRESSION DU RAPPORT === */
+        @media print {
+            body { background: white !important; font-family: 'Inter', sans-serif; }
+            .glass-card { box-shadow: none !important; border: none !important; display: block !important; }
+            .w-full.lg\:w-\[45\%\], .w-full.lg\:w-\[55\%\] { width: 100% !important; background: white !important; color: black !important; padding: 0 !important; }
+            input[type=range], .slider-btn, .tooltip-box, .radar-spinner, button, a.bg-gradient-to-r, #loader-overlay, .bg-blue-600, .bg-emerald-500, #print-btn, #lead-modal { display: none !important; }
+            .text-white { color: black !important; }
+            .text-blue-300, .text-slate-400 { color: #475569 !important; }
+            .bg-\[\#0f172a\] { background: transparent !important; }
+            .border-white\/10, .bg-black\/40 { border: 1px solid #e2e8f0 !important; background: #f8fafc !important; }
+            .neon-text { text-shadow: none !important; color: #059669 !important; }
+            body::before { content: "RAPPORT DE RENTABILITÉ GOOGLE ADS - SEARCH DIGITAL"; display: block; text-align: center; font-weight: 900; font-size: 24px; color: #1e293b; margin-bottom: 30px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 py-12">
+
+    <div class="max-w-6xl w-full glass-card rounded-[2rem] shadow-2xl flex flex-col lg:flex-row overflow-hidden border-0 ring-1 ring-slate-900/5 relative">
+        
+        <!-- Left Panel: Inputs -->
+        <div class="w-full lg:w-[45%] p-8 lg:p-12 bg-white relative z-10 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner"><i class="fas fa-rocket text-2xl"></i></div>
+                    <h2 class="text-3xl font-black text-slate-800 tracking-tight">Le Simulateur</h2>
+                </div>
+            </div>
+            <p class="text-slate-500 text-sm mb-8 pl-15">Paramétrez votre marché et découvrez votre potentiel.</p>
+
+            <!-- Dropdown Métiers -->
+            <div class="mb-6 p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm relative z-20">
+                <label class="font-bold text-slate-700 text-sm mb-3 block">
+                    <i class="fas fa-briefcase text-blue-600 mr-2"></i> 1. Choisissez votre secteur
+                </label>
+                <select id="select-metier" onchange="triggerAnalysis()" class="w-full p-4 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-semibold focus:outline-none focus:border-blue-500 hover:border-blue-300 shadow-sm transition cursor-pointer appearance-none relative">
+                    <option value="custom">-- Sélectionnez pour charger les données du marché --</option>
+                    <option value="agence_immobiliere">Agence immobilière</option>
+                    <option value="architecte">Architecte</option>
+                    <option value="assurance">Assurance</option>
+                    <option value="auto_ecole">Auto-école</option>
+                    <option value="avocat">Avocat</option>
+                    <option value="carrossier">Carrossier</option>
+                    <option value="chauffagiste">Chauffagiste</option>
+                    <option value="chirurgien">Chirurgien</option>
+                    <option value="climatisation">Climatisation</option>
+                    <option value="coach_sportif">Coach sportif</option>
+                    <option value="coiffeur">Coiffeur</option>
+                    <option value="couvreur">Couvreur</option>
+                    <option value="cuisiniste">Cuisiniste</option>
+                    <option value="demenageur">Déménageur</option>
+                    <option value="dentiste">Dentiste</option>
+                    <option value="detective">Détective privé</option>
+                    <option value="dieteticien">Diététicien</option>
+                    <option value="ecommerce">E-commerce / Boutique en ligne</option>
+                    <option value="electricien">Électricien</option>
+                    <option value="estheticienne">Esthéticienne</option>
+                    <option value="expert_comptable">Expert-comptable</option>
+                    <option value="fleuriste">Fleuriste</option>
+                    <option value="garagiste">Garagiste</option>
+                    <option value="huissier">Huissier</option>
+                    <option value="infirmier">Infirmier</option>
+                    <option value="kinesitherapeute">Kinésithérapeute</option>
+                    <option value="macon">Maçon</option>
+                    <option value="menuisier">Menuisier</option>
+                    <option value="nettoyage">Nettoyage</option>
+                    <option value="notaire">Notaire</option>
+                    <option value="opticien">Opticien</option>
+                    <option value="osteopathe">Ostéopathe</option>
+                    <option value="paysagiste">Paysagiste</option>
+                    <option value="peintre">Peintre</option>
+                    <option value="photographe">Photographe</option>
+                    <option value="pisciniste">Pisciniste</option>
+                    <option value="plombier">Plombier</option>
+                    <option value="podologue">Podologue</option>
+                    <option value="psychologue">Psychologue</option>
+                    <option value="restaurant">Restaurant</option>
+                    <option value="serrurier">Serrurier</option>
+                    <option value="traiteur">Traiteur</option>
+                    <option value="veterinaire">Vétérinaire</option>
+                    <option value="vitrier">Vitrier</option>
+                    <option value="vtc">VTC</option>
+                </select>
+            </div>
+
+            <!-- SMART ALERT (Niveau Budget) -->
+            <div id="smart-alert-budget" class="hidden mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+                <i class="fas fa-exclamation-circle text-orange-500 mt-0.5"></i>
+                <div class="text-sm text-orange-800 font-medium leading-snug">
+                    <strong class="block text-orange-900 mb-1">Budget inadapté au marché</strong>
+                    Avec ce coût par clic, votre budget ne permet pas de générer assez de trafic pour obtenir des résultats. Un expert est nécessaire.
+                </div>
+            </div>
+
+            <!-- Paramètres Principaux (Toujours visibles) -->
+            <div class="space-y-6 flex-grow">
+                <!-- Budget -->
+                <div>
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="font-bold text-slate-700 text-sm flex items-center cursor-help relative group">
+                            <i class="fas fa-wallet text-slate-400 mr-2 group-hover:text-blue-500 transition"></i> Budget Google Ads
+                            <i class="fas fa-info-circle text-slate-300 ml-2"></i>
+                            <div class="absolute bottom-full left-0 mb-2 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all tooltip-box shadow-xl font-normal leading-relaxed z-50">Le montant maximum que vous souhaitez dépenser sur Google Ads pour acheter des clics sur un mois.</div>
+                        </label>
+                        <span class="text-xl font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg" id="val-budget">500 €</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="slider-btn" onclick="adjustSlider('input-budget', -50)">-</button>
+                        <input type="range" id="input-budget" min="100" max="5000" step="50" value="500" oninput="calculateROI()">
+                        <button class="slider-btn" onclick="adjustSlider('input-budget', 50)">+</button>
+                    </div>
+                </div>
+
+                <!-- Panier Moyen (MODIFIÉ: Plus clair) -->
+                <div>
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="font-bold text-slate-700 text-sm flex items-center cursor-help relative group">
+                            <i class="fas fa-shopping-cart text-slate-400 mr-2 group-hover:text-blue-500 transition"></i> Que rapporte 1 client en moyenne ?
+                            <i class="fas fa-info-circle text-slate-300 ml-2"></i>
+                            <div class="absolute bottom-full left-0 mb-2 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all tooltip-box shadow-xl font-normal leading-relaxed z-50">Le chiffre d'affaires moyen généré par un client.</div>
+                        </label>
+                        <span class="text-xl font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg" id="val-panier">800 €</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="slider-btn" onclick="adjustSlider('input-panier', -5)">-</button>
+                        <input type="range" id="input-panier" min="0" max="100" step="0.1" value="37.5" oninput="calculateROI()">
+                        <button class="slider-btn" onclick="adjustSlider('input-panier', 5)">+</button>
+                    </div>
+                </div>
+
+                <!-- Bouton pour afficher/masquer les paramètres avancés -->
+                <button id="btn-advanced" onclick="toggleAdvanced()" class="w-full mt-4 p-3 bg-slate-50 border border-slate-200 text-slate-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-cog"></i> Voir les paramètres avancés (Taux de conversion, CPC...)
+                </button>
+
+                <!-- Paramètres Avancés (Cachés par défaut) -->
+                <div id="advanced-settings" class="hidden space-y-6 pt-4 border-t border-slate-100">
+                    <!-- CPC -->
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <label class="font-bold text-slate-700 text-sm flex items-center cursor-help relative group">
+                                <i class="fas fa-mouse-pointer text-slate-400 mr-2 group-hover:text-blue-500 transition"></i> Coût par Clic
+                                <i class="fas fa-info-circle text-slate-300 ml-2"></i>
+                                <div class="absolute bottom-full left-0 mb-2 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all tooltip-box shadow-xl font-normal leading-relaxed z-50">Prix moyen payé à Google à chaque fois qu'un prospect clique sur votre annonce.</div>
+                            </label>
+                            <span class="text-xl font-bold text-slate-700 transition-all" id="val-cpc">1.50 €</span>
+                        </div>
+                        <input type="range" id="input-cpc" min="0.10" max="20.00" step="0.10" value="1.50" oninput="calculateROI()">
+                    </div>
+
+                    <!-- Taux de Contact -->
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <label class="font-bold text-slate-700 text-sm flex items-center cursor-help relative group">
+                                <i class="fas fa-users text-slate-400 mr-2 group-hover:text-blue-500 transition"></i> Taux de contact (Appels)
+                                <i class="fas fa-info-circle text-slate-300 ml-2"></i>
+                                <div class="absolute bottom-full left-0 mb-2 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all tooltip-box shadow-xl font-normal leading-relaxed z-50">Le pourcentage de visiteurs qui décident de vous appeler ou de remplir un formulaire.</div>
+                            </label>
+                            <span class="text-xl font-bold text-slate-700 transition-all" id="val-convSite">5 %</span>
+                        </div>
+                        <input type="range" id="input-convSite" min="0.5" max="25" step="0.5" value="5" oninput="calculateROI()">
+                    </div>
+
+                    <!-- Taux de Signature -->
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <label class="font-bold text-slate-700 text-sm flex items-center cursor-help relative group">
+                                <i class="fas fa-file-signature text-slate-400 mr-2 group-hover:text-blue-500 transition"></i> Taux de signature
+                                <i class="fas fa-info-circle text-slate-300 ml-2"></i>
+                                <div class="absolute bottom-full left-0 mb-2 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all tooltip-box shadow-xl font-normal leading-relaxed z-50">Sur 10 personnes qui vous contactent, combien signent réellement un devis ou achètent avec vous ?</div>
+                            </label>
+                            <span class="text-xl font-bold text-slate-700" id="val-convVente">30 %</span>
+                        </div>
+                        <input type="range" id="input-convVente" min="5" max="100" step="5" value="30" oninput="calculateROI()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Results -->
+        <div class="w-full lg:w-[55%] bg-[#0f172a] text-white p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden">
+            
+            <!-- OVERLAY LOADER -->
+            <div id="loader-overlay" class="absolute inset-0 bg-[#0f172a]/90 z-50 hidden flex-col items-center justify-center">
+                <div class="radar-spinner mb-4"></div>
+                <div class="text-blue-400 font-bold text-lg tracking-wide mb-1">Analyse du marché en cours...</div>
+                <div id="loader-text" class="text-slate-400 text-sm">Chargement des données concurrentielles</div>
+            </div>
+
+            <div class="absolute -top-40 -right-40 w-96 h-96 bg-blue-600 rounded-full opacity-20 blur-[100px] pointer-events-none"></div>
+            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-500 rounded-full opacity-10 blur-[100px] pointer-events-none"></div>
+            
+            <div class="relative z-10 flex-grow">
+                
+                <!-- THE MAGIC TOGGLE (Animé) -->
+                <div id="toggle-container" class="bg-gradient-to-r from-blue-900/50 to-blue-800/30 border border-blue-500/30 rounded-2xl p-5 mb-6 flex items-center justify-between shadow-lg shadow-blue-900/20 backdrop-blur-md pulse-glow transition-all">
+                    <div>
+                        <div class="font-bold text-white flex items-center gap-2">
+                            Optimisation Search-Digital <i class="fas fa-bolt text-yellow-400"></i>
+                        </div>
+                        <div class="text-xs text-blue-200 mt-1 max-w-[250px] leading-relaxed">Simuler l'intervention d'un expert certifié (Baisse du coût par clic & hausse conversion).</div>
+                    </div>
+                    <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="opti-toggle" onchange="toggleOptimization()" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer top-1 left-1"/>
+                        <label for="opti-toggle" class="toggle-label block overflow-hidden h-8 rounded-full cursor-pointer"></label>
+                    </div>
+                </div>
+                
+                <!-- STORY TEXT (La "Petite histoire") -->
+                <div id="story-text" class="text-center text-blue-100 font-medium mb-5 text-sm bg-blue-950/40 p-4 rounded-xl border border-blue-500/20 shadow-inner">
+                    <!-- Rempli par le JavaScript -->
+                </div>
+
+                <!-- Funnel Visual -->
+                <div class="grid grid-cols-3 gap-3 md:gap-6 mb-6">
+                    <div class="bg-white/5 rounded-2xl p-4 border border-white/10 text-center">
+                        <div class="text-slate-400 text-[10px] md:text-xs uppercase font-bold tracking-wider mb-2">Visiteurs</div>
+                        <div class="text-2xl font-light text-white" id="res-visites">333</div>
+                    </div>
+                    <div class="bg-white/5 rounded-2xl p-4 border border-white/10 text-center relative">
+                        <i class="fas fa-chevron-right absolute -left-3 top-1/2 -translate-y-1/2 text-slate-600 hidden md:block"></i>
+                        <div class="text-slate-400 text-[10px] md:text-xs uppercase font-bold tracking-wider mb-2">Contacts</div>
+                        <div class="text-2xl font-light text-blue-300" id="res-leads">16</div>
+                    </div>
+                    <div class="bg-blue-600/20 rounded-2xl p-4 border border-blue-500/30 text-center relative shadow-[0_0_15px_rgba(37,99,235,0.15)]">
+                        <i class="fas fa-chevron-right absolute -left-3 top-1/2 -translate-y-1/2 text-slate-600 hidden md:block"></i>
+                        <div class="text-blue-300 text-[10px] md:text-xs uppercase font-bold tracking-wider mb-2">Clients</div>
+                        <div class="text-3xl font-bold text-white" id="res-clients">5</div>
+                    </div>
+                </div>
+
+                <!-- EXPERT METRICS -->
+                <div class="flex gap-4 mb-6">
+                    <div class="w-1/2 bg-black/20 border border-white/5 rounded-xl p-3 flex justify-between items-center">
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Coût par Contact</div>
+                            <div class="text-sm font-medium text-slate-300 mt-1">Vous payez <span id="res-cpl" class="text-white font-bold">31 €</span> pour un appel.</div>
+                        </div>
+                    </div>
+                    <div class="w-1/2 bg-black/20 border border-white/5 rounded-xl p-3 flex justify-between items-center">
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Coût d'Acquisition</div>
+                            <div class="text-sm font-medium text-slate-300 mt-1">Payez <span id="res-cpa" class="text-emerald-400 font-bold">100 €</span> pour gagner <span class="panier-rappel font-bold">800 €</span>.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue & Bénéfice -->
+                <div class="mb-4 relative">
+                    <div id="alert-perte" class="hidden absolute -top-14 left-0 w-full bg-red-500/20 border border-red-500/50 text-red-200 text-xs p-3 rounded-xl backdrop-blur-sm shadow-xl font-medium z-20">
+                        <i class="fas fa-exclamation-triangle mr-1 text-red-400"></i> Campagnes déficitaires. Activez l'optimisation Search-Digital pour corriger le tir.
+                    </div>
+
+                    <div class="bg-black/40 rounded-[2rem] p-6 lg:p-8 border border-white/10 shadow-2xl relative overflow-hidden">
+                        <div id="delta-badge" class="hidden absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-4 py-1 rounded-bl-xl shadow-lg">
+                            + <span id="res-delta">0</span> € grâce à l'expertise
+                        </div>
+
+                        <div class="text-sm text-slate-400 font-medium mb-1">Bénéfice Net Mensuel estimé</div>
+                        <div class="text-5xl lg:text-6xl font-black text-white tracking-tight mb-2 transition-all duration-300 neon-text" id="res-benefice">+ 3 500 €</div>
+                        
+                        <div class="flex flex-wrap items-center gap-3 lg:gap-4 mt-4">
+                            <div class="text-xs lg:text-sm text-slate-500">CA Brut généré: <span id="res-ca" class="text-slate-300 font-bold">4 000 €</span></div>
+                            <div class="w-1 h-1 bg-slate-600 rounded-full hidden sm:block"></div>
+                            <div class="text-xs lg:text-sm text-emerald-400 font-medium" id="res-roas-container">
+                                Retour (ROAS) : x<span id="res-roas">8.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROJECTION ANNUELLE -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-red-900/20 border border-red-500/20 rounded-xl p-3 flex flex-col justify-center items-center text-center">
+                        <div class="text-[10px] text-red-400 uppercase font-bold tracking-wider mb-1"><i class="fas fa-ban mr-1"></i> Coût de l'inaction</div>
+                        <div class="text-xs text-red-200 leading-tight">Vos concurrents captent actuellement <strong class="text-white block mt-1"><span id="res-inaction">4 000 €</span> / mois</strong></div>
+                    </div>
+                    <div class="bg-emerald-900/20 border border-emerald-500/20 rounded-xl p-3 flex flex-col justify-center items-center text-center">
+                        <div class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider mb-1"><i class="fas fa-rocket mr-1"></i> Potentiel sur 1 an</div>
+                        <div class="text-xs text-emerald-200 leading-tight">Générez un bénéfice estimé à <strong class="text-white text-lg block mt-1" id="res-yearly">+ 42 000 €</strong></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CTA Section avec MODAL -->
+            <div class="relative z-10 mt-8">
+                <!-- Le bouton ouvre la modal au lieu de rediriger -->
+                <button onclick="openModal()" id="dynamic-btn" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-5 rounded-2xl transition-all shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] flex justify-center items-center gap-2 text-lg transform hover:-translate-y-1">
+                    Recevoir mon devis et ma stratégie <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+                
+                <div class="mt-4 flex justify-center gap-4 text-xs text-slate-400 font-medium">
+                    <span><i class="fas fa-chart-line text-emerald-500 mr-1"></i> Stratégie sur-mesure</span>
+                    <span><i class="fas fa-check text-emerald-500 mr-1"></i> Devis gratuit</span>
+                </div>
+
+                <div class="mt-6 flex justify-center">
+                    <button id="print-btn" onclick="window.print()" class="text-slate-400 hover:text-white transition text-sm flex items-center gap-2 font-medium">
+                        <i class="fas fa-print"></i> Imprimer mon audit personnalisé
+                    </button>
+                </div>
+
+                <!-- DISCLAIMER MÉTHODOLOGIE -->
+                <div class="mt-8 pt-6 border-t border-white/10 text-[10px] text-slate-500 text-center leading-relaxed font-medium">
+                    <i class="fas fa-info-circle mr-1 text-slate-400"></i> <strong>Méthodologie :</strong> Ces projections sont des estimations générées en temps réel, basées sur les moyennes nationales du secteur enregistrées par Google Ads (Benchmarks 2024). Elles reflètent l'état de la concurrence sur votre marché mais ne constituent pas une garantie absolue de résultats financiers.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- === LA MODAL "ONE-CLICK CLOSER" CONNECTÉE AUX EMAILS === -->
+    <div id="lead-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/80 px-4">
+        <div class="modal-content bg-white rounded-3xl w-full max-w-lg relative overflow-hidden shadow-2xl border border-slate-200">
+            <!-- Header Image/Gradient -->
+            <div class="bg-gradient-to-r from-blue-700 to-blue-900 p-6 text-white text-center relative">
+                <button type="button" onclick="closeModal()" class="absolute top-4 right-4 text-blue-200 hover:text-white transition text-xl"><i class="fas fa-times"></i></button>
+                <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+                    <i class="fas fa-search-location text-2xl text-blue-200"></i>
+                </div>
+                <!-- TITRE MODIFIÉ POUR PLUS D'IMPACT -->
+                <h3 class="text-2xl font-black mb-1 leading-tight">Découvrez qui vous vole des clients</h3>
+                <p class="text-blue-200 text-sm mt-2">Obtenez un audit vidéo gratuit montrant exactement comment dominer les autres <strong id="modal-job-text" class="text-white">professionnels</strong> dans votre ville.</p>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-8">
+                <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-6 flex justify-between items-center">
+                    <div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Votre budget</div>
+                        <div class="font-bold text-slate-800 text-sm" id="modal-budget-text">500 €</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Bénéfice estimé</div>
+                        <div class="font-black text-emerald-500 text-lg" id="modal-ca-text">4 000 €</div>
+                    </div>
+                </div>
+
+                <!-- LE FORMULAIRE QUI T'ENVOIE UN VRAI MAIL VIA FORMSUBMIT -->
+                <form id="lead-form" onsubmit="submitFormspree(event)">
+                    
+                    <!-- Champs cachés pour t'envoyer les résultats de la simulation -->
+                    <input type="hidden" name="_subject" value="Nouveau Lead - Simulateur Rentabilité !">
+                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="Metier_Selectionne" id="hidden-job" value="">
+                    <input type="hidden" name="Budget_Simule" id="hidden-budget" value="">
+                    <input type="hidden" name="Benefice_Mensuel_Estime" id="hidden-benefice" value="">
+                    <input type="hidden" name="Option_Expertise_Activee" id="hidden-opti" value="">
+
+                    <div class="space-y-4 mb-6">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Votre ville d'intervention *</label>
+                            <input type="text" name="Ville" required placeholder="Ex: Vitry-sur-Seine..." class="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Téléphone *</label>
+                                <input type="tel" name="Telephone" required placeholder="06 XX XX XX XX" class="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:border-blue-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email *</label>
+                                <input type="email" name="Email" required placeholder="contact@pro.fr" class="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:border-blue-500 transition">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-brand-blue text-white bg-blue-600 hover:bg-blue-700 font-bold py-4 rounded-xl transition shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
+                        Recevoir mon audit et mon devis <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <p class="text-center text-[10px] text-slate-400 mt-3"><i class="fas fa-shield-alt"></i> Vos données sont sécurisées et envoyées directement à l'agence.</p>
+                </form>
+                
+                <!-- Loading State (Pendant l'envoi) -->
+                <div id="modal-loading" class="hidden text-center py-8">
+                    <div class="radar-spinner mb-4 border-blue-600 border-t-transparent mx-auto"></div>
+                    <p class="text-slate-600 font-bold text-sm">Envoi sécurisé en cours...</p>
+                </div>
+
+                <!-- Success Message (Après l'envoi) -->
+                <div id="modal-success" class="hidden text-center py-6">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-check text-2xl text-emerald-500"></i>
+                    </div>
+                    <h4 class="text-xl font-black text-slate-800 mb-2">Demande sécurisée !</h4>
+                    <p class="text-slate-500 text-sm">Je prépare votre stratégie sur-mesure et je vous recontacte très rapidement.</p>
+                    <button type="button" onclick="closeModal()" class="mt-6 text-blue-600 font-bold text-sm hover:underline">Fermer la fenêtre</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données du marché (40+ métiers)
+        const metiers = {
+            'agence_immobiliere': { cpc: 2.00, convSite: 3, convVente: 15, panier: 7000 },
+            'architecte': { cpc: 2.50, convSite: 4, convVente: 20, panier: 5000 },
+            'assurance': { cpc: 4.00, convSite: 5, convVente: 20, panier: 1000 },
+            'auto_ecole': { cpc: 1.50, convSite: 6, convVente: 40, panier: 1200 },
+            'avocat': { cpc: 4.50, convSite: 8, convVente: 40, panier: 1500 },
+            'carrossier': { cpc: 1.50, convSite: 10, convVente: 50, panier: 800 },
+            'chauffagiste': { cpc: 3.50, convSite: 8, convVente: 40, panier: 3000 },
+            'chirurgien': { cpc: 3.00, convSite: 3, convVente: 20, panier: 4000 },
+            'climatisation': { cpc: 3.50, convSite: 6, convVente: 40, panier: 3000 },
+            'coach_sportif': { cpc: 1.50, convSite: 10, convVente: 50, panier: 500 },
+            'coiffeur': { cpc: 0.80, convSite: 15, convVente: 80, panier: 60 },
+            'couvreur': { cpc: 4.00, convSite: 5, convVente: 30, panier: 8000 },
+            'cuisiniste': { cpc: 3.50, convSite: 4, convVente: 20, panier: 6000 },
+            'demenageur': { cpc: 4.50, convSite: 12, convVente: 35, panier: 1000 },
+            'dentiste': { cpc: 2.00, convSite: 8, convVente: 50, panier: 500 },
+            'detective': { cpc: 3.00, convSite: 5, convVente: 30, panier: 1500 },
+            'dieteticien': { cpc: 1.20, convSite: 10, convVente: 60, panier: 200 },
+            'ecommerce': { cpc: 0.80, convSite: 4, convVente: 50, panier: 80 },
+            'electricien': { cpc: 3.50, convSite: 12, convVente: 50, panier: 800 },
+            'estheticienne': { cpc: 1.00, convSite: 15, convVente: 70, panier: 80 },
+            'expert_comptable': { cpc: 5.00, convSite: 4, convVente: 50, panier: 2000 },
+            'fleuriste': { cpc: 0.80, convSite: 10, convVente: 60, panier: 50 },
+            'garagiste': { cpc: 1.50, convSite: 15, convVente: 60, panier: 500 },
+            'huissier': { cpc: 3.00, convSite: 5, convVente: 40, panier: 800 },
+            'infirmier': { cpc: 1.00, convSite: 15, convVente: 80, panier: 150 },
+            'kinesitherapeute': { cpc: 1.00, convSite: 15, convVente: 80, panier: 300 },
+            'macon': { cpc: 3.00, convSite: 5, convVente: 30, panier: 10000 },
+            'menuisier': { cpc: 3.00, convSite: 5, convVente: 30, panier: 4000 },
+            'nettoyage': { cpc: 2.50, convSite: 8, convVente: 40, panier: 800 },
+            'notaire': { cpc: 3.50, convSite: 5, convVente: 40, panier: 1500 },
+            'opticien': { cpc: 2.00, convSite: 8, convVente: 50, panier: 400 },
+            'osteopathe': { cpc: 1.20, convSite: 15, convVente: 80, panier: 200 },
+            'paysagiste': { cpc: 1.50, convSite: 8, convVente: 40, panier: 1500 },
+            'peintre': { cpc: 2.50, convSite: 6, convVente: 40, panier: 2000 },
+            'photographe': { cpc: 1.20, convSite: 8, convVente: 30, panier: 1500 },
+            'pisciniste': { cpc: 2.50, convSite: 4, convVente: 20, panier: 15000 },
+            'plombier': { cpc: 8.00, convSite: 20, convVente: 60, panier: 400 },
+            'podologue': { cpc: 1.00, convSite: 12, convVente: 70, panier: 150 },
+            'psychologue': { cpc: 1.50, convSite: 8, convVente: 60, panier: 300 },
+            'restaurant': { cpc: 0.80, convSite: 10, convVente: 80, panier: 60 },
+            'serrurier': { cpc: 12.00, convSite: 25, convVente: 80, panier: 300 },
+            'traiteur': { cpc: 2.00, convSite: 6, convVente: 30, panier: 2000 },
+            'veterinaire': { cpc: 1.50, convSite: 15, convVente: 80, panier: 150 },
+            'vitrier': { cpc: 6.00, convSite: 15, convVente: 60, panier: 600 },
+            'vtc': { cpc: 1.50, convSite: 15, convVente: 90, panier: 80 }
+        };
+
+        let isOptimized = false;
+        let baseBenefice = 0;
+        let currentJob = "professionnel";
+
+        function getPanierValue(pos) {
+            const minPanier = 5;
+            const maxPanier = 15000;
+            let rawValue = minPanier + (maxPanier - minPanier) * Math.pow(pos / 100, 3);
+            if (rawValue < 50) return Math.round(rawValue / 5) * 5;
+            if (rawValue < 500) return Math.round(rawValue / 10) * 10;
+            if (rawValue < 2000) return Math.round(rawValue / 50) * 50;
+            return Math.round(rawValue / 100) * 100;
+        }
+
+        function setPanierPosition(val) {
+            const minPanier = 5;
+            const maxPanier = 15000;
+            let pos = 100 * Math.cbrt((val - minPanier) / (maxPanier - minPanier));
+            return pos.toFixed(2);
+        }
+
+        function triggerAnalysis() {
+            const selectEl = document.getElementById('select-metier');
+            const selectValue = selectEl.value;
+            currentJob = selectValue !== "custom" ? selectEl.options[selectEl.selectedIndex].text.split(' / ')[0] : "professionnel";
+
+            if (metiers[selectValue]) {
+                const loader = document.getElementById('loader-overlay');
+                document.getElementById('loader-text').innerText = "Recherche des concurrents pour : " + currentJob;
+                loader.style.display = 'flex';
+                
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    updateInputs(selectValue);
+                }, 800);
+            }
+        }
+
+        function updateInputs(selectValue) {
+            document.getElementById('input-cpc').value = metiers[selectValue].cpc;
+            document.getElementById('input-convSite').value = metiers[selectValue].convSite;
+            document.getElementById('input-convVente').value = metiers[selectValue].convVente;
+            document.getElementById('input-panier').value = setPanierPosition(metiers[selectValue].panier);
+            calculateROI();
+        }
+
+        function toggleOptimization() {
+            const toggle = document.getElementById('opti-toggle');
+            const container = document.getElementById('toggle-container');
+            isOptimized = toggle.checked;
+            
+            // On enlève l'animation pulse quand il clique dessus
+            if(isOptimized) {
+                container.classList.remove('pulse-glow');
+            } else {
+                container.classList.add('pulse-glow');
+            }
+            
+            calculateROI();
+        }
+
+        // --- GESTION DU BOUTON PARAMÈTRES AVANCÉS ---
+        function toggleAdvanced() {
+            const div = document.getElementById('advanced-settings');
+            const btn = document.getElementById('btn-advanced');
+            if (div.classList.contains('hidden')) {
+                div.classList.remove('hidden');
+                btn.innerHTML = '<i class="fas fa-chevron-up"></i> Masquer les paramètres avancés';
+            } else {
+                div.classList.add('hidden');
+                btn.innerHTML = '<i class="fas fa-cog"></i> Voir les paramètres avancés (Taux de conversion, CPC...)';
+            }
+        }
+
+        // --- GESTION DES BOUTONS PLUS/MOINS DES SLIDERS ---
+        function adjustSlider(id, amount) {
+            const slider = document.getElementById(id);
+            let newVal = parseFloat(slider.value) + amount;
+            if (newVal < parseFloat(slider.min)) newVal = slider.min;
+            if (newVal > parseFloat(slider.max)) newVal = slider.max;
+            slider.value = newVal;
+            calculateROI();
+        }
+
+        // --- GESTION DE LA MODAL DE CONVERSION ---
+        function openModal() {
+            document.getElementById('modal-job-text').innerText = currentJob;
+            document.getElementById('modal-budget-text').innerText = document.getElementById('val-budget').innerText;
+            document.getElementById('modal-ca-text').innerText = document.getElementById('res-benefice').innerText;
+            
+            document.getElementById('hidden-job').value = currentJob;
+            document.getElementById('hidden-budget').value = document.getElementById('val-budget').innerText;
+            document.getElementById('hidden-benefice').value = document.getElementById('res-benefice').innerText;
+            document.getElementById('hidden-opti').value = isOptimized ? "OUI" : "NON";
+
+            document.getElementById('lead-form').classList.remove('hidden');
+            document.getElementById('modal-success').classList.add('hidden');
+            document.getElementById('modal-loading').classList.add('hidden');
+            document.getElementById('lead-form').reset();
+
+            const modal = document.getElementById('lead-modal');
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('lead-modal').classList.remove('active');
+        }
+
+        function submitFormspree(event) {
+            event.preventDefault(); 
+            const form = document.getElementById('lead-form');
+            const formData = new FormData(form);
+            
+            document.getElementById('lead-form').classList.add('hidden');
+            document.getElementById('modal-loading').classList.remove('hidden');
+
+            fetch("https://formsubmit.co/ajax/contact@search-digital.fr", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('modal-loading').classList.add('hidden');
+                document.getElementById('modal-success').classList.remove('hidden');
+            })
+            .catch(error => {
+                document.getElementById('modal-loading').classList.add('hidden');
+                document.getElementById('modal-success').classList.remove('hidden');
+            });
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('lead-modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        function calculateROI() {
+            const budget = parseFloat(document.getElementById('input-budget').value);
+            const baseCpc = parseFloat(document.getElementById('input-cpc').value);
+            const baseConvSite = parseFloat(document.getElementById('input-convSite').value) / 100;
+            const convVente = parseFloat(document.getElementById('input-convVente').value) / 100;
+            const panierPos = parseFloat(document.getElementById('input-panier').value);
+            const panier = getPanierValue(panierPos);
+
+            // Update Input Labels (WITH VISUAL PROOF FOR OPTIMIZATION)
+            document.getElementById('val-budget').innerText = new Intl.NumberFormat('fr-FR').format(budget) + ' €';
+            
+            if (isOptimized) {
+                const optiCpc = baseCpc * 0.75;
+                const optiConvSite = baseConvSite * 1.40;
+                document.getElementById('val-cpc').innerHTML = `<span class="line-through text-red-400 text-sm mr-2">${baseCpc.toFixed(2)} €</span><span class="text-emerald-500">${optiCpc.toFixed(2)} €</span>`;
+                document.getElementById('val-convSite').innerHTML = `<span class="line-through text-red-400 text-sm mr-2">${(baseConvSite * 100).toFixed(1)} %</span><span class="text-emerald-500">${(optiConvSite * 100).toFixed(1)} %</span>`;
+            } else {
+                document.getElementById('val-cpc').innerText = baseCpc.toFixed(2) + ' €';
+                document.getElementById('val-convSite').innerText = (baseConvSite * 100).toFixed(1) + ' %';
+            }
+
+            document.getElementById('val-convVente').innerText = Math.round(convVente * 100) + ' %';
+            document.getElementById('val-panier').innerText = new Intl.NumberFormat('fr-FR').format(panier) + ' €';
+
+            document.querySelectorAll('.panier-rappel').forEach(el => {
+                el.innerText = new Intl.NumberFormat('fr-FR').format(panier) + ' €';
+            });
+
+            // SMART ALERT
+            const alertBudget = document.getElementById('smart-alert-budget');
+            if (budget / baseCpc < 30) {
+                alertBudget.classList.remove('hidden');
+            } else {
+                alertBudget.classList.add('hidden');
+            }
+
+            // CALCULS
+            const baseVisites = Math.floor(budget / baseCpc);
+            const baseLeads = Math.floor(baseVisites * baseConvSite);
+            const baseClients = Math.floor(baseLeads * convVente);
+            const baseCa = baseClients * panier;
+            baseBenefice = baseCa - budget;
+
+            let finalVisites = baseVisites;
+            let finalLeads = baseLeads;
+            let finalClients = baseClients;
+            let finalCa = baseCa;
+            let finalBenefice = baseBenefice;
+            
+            let cpl = 0;
+            let cpa = 0;
+
+            if (isOptimized) {
+                const optiCpc = baseCpc * 0.75; 
+                const optiConvSite = baseConvSite * 1.40;
+                finalVisites = Math.floor(budget / optiCpc);
+                finalLeads = Math.floor(finalVisites * optiConvSite);
+                finalClients = Math.floor(finalLeads * convVente);
+                finalCa = finalClients * panier;
+                finalBenefice = finalCa - budget;
+            }
+
+            // MISE À JOUR DE LA "STORY" (L'histoire textuelle compréhensible par tous)
+            const storyDiv = document.getElementById('story-text');
+            if (finalClients > 0) {
+                storyDiv.innerHTML = `💡 Avec <strong>${budget} €</strong>, nous envoyons <strong>${finalVisites} visiteurs</strong> sur votre site. Environ <strong>${finalLeads} vous appellent</strong>, et vous signez <strong>${finalClients} chantiers/clients</strong>.`;
+            } else if (finalLeads > 0) {
+                storyDiv.innerHTML = `⚠️ Avec <strong>${budget} €</strong>, vous obtenez <strong>${finalLeads} contacts</strong>, mais avec votre taux de signature, cela ne suffit pas pour obtenir 1 client complet.`;
+            } else {
+                storyDiv.innerHTML = `❌ Le budget de <strong>${budget} €</strong> est trop faible pour générer des contacts concrets dans votre secteur.`;
+            }
+
+            // CPL / CPA
+            cpl = finalLeads > 0 ? (budget / finalLeads) : budget;
+            cpa = finalClients > 0 ? (budget / finalClients) : budget;
+            document.getElementById('res-cpl').innerText = new Intl.NumberFormat('fr-FR').format(Math.round(cpl)) + ' €';
+            if (finalClients > 0) {
+                document.getElementById('res-cpa').innerText = new Intl.NumberFormat('fr-FR').format(Math.round(cpa)) + ' €';
+                document.getElementById('res-cpa').className = "text-emerald-400 font-bold";
+            } else {
+                document.getElementById('res-cpa').innerText = "Pas de client";
+                document.getElementById('res-cpa').className = "text-red-400 font-bold";
+            }
+
+            const roas = finalCa > 0 ? (finalCa / budget) : 0;
+            const yearlyBenefice = finalBenefice * 12; 
+
+            // UPDATES
+            document.getElementById('res-visites').innerText = new Intl.NumberFormat('fr-FR').format(finalVisites);
+            document.getElementById('res-leads').innerText = new Intl.NumberFormat('fr-FR').format(finalLeads);
+            document.getElementById('res-clients').innerText = new Intl.NumberFormat('fr-FR').format(finalClients);
+            document.getElementById('res-ca').innerText = new Intl.NumberFormat('fr-FR').format(finalCa) + ' €';
+            document.getElementById('res-inaction').innerText = new Intl.NumberFormat('fr-FR').format(baseCa) + ' €';
+
+            const yearlyEl = document.getElementById('res-yearly');
+            if(yearlyBenefice > 0) {
+                yearlyEl.innerText = '+ ' + new Intl.NumberFormat('fr-FR').format(yearlyBenefice) + ' €';
+                yearlyEl.className = "text-white text-lg block mt-1";
+            } else {
+                yearlyEl.innerText = new Intl.NumberFormat('fr-FR').format(yearlyBenefice) + ' €';
+                yearlyEl.className = "text-red-400 text-lg block mt-1";
+            }
+            
+            const deltaBadge = document.getElementById('delta-badge');
+            if (isOptimized && (finalBenefice - baseBenefice) > 0) {
+                document.getElementById('res-delta').innerText = new Intl.NumberFormat('fr-FR').format(finalBenefice - baseBenefice);
+                deltaBadge.classList.remove('hidden');
+            } else {
+                deltaBadge.classList.add('hidden');
+            }
+            
+            const beneficeEl = document.getElementById('res-benefice');
+            const alertPerte = document.getElementById('alert-perte');
+            const roasContainer = document.getElementById('res-roas-container');
+            
+            if (finalBenefice >= 0) {
+                beneficeEl.innerText = '+ ' + new Intl.NumberFormat('fr-FR').format(finalBenefice) + ' €';
+                beneficeEl.className = 'text-5xl lg:text-6xl font-black tracking-tight mb-2 transition-all duration-300 text-emerald-400 neon-text';
+                alertPerte.classList.add('hidden');
+                roasContainer.classList.remove('hidden');
+                document.getElementById('res-roas').innerText = roas.toFixed(2);
+            } else {
+                beneficeEl.innerText = '- ' + new Intl.NumberFormat('fr-FR').format(Math.abs(finalBenefice)) + ' €';
+                beneficeEl.className = 'text-5xl lg:text-6xl font-black tracking-tight mb-2 transition-all duration-300 text-red-500';
+                alertPerte.classList.remove('hidden');
+                roasContainer.classList.add('hidden');
+            }
+        }
+
+        window.onload = () => {
+            document.getElementById('input-panier').value = setPanierPosition(800);
+            calculateROI();
+        };
+    </script>
+</body>
+</html>
