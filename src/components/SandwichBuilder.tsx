@@ -90,6 +90,14 @@ export default function SandwichBuilder() {
       return;
     }
 
+    // Vérification de la blacklist locale (simulation)
+    const blacklist = JSON.parse(localStorage.getItem("blacklisted_phones") || "[]");
+    if (orderInfo.payment === "on_site" && blacklist.includes(orderInfo.phone)) {
+      alert("Désolé, suite à des commandes non honorées, vous devez obligatoirement payer en ligne pour commander.");
+      setOrderInfo({ ...orderInfo, payment: "online" });
+      return;
+    }
+
     setIsSubmitting(true);
     // Simulation d'envoi à Supabase
     setTimeout(() => {

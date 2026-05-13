@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Order } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle2, ChefHat, Bell, LogOut } from "lucide-react";
+import { Clock, ChefHat, Bell, LogOut, Trash2 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -55,6 +55,14 @@ export default function AdminDashboard() {
     );
   };
 
+  const addToBlacklist = (phone: string) => {
+    const current = JSON.parse(localStorage.getItem("blacklisted_phones") || "[]");
+    if (!current.includes(phone)) {
+      localStorage.setItem("blacklisted_phones", JSON.stringify([...current, phone]));
+      alert(`Le numéro ${phone} a été banni des commandes sur place.`);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("admin_auth");
     window.location.reload();
@@ -98,6 +106,7 @@ export default function AdminDashboard() {
                   key={order.id}
                   order={order}
                   onNext={() => updateStatus(order.id, "preparing")}
+                  onBlacklist={addToBlacklist}
                 />
               ))}
           </AnimatePresence>
@@ -117,6 +126,7 @@ export default function AdminDashboard() {
                   key={order.id}
                   order={order}
                   onNext={() => updateStatus(order.id, "ready")}
+                  onBlacklist={addToBlacklist}
                 />
               ))}
           </AnimatePresence>
@@ -136,6 +146,7 @@ export default function AdminDashboard() {
                   key={order.id}
                   order={order}
                   onNext={() => updateStatus(order.id, "completed")}
+                  onBlacklist={addToBlacklist}
                   isReady
                 />
               ))}
@@ -150,10 +161,12 @@ function OrderCard({
   order,
   onNext,
   isReady,
+  onBlacklist,
 }: {
   order: Order;
   onNext: () => void;
   isReady?: boolean;
+  onBlacklist: (phone: string) => void;
 }) {
   return (
     <motion.div
@@ -206,19 +219,30 @@ function OrderCard({
           <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Total</span>
           <span className="text-xl font-bold text-primary">{order.total_price.toFixed(2)}€</span>
         </div>
-        <button
-          onClick={onNext}
-          className={cn(
-            "px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all",
-            isReady
-              ? "bg-white text-black hover:bg-gray-200"
-              : "premium-gradient text-background hover:scale-105 shadow-lg shadow-primary/10"
+        <div className="flex gap-2">
+          {order.status === "pending" && order.payment_status === "unpaid" && (
+            <button
+              onClick={() => onBlacklist(order.client_phone)}
+              className="p-3 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-all"
+              title="Bannir (Non venu)"
+            >
+              <Trash2 size={18} />
+            </button>
           )}
-        >
-          {order.status === "pending" && "Lancer"}
-          {order.status === "preparing" && "Prêt !"}
-          {order.status === "ready" && "Terminé"}
-        </button>
+          <button
+            onClick={onNext}
+            className={cn(
+              "px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all",
+              isReady
+                ? "bg-white text-black hover:bg-gray-200"
+                : "premium-gradient text-background hover:scale-105 shadow-lg shadow-primary/10"
+            )}
+          >
+            {order.status === "pending" && "Lancer"}
+            {order.status === "preparing" && "Prêt !"}
+            {order.status === "ready" && "Terminé"}
+          </button>
+        </div>
       </div>
     </motion.div>
   );
