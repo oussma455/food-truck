@@ -656,20 +656,96 @@ export default function SandwichBuilder() {
     }
   };
 
-  const [activeTab, setActiveTab] = useState<'menu' | 'cart' | 'loyalty'>('menu');
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'menu':
+        return (
+          <div className="space-y-6">
+            <div className="mb-8 px-2">
+              <div className="flex justify-between mb-2">
+                {['FORMULA', 'PRESETS', 'DRINKS', 'CHECKOUT'].map((s, i) => {
+                  const stepsOrder: StepId[] = ['ORDER_TYPE', 'FORMULA', 'PRESETS', 'KIDS_MENU', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'];
+                  const currentIndex = stepsOrder.indexOf(step);
+                  const stepIndex = stepsOrder.indexOf(s as StepId);
+                  const isActive = currentIndex >= stepIndex;
+                  
+                  return (
+                    <div key={s} className="flex flex-col items-center gap-1">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full transition-all duration-500",
+                        isActive ? "bg-primary shadow-[0_0_10px_rgba(255,0,0,0.5)]" : "bg-gray-800"
+                      )} />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="h-[2px] w-full bg-gray-900 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ 
+                    width: `${Math.min(100, (['ORDER_TYPE', 'FORMULA', 'PRESETS', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'].indexOf(step) / 6) * 100)}%` 
+                  }}
+                  className="h-full bg-primary"
+                />
+              </div>
+            </div>
+            {renderStep()}
+          </div>
+        );
+      case 'cart':
+        return (
+          <div className="min-h-[60vh] flex flex-col pt-4">
+             <CheckoutScreen 
+              orderInfo={orderInfo} 
+              setOrderInfo={setOrderInfo} 
+              cart={cart}
+              currentConfig={currentConfig}
+              calculateTotal={calculateTotal} 
+              rgpdAccepted={rgpdAccepted} 
+              setRgpdAccepted={setRgpdAccepted} 
+              isSubmitting={isSubmitting} 
+              onSubmit={handleSubmitOrder}
+              onAddAnother={() => setActiveTab('menu')}
+              isCouscousMode={isCouscousMode}
+            />
+          </div>
+        );
+      case 'loyalty':
+        return (
+          <div className="min-h-[60vh] py-12 flex flex-col items-center justify-center text-center px-4">
+            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-8 border-2 border-primary/30 shadow-[0_0_40px_rgba(255,0,0,0.2)] animate-pulse">
+              <Star className="text-primary" size={48} />
+            </div>
+            <h2 className="text-3xl font-serif italic mb-4">Programme VIP</h2>
+            <p className="text-gray-400 text-sm uppercase tracking-widest font-black mb-8 leading-relaxed">9 commandes = 10ème offerte !</p>
+            
+            <div className="grid grid-cols-5 gap-3 mb-10 bg-secondary/20 p-6 rounded-3xl border border-gray-800 shadow-inner">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className={cn(
+                  "w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all duration-500 shadow-lg",
+                  i < loyaltyPoints ? "bg-primary border-primary text-background rotate-[360deg] scale-110" : "bg-black/40 border-gray-800 text-gray-800"
+                )}>
+                  {i < loyaltyPoints ? <Check size={20} strokeWidth={4} /> : <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                </div>
+              ))}
+            </div>
 
-  // Helper to get tab icon
-  const getTabIcon = (tab: 'menu' | 'cart' | 'loyalty') => {
-    switch (tab) {
-      case 'menu': return <Utensils size={20} />;
-      case 'cart': return <ShoppingCart size={20} />;
-      case 'loyalty': return <Star size={20} />;
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Plus que {10 - loyaltyPoints} commandes avant votre cadeau !</p>
+          </div>
+        );
     }
   };
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden max-w-md mx-auto">
       <AnimatePresence>{showConfetti && <Confetti />}</AnimatePresence>
+      <AnimatePresence>{isProcessing && (
+        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center">
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full mb-6 shadow-[0_0_20px_rgba(255,0,0,0.3)]" />
+          <h3 className="text-xl font-serif italic text-white mb-2 italic">Sécurisation SumUp...</h3>
+          <p className="text-gray-400 text-[10px] uppercase tracking-widest font-black leading-relaxed">Merci de ne pas fermer cette fenêtre.<br/>Nous validons votre acompte de sécurité.</p>
+        </div>
+      )}</AnimatePresence>
       
       {/* Fixed Header */}
       <header className="shrink-0 py-6 px-6 text-center border-b border-gray-900/50 bg-background/80 backdrop-blur-md z-40 relative">
@@ -679,20 +755,63 @@ export default function SandwichBuilder() {
       </header>
 
       {/* Main Content - Scrollable Area */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-2 pb-40 relative scroll-smooth">
-        {/* Real-time Price Ticker - Fixed at top of main area with proper spacing */}
-        <div className="sticky top-0 z-40 pt-2 pb-4 bg-background">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-48 relative scroll-smooth bg-background">
+        <AnimatePresence>
+          {showNotifyPrompt && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="mb-6 overflow-hidden shrink-0"
+            >
+              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/20 p-2 rounded-lg text-primary">
+                    <Bell size={18} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white">Restez informé</p>
+                    <p className="text-[9px] text-gray-500">Ding ! Soyez prévenu dès que le truck ouvre.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={enableNotifications} className="bg-primary text-background px-3 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest hover:scale-105 transition-all">Activer</button>
+                  <button onClick={() => setShowNotifyPrompt(false)} className="text-gray-600 p-2"><X size={14} /></button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence mode="wait">
           <motion.div 
-            initial={{ y: -20, opacity: 0 }}
+            key={activeTab === 'menu' ? `${activeTab}-${step}` : activeTab} 
+            initial={{ opacity: 0, x: 10 }} 
+            animate={{ opacity: 1, x: 0 }} 
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+            className="min-h-full"
+          >
+            {renderTabContent()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Persistent Bottom UI (Thumb Zone) */}
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50">
+        {/* Real-time Price Ticker - Fixed above navigation */}
+        <div className="px-4 pb-2">
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-secondary/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-2xl"
+            className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-[0_-20px_40px_rgba(0,0,0,0.8)] border-b-0 rounded-b-none"
           >
             <div>
-              <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total</p>
+              <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total Panier</p>
               <p className="text-xl font-black text-white tracking-tighter">{calculateTotal().toFixed(2)}€</p>
             </div>
             <div className="text-right">
-              <p className="text-[8px] text-primary font-black uppercase tracking-widest">Acompte ({isCouscousMode ? "50%" : "30%"})</p>
+              <p className="text-[8px] text-primary font-black uppercase tracking-widest">Acompte à payer</p>
               <p className="text-lg font-black text-primary tracking-tighter">
                 {(calculateTotal() * (isCouscousMode ? 0.5 : 0.3)).toFixed(2)}€
               </p>
@@ -700,7 +819,37 @@ export default function SandwichBuilder() {
           </motion.div>
         </div>
 
-        {/* Progress Bar */}
+        {/* Tab Navigation Footer */}
+        <footer className="bg-background/95 backdrop-blur-3xl border-t border-gray-900 p-4 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center justify-between gap-1">
+            {[
+              { id: 'menu', label: 'Carte', icon: <Utensils size={18} /> },
+              { id: 'cart', label: 'Commande', icon: <ShoppingCart size={18} /> },
+              { id: 'loyalty', label: 'VIP', icon: <Star size={18} /> }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={cn(
+                  "flex-1 flex flex-col items-center gap-1.5 py-2 transition-all duration-300",
+                  activeTab === tab.id ? "text-primary scale-110" : "text-gray-500 hover:text-gray-300"
+                )}
+              >
+                <div className={cn(
+                  "p-2 rounded-xl transition-all duration-300",
+                  activeTab === tab.id ? "bg-primary/10 shadow-[0_0_15px_rgba(255,0,0,0.1)]" : ""
+                )}>
+                  {tab.icon}
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-widest">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
         <div className="mb-8 px-2">
           <div className="flex justify-between mb-2">
             {['FORMULA', 'PRESETS', 'DRINKS', 'CHECKOUT'].map((s, i) => {
