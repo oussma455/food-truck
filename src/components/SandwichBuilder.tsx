@@ -87,34 +87,66 @@ export default function SandwichBuilder() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
 
-  const calculateItemTotal = (config: SandwichConfig) => {
+  const calculateGrilladeTotal = (config: SandwichConfig) => {
     let total = config.formula?.price || 0;
     const formulaId = config.formula?.id || '';
     const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaId);
-    const isCouscous = ['s1', 's2', 's3'].includes(formulaId);
 
-    if (config.preset_sandwich) {
-      if (isCouscous) total += config.preset_sandwich.price;
-      else if (formulaId !== 'menu_kids') {
-        const extra = Math.max(0, config.preset_sandwich.price - 10);
-        total += extra;
-      }
+    // Sandwich Surcharge
+    if (config.preset_sandwich && formulaId !== 'menu_kids') {
+      const extra = Math.max(0, config.preset_sandwich.price - 10);
+      total += extra;
     }
 
+    // Sauces
     const saucesCount = config.sauces.length;
     total += Math.max(0, saucesCount - 2) * 0.5;
+
+    // Extras
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
     
+    // Drinks (1 free for menus, Cans only)
+    const drinks = config.drinks || [];
+    const drinkQuota = isStandardMenu ? 1 : 0;
+
+    if (drinkQuota > 0) {
+      const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
+                               .flatMap(d => Array(d.quantity).fill(d.option.price))
+                               .sort((a, b) => b - a);
+      const paidCans = cansPrices.slice(drinkQuota);
+      total += paidCans.reduce((acc, p) => acc + p, 0);
+      
+      // Bottles always paid
+      total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L'))
+                     .reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    } else {
+      total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    }
+
+    total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    return total;
+  };
+
+  const calculateCouscousTotal = (config: SandwichConfig) => {
+    let total = config.formula?.price || 0;
+    const formulaId = config.formula?.id || '';
+
+    // Meat Surcharge
+    if (config.preset_sandwich) {
+      total += config.preset_sandwich.price;
+    }
+
+    // Drinks Quota
     const drinks = config.drinks || [];
     let drinkQuota = 0;
-    if (isStandardMenu) drinkQuota = 1;
-    else if (formulaId === 's1') drinkQuota = 2;
-    else if (formulaId === 's2') drinkQuota = 3;
-    else if (formulaId === 's3') drinkQuota = 4;
+    if (formulaId === 'COUSCOUS_S1') drinkQuota = 2;
+    else if (formulaId === 'COUSCOUS_S2') drinkQuota = 3;
+    else if (formulaId === 'COUSCOUS_S3') drinkQuota = 4;
 
-    if (formulaId === 's3') {
+    if (formulaId === 'COUSCOUS_S3') {
       const totalBottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + d.quantity, 0);
       if (totalBottles >= 1) {
+        // Special case: 1 bottle free, rest paid
         const bottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).sort((a, b) => b.option.price - a.option.price);
         total += (totalBottles - 1) * bottles[0].option.price;
         total += drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
@@ -122,17 +154,27 @@ export default function SandwichBuilder() {
       }
     }
 
-    if (drinkQuota > 0) {
-      const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
-      const paidCans = cansPrices.slice(drinkQuota);
-      total += paidCans.reduce((acc, p) => acc + p, 0);
-      total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    } else {
-      total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    }
+    // Standard Couscous drink quota (Cans only)
+    const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
+                             .flatMap(d => Array(d.quantity).fill(d.option.price))
+                             .sort((a, b) => b - a);
+    const paidCans = cansPrices.slice(drinkQuota);
+    total += paidCans.reduce((acc, p) => acc + p, 0);
+    
+    // Bottles paid unless handled in S3 exception above
+    total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L'))
+                   .reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
 
     total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     return total;
+  };
+
+  const calculateItemTotal = (config: SandwichConfig) => {
+    const formulaId = config.formula?.id || '';
+    if (formulaId.startsWith('COUSCOUS_')) {
+      return calculateCouscousTotal(config);
+    }
+    return calculateGrilladeTotal(config);
   };
 
   const calculateTotal = () => {
@@ -144,12 +186,22 @@ export default function SandwichBuilder() {
   const handleNext = (overrideStep?: StepId, formulaId?: string) => {
     const currentStep = overrideStep || step;
     switch (currentStep) {
-      case 'ORDER_TYPE': setStep('FORMULA'); break;
+      case 'ORDER_TYPE': 
+        setIsCouscousMode(false); // Reset mode by default
+        setStep('FORMULA'); 
+        break;
       case 'FORMULA':
         const selId = formulaId || currentConfig.formula?.id;
-        if (selId === 'menu_kids') setStep('KIDS_MENU');
-        else if (isCouscousMode) setStep('COUSCOUS');
-        else setStep('PRESETS');
+        if (selId === 'menu_kids') {
+          setIsCouscousMode(false);
+          setStep('KIDS_MENU');
+        } else if (selId?.startsWith('COUSCOUS_')) {
+          setIsCouscousMode(true);
+          setStep('COUSCOUS_MEAT');
+        } else {
+          setIsCouscousMode(false);
+          setStep('PRESETS');
+        }
         break;
       case 'COUSCOUS': setStep('COUSCOUS_MEAT'); break;
       case 'COUSCOUS_MEAT': setStep('DRINKS'); break;
