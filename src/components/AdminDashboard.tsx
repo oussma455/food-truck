@@ -177,7 +177,7 @@ export default function AdminDashboard() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-800 pb-6">
         <div className="flex items-center gap-6">
           <div>
-            <h1 className="text-3xl font-serif font-bold text-primary italic">Gourmet Admin</h1>
+            <h1 className="text-3xl font-serif font-bold text-primary italic">Grillade Admin</h1>
             <div className="flex items-center gap-2 mt-2">
               <button onClick={() => setActiveTab('orders')} className={cn("px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all", activeTab === 'orders' ? "bg-primary text-background border-primary" : "border-gray-800 text-gray-500 hover:text-white")}>Direct</button>
               <button onClick={() => setActiveTab('menu')} className={cn("px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all", activeTab === 'menu' ? "bg-primary text-background border-primary" : "border-gray-800 text-gray-500 hover:text-white")}>Menu</button>

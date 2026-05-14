@@ -3,9 +3,9 @@
 :root {
   --background: #000000;
   --foreground: #ffffff;
-  --primary: #D4AF37; /* Gold */
+  --primary: #FF0000; /* Red */
   --secondary: #1A1C20; /* Dark gray for cards */
-  --accent: #FFD700; /* Lighter gold */
+  --accent: #FFFFFF; /* White */
 }
 
 @theme inline {
@@ -28,16 +28,16 @@ body {
 
 /* Custom styles for the premium feel */
 .premium-gradient {
-  background: linear-gradient(135deg, #D4AF37 0%, #FFD700 50%, #B8860B 100%);
+  background: linear-gradient(135deg, #FF0000 0%, #FFFFFF 50%, #FF0000 100%);
 }
 
 .premium-border {
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .premium-card {
   background: rgba(26, 28, 32, 0.8);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 1rem;
 }

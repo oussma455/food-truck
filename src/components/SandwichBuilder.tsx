@@ -399,9 +399,9 @@ export default function SandwichBuilder() {
       <AnimatePresence>{showConfetti && <Confetti />}</AnimatePresence>
       
       <header className="mb-8 pt-4 text-center">
-        <h1 className="text-3xl font-serif font-bold text-primary mb-2 italic">Gourmet Truck</h1>
+        <h1 className="text-3xl font-serif font-bold text-primary mb-2 italic">La Grillade O&apos;Charbon</h1>
         <div className="premium-gradient h-[1px] w-24 mx-auto mb-2 opacity-50" />
-        <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold">L&apos;art du sandwich premium</p>
+        <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold">L&apos;excellence de la grillade</p>
       </header>
 
       <AnimatePresence>

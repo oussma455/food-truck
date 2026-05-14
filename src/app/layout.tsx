@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gourmet Truck - Premium Sandwich",
-  description: "Commandez votre sandwich gourmet en un clic",
+  title: "La Grillade O'Charbon - Premium Grill",
+  description: "Commandez votre grillade gourmet en un clic",
   manifest: "/manifest.json",
 };
 
