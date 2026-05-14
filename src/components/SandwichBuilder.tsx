@@ -206,7 +206,7 @@ export default function SandwichBuilder() {
               </div>
 
               <div className="grid grid-cols-1 gap-3">
-                {currentCategory.options.map((option) => (
+                {currentCategory?.options.map((option) => (
                   <div key={option.id} className={cn(
                     "premium-card transition-all duration-500 flex justify-between items-center group relative",
                     (isOptionSelected(option.id) || getQuantity(currentCategory.id as "drinks" | "desserts", option.id) > 0) ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(212,175,55,0.1)]" : "hover:border-primary/40",
@@ -313,6 +313,11 @@ function Confetti() {
     <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">
       {particles.map((p, i) => (
         <motion.div key={i} initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }} animate={{ opacity: 0, x: p.x, y: p.y, rotate: p.rotate, scale: 0 }} transition={{ duration: 3, ease: "easeOut" }} className={cn("absolute w-2 h-2 rounded-sm", p.color)} />
+      ))}
+    </div>
+  );
+}
+r)} />
       ))}
     </div>
   );
