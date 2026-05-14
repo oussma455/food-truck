@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { SANDWICH_CATEGORIES, FORMULAS, ORDER_TYPES } from "@/lib/data";
 import { SandwichConfig, Option, Order, Category } from "@/types";
-import { X, Plus, Check, MinusCircle } from "lucide-react";
+import { X, Plus, Check, MinusCircle, Minus } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -131,6 +131,26 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     }
   };
 
+  const updateQuantity = (catId: 'drinks' | 'desserts', option: Option, delta: number) => {
+    const currentList = config[catId] || [];
+    const existing = currentList.find(i => i.option.id === option.id);
+    
+    if (existing) {
+      const newQty = Math.max(0, existing.quantity + delta);
+      if (newQty === 0) {
+        setConfig({ ...config, [catId]: currentList.filter(i => i.option.id !== option.id) });
+      } else {
+        setConfig({ ...config, [catId]: currentList.map(i => i.option.id === option.id ? { ...i, quantity: newQty } : i) });
+      }
+    } else if (delta > 0) {
+      setConfig({ ...config, [catId]: [...currentList, { option, quantity: 1 }] });
+    }
+  };
+
+  const getQuantity = (catId: 'drinks' | 'desserts', optionId: string) => {
+    return (config[catId] || []).find(i => i.option.id === optionId)?.quantity || 0;
+  };
+
   const toggleIngredientRemoval = (ingredient: string) => {
     const current = config.removed_ingredients || [];
     if (current.includes(ingredient)) {
@@ -243,23 +263,35 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 </div>
                 
                 <div className="grid grid-cols-1 gap-2">
-                  {currentCategory.options.map((option) => (
-                    <button
-                      key={option.id}
-                      onClick={() => handleOptionToggle(option)}
-                      className={cn(
-                        "p-3 rounded-xl border text-left transition-all flex justify-between items-center group text-sm",
-                        isOptionSelected(option.id) ? "border-primary bg-primary/10" : "border-gray-800 hover:border-gray-600 bg-black/40"
-                      )}
-                    >
-                      <div>
-                        <p className={cn("font-medium", isOptionSelected(option.id) ? "text-primary" : "text-gray-300")}>{option.name}</p>
-                        {option.price > 0 && <p className="text-[10px] text-gray-500">+ {option.price.toFixed(2)}€</p>}
-                        {option.description && <p className="text-[10px] text-gray-500 mt-1 line-clamp-1 italic">{option.description}</p>}
+                  {currentCategory.options.map((option) => {
+                    const isDrinkOrDessert = currentCategory.id === 'drinks' || currentCategory.id === 'desserts';
+                    const qty = isDrinkOrDessert ? getQuantity(currentCategory.id as 'drinks' | 'desserts', option.id) : 0;
+
+                    return (
+                      <div
+                        key={option.id}
+                        className={cn(
+                          "p-3 rounded-xl border transition-all flex justify-between items-center group text-sm",
+                          (isOptionSelected(option.id) || qty > 0) ? "border-primary bg-primary/10" : "border-gray-800 bg-black/40"
+                        )}
+                      >
+                        <div onClick={() => !isDrinkOrDessert && handleOptionToggle(option)} className="flex-1 cursor-pointer">
+                          <p className={cn("font-medium", (isOptionSelected(option.id) || qty > 0) ? "text-primary" : "text-gray-300")}>{option.name}</p>
+                          {option.price > 0 && <p className="text-[10px] text-gray-500">+ {option.price.toFixed(2)}€</p>}
+                        </div>
+                        
+                        {isDrinkOrDessert ? (
+                          <div className="flex items-center gap-3 bg-black/60 p-1 rounded-lg border border-gray-800">
+                            <button onClick={() => updateQuantity(currentCategory.id as 'drinks' | 'desserts', option, -1)} className="p-1 hover:text-primary text-gray-500"><Minus size={14} /></button>
+                            <span className="text-xs font-bold w-4 text-center text-primary">{qty}</span>
+                            <button onClick={() => updateQuantity(currentCategory.id as 'drinks' | 'desserts', option, 1)} className="p-1 hover:text-primary text-gray-500"><Plus size={14} /></button>
+                          </div>
+                        ) : (
+                          isOptionSelected(option.id) && <Check size={14} className="text-primary" />
+                        )}
                       </div>
-                      {isOptionSelected(option.id) && <Check size={14} className="text-primary" />}
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {config.preset_sandwich && currentIngredients.length > 0 && (
@@ -326,6 +358,16 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                           )}
                         </div>
                       </li>
+                      {(config.drinks || []).length > 0 && (
+                        <li className="flex justify-between items-start gap-2 pt-1 border-t border-gray-800/30 mt-1">
+                          <span className="text-gray-500">Boissons:</span>
+                          <div className="text-right">
+                            {config.drinks?.map(d => (
+                              <span key={d.option.id} className="text-white block text-[9px]">{d.quantity}x {d.option.name}</span>
+                            ))}
+                          </div>
+                        </li>
+                      )}
                     </ul>
                     <button onClick={addItemToBasket} className="w-full mt-3 py-2 border border-primary/30 text-primary rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-primary/10 transition-all">+ Ajouter un autre article</button>
                   </div>
