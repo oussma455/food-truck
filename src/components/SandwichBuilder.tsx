@@ -83,8 +83,23 @@ export default function SandwichBuilder() {
     paymentMethod: "card"
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial loading for skeleton demo
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleSumUpPayment = async () => {
+    setIsProcessing(true);
+    // Future SumUp API call will go here
+    setTimeout(() => {
+      setIsProcessing(false);
+      handleSubmitOrder();
+    }, 2500);
+  };
   const [showConfetti, setShowConfetti] = useState(false);
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
 
