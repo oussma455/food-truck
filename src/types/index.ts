@@ -22,6 +22,7 @@ export type StepId =
   | 'DRINKS' 
   | 'DESSERTS' 
   | 'COUSCOUS'
+  | 'COUSCOUS_MEAT'
   | 'CHECKOUT';
 
 export interface SandwichConfig {

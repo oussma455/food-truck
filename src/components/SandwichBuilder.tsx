@@ -140,6 +140,12 @@ export default function SandwichBuilder() {
           setStep('PRESETS');
         }
         break;
+      case 'COUSCOUS':
+        setStep('COUSCOUS_MEAT');
+        break;
+      case 'COUSCOUS_MEAT':
+        setStep('DRINKS');
+        break;
       case 'KIDS_MENU':
         setStep('DRINKS');
         break;
@@ -198,13 +204,18 @@ export default function SandwichBuilder() {
   const handleBack = () => {
     switch (step) {
       case 'FORMULA': setStep('ORDER_TYPE'); break;
+      case 'COUSCOUS': setStep('ORDER_TYPE'); break;
+      case 'COUSCOUS_MEAT': setStep('COUSCOUS'); break;
       case 'PRESETS': setStep('FORMULA'); break;
       case 'KIDS_MENU': setStep('FORMULA'); break;
       case 'EXTRAS': 
         if (currentConfig.formula?.id === 'menu_kids') setStep('KIDS_MENU');
         else setStep('PRESETS'); 
         break;
-      case 'DRINKS': setStep('EXTRAS'); break;
+      case 'DRINKS': 
+        if (isCouscousMode) setStep('COUSCOUS_MEAT');
+        else setStep('EXTRAS'); 
+        break;
       case 'DESSERTS': setStep('DRINKS'); break;
       case 'CHECKOUT': setStep('DESSERTS'); break;
       default: break;
@@ -237,32 +248,57 @@ export default function SandwichBuilder() {
     // 3. Extras (always additional)
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
     
-    // 4. Drinks (1 free per person if it's a Menu)
+    // 4. Drinks (Advanced Quota Logic)
     const drinks = config.drinks || [];
     let drinkQuota = 0;
+    let bottleQuota = 0; // Specific for Couscous 4 persons
+
     if (isMenu) drinkQuota = 1;
     if (isCouscous) {
       if (formulaId === 's1') drinkQuota = 2;
       if (formulaId === 's2') drinkQuota = 3;
-      if (formulaId === 's3') drinkQuota = 4;
+      if (formulaId === 's3') {
+        // Couscous 4 persons logic: 4 cans OR 1 bottle 1.5L
+        const totalCans = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).reduce((acc, d) => acc + d.quantity, 0);
+        const totalBottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + d.quantity, 0);
+        
+        if (totalBottles >= 1) {
+          bottleQuota = 1; // 1 bottle is free
+          drinkQuota = 0;   // cans are paid
+        } else {
+          drinkQuota = 4;   // 4 cans are free
+          bottleQuota = 0;
+        }
+      }
     }
 
-    if (drinkQuota > 0) {
-      const totalDrinkQty = drinks.reduce((acc, d) => acc + d.quantity, 0);
-      if (totalDrinkQty > 0) {
-        // Create a flat list of all selected drink prices
-        const allDrinksPrices: number[] = [];
-        drinks.forEach(d => {
-          for (let i = 0; i < d.quantity; i++) {
-            allDrinksPrices.push(d.option.price);
-          }
-        });
-        
-        // Sort by price descending and remove the 'quota' most expensive drinks
-        allDrinksPrices.sort((a, b) => b - a);
-        const paidDrinks = allDrinksPrices.slice(drinkQuota);
-        total += paidDrinks.reduce((acc, p) => acc + p, 0);
+    const allDrinksPrices: { price: number; isBottle: boolean }[] = [];
+    drinks.forEach(d => {
+      const isBottle = d.option.name.includes('1.5L') || d.option.name.includes('2L');
+      for (let i = 0; i < d.quantity; i++) {
+        allDrinksPrices.push({ price: d.option.price, isBottle });
       }
+    });
+
+    if (isCouscous && formulaId === 's3') {
+      // Special 4-person logic implementation
+      if (bottleQuota === 1) {
+        // Find most expensive bottle
+        const bottles = allDrinksPrices.filter(p => p.isBottle).sort((a, b) => b.price - a.price);
+        const others = [...allDrinksPrices.filter(p => !p.isBottle), ...bottles.slice(1)];
+        total += others.reduce((acc, p) => acc + p.price, 0);
+      } else {
+        // Find 4 most expensive cans
+        const cans = allDrinksPrices.filter(p => !p.isBottle).sort((a, b) => b.price - a.price);
+        const paidCans = cans.slice(4);
+        const allOthers = [...allDrinksPrices.filter(p => p.isBottle), ...paidCans];
+        total += allOthers.reduce((acc, p) => acc + p.price, 0);
+      }
+    } else if (drinkQuota > 0) {
+      // Standard Quota (Standard Menus & Couscous 2/3)
+      allDrinksPrices.sort((a, b) => b.price - a.price);
+      const paidDrinks = allDrinksPrices.slice(drinkQuota);
+      total += paidDrinks.reduce((acc, p) => acc + p.price, 0);
     } else {
       total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     }
