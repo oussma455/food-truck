@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SANDWICH_CATEGORIES } from "@/lib/data";
 import { SandwichConfig, Option, Category } from "@/types";
-import { ChevronRight, ChevronLeft, ShoppingCart, Check, Star, Award, Plus, Minus, Clock, MapPin, Phone, Shield } from "lucide-react";
+import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
@@ -14,9 +14,20 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function SandwichBuilder() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("truck_status") !== "closed";
+    }
+    return true;
+  });
   const [step, setStep] = useState(0);
-  const [menu, setMenu] = useState<Category[]>(SANDWICH_CATEGORIES);
+  const [menu] = useState<Category[]>(() => {
+    if (typeof window !== "undefined") {
+      const savedMenu = localStorage.getItem("truck_menu");
+      return savedMenu ? JSON.parse(savedMenu) : SANDWICH_CATEGORIES;
+    }
+    return SANDWICH_CATEGORIES;
+  });
   const [config, setConfig] = useState<SandwichConfig>({
     sauces: [],
     extras: [],
@@ -36,19 +47,13 @@ export default function SandwichBuilder() {
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
 
   useEffect(() => {
-    // Charger le statut du truck
-    const status = localStorage.getItem("truck_status");
-    setIsOpen(status !== "closed");
-
-    // Charger le menu dynamique
-    const savedMenu = localStorage.getItem("truck_menu");
-    if (savedMenu) {
-      setMenu(JSON.parse(savedMenu));
-    }
+    // Initial loading handled by useState initializers
 
     if (step === menu.length && orderInfo.phone) {
       const history = JSON.parse(localStorage.getItem(`loyalty_${orderInfo.phone}`) || "0");
-      setLoyaltyPoints(history);
+      // Use a timeout or a microtask to avoid synchronous update during render cycle
+      const timer = setTimeout(() => setLoyaltyPoints(history), 0);
+      return () => clearTimeout(timer);
     }
   }, [step, orderInfo.phone, menu.length]);
 
@@ -186,7 +191,7 @@ export default function SandwichBuilder() {
       <header className="mb-8 pt-4 text-center">
         <h1 className="text-3xl font-serif font-bold text-primary mb-2 italic">Gourmet Truck</h1>
         <div className="premium-gradient h-[1px] w-24 mx-auto mb-2 opacity-50" />
-        <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold">L'art du sandwich premium</p>
+        <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold">L&apos;art du sandwich premium</p>
       </header>
 
       <div className="flex-1 flex flex-col">
@@ -204,18 +209,18 @@ export default function SandwichBuilder() {
                 {currentCategory.options.map((option) => (
                   <div key={option.id} className={cn(
                     "premium-card transition-all duration-500 flex justify-between items-center group relative",
-                    (isOptionSelected(option.id) || getQuantity(currentCategory.id as any, option.id) > 0) ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(212,175,55,0.1)]" : "hover:border-primary/40",
+                    (isOptionSelected(option.id) || getQuantity(currentCategory.id as "drinks" | "desserts", option.id) > 0) ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(212,175,55,0.1)]" : "hover:border-primary/40",
                     (currentCategory.id === 'drinks' || currentCategory.id === 'desserts') ? "p-4" : "p-5"
                   )}>
                     <div onClick={() => (currentCategory.id !== 'drinks' && currentCategory.id !== 'desserts') && handleOptionToggle(option)} className="flex-1 cursor-pointer">
-                      <p className={cn("font-black text-[11px] uppercase tracking-[0.1em] transition-colors", (isOptionSelected(option.id) || getQuantity(currentCategory.id as any, option.id) > 0) ? "text-primary" : "text-gray-300")}>{option.name}</p>
+                      <p className={cn("font-black text-[11px] uppercase tracking-[0.1em] transition-colors", (isOptionSelected(option.id) || getQuantity(currentCategory.id as "drinks" | "desserts", option.id) > 0) ? "text-primary" : "text-gray-300")}>{option.name}</p>
                       {option.price > 0 && <span className="text-[10px] text-gray-600 font-mono mt-1 font-bold">+{option.price.toFixed(2)}€</span>}
                     </div>
                     {(currentCategory.id === 'drinks' || currentCategory.id === 'desserts') ? (
                       <div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800 shadow-inner">
-                        <button onClick={() => updateQuantity(currentCategory.id as any, option, -1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button>
-                        <span className="text-xs font-black w-4 text-center text-primary">{getQuantity(currentCategory.id as any, option.id)}</span>
-                        <button onClick={() => updateQuantity(currentCategory.id as any, option, 1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button>
+                        <button onClick={() => updateQuantity(currentCategory.id as "drinks" | "desserts", option, -1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button>
+                        <span className="text-xs font-black w-4 text-center text-primary">{getQuantity(currentCategory.id as "drinks" | "desserts", option.id)}</span>
+                        <button onClick={() => updateQuantity(currentCategory.id as "drinks" | "desserts", option, 1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button>
                       </div>
                     ) : (
                       <div onClick={() => handleOptionToggle(option)} className={cn("w-6 h-6 rounded-full border border-primary flex items-center justify-center transition-all duration-700 shadow-lg", isOptionSelected(option.id) ? "bg-primary text-background scale-110 rotate-[360deg]" : "bg-black/40 text-transparent scale-100")}>
@@ -253,7 +258,7 @@ export default function SandwichBuilder() {
                   <button onClick={() => setRgpdAccepted(!rgpdAccepted)} className={cn("w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 shadow-sm", rgpdAccepted ? "bg-primary border-primary text-background" : "border-gray-700 hover:border-primary/50")}>
                     {rgpdAccepted && <Check size={14} strokeWidth={4} />}
                   </button>
-                  <p className="text-[9px] text-gray-500 leading-normal font-medium">J'autorise l'utilisation de mon numéro pour la gestion de ma commande et mon programme VIP. <Link href="/legals" className="text-primary hover:underline font-black">LIRE LES MENTIONS</Link></p>
+                  <p className="text-[9px] text-gray-500 leading-normal font-medium">J&apos;autorise l&apos;utilisation de mon numéro pour la gestion de ma commande et mon programme VIP. <Link href="/legals" className="text-primary hover:underline font-black">LIRE LES MENTIONS</Link></p>
                 </div>
               </div>
 
@@ -291,13 +296,17 @@ function Confetti() {
   const [particles, setParticles] = useState<Array<{x: number, y: number, rotate: number, color: string}>>([]);
   
   useEffect(() => {
-    const newParticles = [...Array(60)].map(() => ({
-      x: (Math.random() - 0.5) * 1000,
-      y: (Math.random() - 0.5) * 1000,
-      rotate: Math.random() * 720,
-      color: ["bg-primary", "bg-white", "bg-yellow-600", "bg-amber-200"][Math.floor(Math.random() * 4)]
-    }));
-    setParticles(newParticles);
+    // Use a timeout to avoid synchronous update during mount
+    const timer = setTimeout(() => {
+      const newParticles = [...Array(60)].map(() => ({
+        x: (Math.random() - 0.5) * 1000,
+        y: (Math.random() - 0.5) * 1000,
+        rotate: Math.random() * 720,
+        color: ["bg-primary", "bg-white", "bg-yellow-600", "bg-amber-200"][Math.floor(Math.random() * 4)]
+      }));
+      setParticles(newParticles);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return (

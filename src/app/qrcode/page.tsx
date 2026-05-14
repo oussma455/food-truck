@@ -6,59 +6,53 @@ import { motion } from "framer-motion";
 import { Download, Share2 } from "lucide-react";
 
 export default function QRCodePage() {
-  const [url, setUrl] = useState("");
+  const [url] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.location.origin;
+    }
+    return "";
+  });
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setUrl(window.location.origin);
-    }
+    // Initialized in useState
   }, []);
 
+  const downloadQR = () => {
+    const svg = document.querySelector("svg");
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = "qrcode-truck.png";
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(svgData);
+  };
+
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="premium-card p-10 flex flex-col items-center text-center max-w-sm"
-      >
-        <h1 className="text-2xl font-serif font-bold text-primary mb-2">Gourmet Truck</h1>
-        <p className="text-gray-400 text-sm mb-8">Scannez pour commander votre sandwich premium</p>
-        
-        <div className="p-4 bg-white rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-          {url && (
-            <QRCodeSVG 
-              value={url} 
-              size={200}
-              level="H"
-              includeMargin={false}
-              imageSettings={{
-                src: "/favicon.ico",
-                x: undefined,
-                y: undefined,
-                height: 40,
-                width: 40,
-                excavate: true,
-              }}
-            />
-          )}
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-white text-center">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="premium-card p-10 max-w-sm w-full border-primary/20">
+        <h1 className="text-2xl font-serif mb-2 italic">Menu Digital</h1>
+        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-8">Scannez pour commander</p>
+
+        <div className="bg-white p-6 rounded-3xl inline-block shadow-2xl shadow-primary/10 mb-8">
+          <QRCodeSVG value={url} size={200} level="H" includeMargin={false} imageSettings={{ src: "/favicon.ico", x: undefined, y: undefined, height: 40, width: 40, excavate: true }} />
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-4 w-full">
-          <button 
-            className="flex items-center justify-center gap-2 bg-secondary border border-gray-800 p-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:border-primary transition-all"
-            onClick={() => window.print()}
-          >
+        <div className="grid grid-cols-2 gap-3">
+          <button onClick={downloadQR} className="flex items-center justify-center gap-2 bg-secondary/20 border border-gray-800 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-primary/50 transition-all">
             <Download size={16} />
-            Imprimer
+            Download
           </button>
-          <button 
-            className="flex items-center justify-center gap-2 premium-gradient text-background p-3 rounded-xl text-xs font-bold uppercase tracking-widest"
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({ title: 'Gourmet Truck', url: url });
-              }
-            }}
-          >
+          <button onClick={() => navigator.share({ title: "Gourmet Truck Menu", url })} className="flex items-center justify-center gap-2 bg-secondary/20 border border-gray-800 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-primary/50 transition-all">
             <Share2 size={16} />
             Partager
           </button>

@@ -60,18 +60,23 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isKitchenMode, setIsKitchenMode] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("truck_status") !== "closed";
+    }
+    return true;
+  });
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'stats'>('orders');
-  const [editableMenu, setEditableMenu] = useState<Category[]>(SANDWICH_CATEGORIES);
+  const [editableMenu, setEditableMenu] = useState<Category[]>(() => {
+    if (typeof window !== "undefined") {
+      const savedMenu = localStorage.getItem("truck_menu");
+      return savedMenu ? JSON.parse(savedMenu) : SANDWICH_CATEGORIES;
+    }
+    return SANDWICH_CATEGORIES;
+  });
 
   useEffect(() => {
-    const status = localStorage.getItem("truck_status");
-    setIsOpen(status !== "closed");
-    
-    const savedMenu = localStorage.getItem("truck_menu");
-    if (savedMenu) {
-      setEditableMenu(JSON.parse(savedMenu));
-    }
+    // Initial loading handled by useState initializers
   }, []);
 
   const saveMenu = (newMenu: Category[]) => {
@@ -81,7 +86,10 @@ export default function AdminDashboard() {
 
   const addItem = (catIdx: number) => {
     const newMenu = [...editableMenu];
-    const newId = Math.random().toString(36).substr(2, 5).toUpperCase();
+    // Generate ID inside the handler
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const randomPart = Math.floor(Math.random() * 100).toString(36).toUpperCase();
+    const newId = `${timestamp}${randomPart}`;
     newMenu[catIdx].options.push({
       id: newId,
       name: "NOUVEAU PRODUIT",
@@ -252,7 +260,7 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ icon, label, value, color }: { icon: any, label: string, value: string, color: string }) {
+function StatCard({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string, color: string }) {
   return (
     <div className={cn("premium-card p-8 bg-secondary/10 flex flex-col items-center text-center border-b-4", color)}>
       <div className="p-4 bg-white/5 rounded-2xl mb-4">{icon}</div>
@@ -262,7 +270,18 @@ function StatCard({ icon, label, value, color }: { icon: any, label: string, val
   );
 }
 
-function OrderColumn({ title, color, orders, status, updateStatus, cancelOrder, isKitchenMode, onBlacklist }: any) {
+interface OrderColumnProps {
+  title: string;
+  color: string;
+  orders: Order[];
+  status: Order["status"];
+  updateStatus: (id: string, status: Order["status"]) => void;
+  cancelOrder: (id: string) => void;
+  isKitchenMode: boolean;
+  onBlacklist: (phone: string) => void;
+}
+
+function OrderColumn({ title, color, orders, status, updateStatus, cancelOrder, isKitchenMode, onBlacklist }: OrderColumnProps) {
   return (
     <div className="space-y-4">
       <h2 className={cn("text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2 mb-6", color)}>
@@ -282,7 +301,16 @@ function OrderColumn({ title, color, orders, status, updateStatus, cancelOrder, 
   );
 }
 
-function OrderCard({ order, onNext, onCancel, isReady, onBlacklist, isKitchenMode = false }: any) {
+interface OrderCardProps {
+  order: Order;
+  onNext: () => void;
+  onCancel: () => void;
+  isReady: boolean;
+  onBlacklist: (phone: string) => void;
+  isKitchenMode?: boolean;
+}
+
+function OrderCard({ order, onNext, onCancel, isReady, isKitchenMode = false }: OrderCardProps) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className={cn("premium-card border-l-4 border-l-primary bg-secondary/10 transition-all", isKitchenMode ? "p-8" : "p-5")}>
       <div className="flex justify-between items-start mb-4">
@@ -324,18 +352,18 @@ function OrderCard({ order, onNext, onCancel, isReady, onBlacklist, isKitchenMod
         </div>
         <div className="flex justify-between items-center">
           <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Sauces</span>
-          <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.sauces.map((s: any) => s.name).join(", ")}</span>
+          <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.sauces.map((s) => s.name).join(", ")}</span>
         </div>
         {order.config.drinks && order.config.drinks.length > 0 && (
           <div className="flex justify-between items-center">
             <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Boissons</span>
-            <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.drinks.map((d: any) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
+            <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.drinks.map((d) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
           </div>
         )}
         {order.config.desserts && order.config.desserts.length > 0 && (
           <div className="flex justify-between items-center">
             <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Desserts</span>
-            <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.desserts.map((d: any) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
+            <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.desserts.map((d) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
           </div>
         )}
       </div>
