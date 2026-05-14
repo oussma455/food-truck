@@ -124,9 +124,24 @@ export default function SandwichBuilder() {
       }
     }
 
-    const allDrinksPrices = drinks.flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
-    const paidDrinks = allDrinksPrices.slice(drinkQuota);
-    total += paidDrinks.reduce((acc, p) => acc + p, 0);
+    if (drinkQuota > 0 && formulaId !== 's3') {
+      // Pour les menus standards et Couscous 2/3 pers, seules les canettes peuvent être offertes
+      const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
+      const paidCans = cansPrices.slice(drinkQuota);
+      total += paidCans.reduce((acc, p) => acc + p, 0);
+      
+      // Les grandes bouteilles sont toujours payantes dans ces menus
+      total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    } else if (drinkQuota > 0 && formulaId === 's3') {
+       // Cas Couscous 4 pers où l'utilisateur n'a pris que des canettes
+       const allDrinksPrices = drinks.flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
+       const paidDrinks = allDrinksPrices.slice(drinkQuota);
+       total += paidDrinks.reduce((acc, p) => acc + p, 0);
+    } else {
+      // Aucun quota (Sandwich seul)
+      total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    }
+
     total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     
     return total;
