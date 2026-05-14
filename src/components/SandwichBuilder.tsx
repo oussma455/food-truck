@@ -61,7 +61,7 @@ export default function SandwichBuilder() {
 
   useEffect(() => {
     if (step === 'DRINKS') {
-      const isMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_kids';
+      const isMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_student' || currentConfig.formula?.id === 'menu_kids';
       if (isMenu) {
         alert("Boisson comprise dans votre menu !");
       }
@@ -138,7 +138,7 @@ export default function SandwichBuilder() {
         setStep('DRINKS');
         break;
       case 'DRINKS':
-        const isMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_kids';
+        const isMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_student' || currentConfig.formula?.id === 'menu_kids';
         const hasDrink = currentConfig.drinks && currentConfig.drinks.length > 0;
         
         if (isMenu && !hasDrink) {
@@ -191,13 +191,10 @@ export default function SandwichBuilder() {
   const calculateItemTotal = (config: SandwichConfig) => {
     let total = config.formula?.price || 0;
     
-    if (config.creation_mode === 'custom') {
-      if (config.bread) total += config.bread.price;
-      if (config.meat) total += config.meat.price;
-    } else if (config.preset_sandwich) {
-      total = Math.max(total, config.preset_sandwich.price);
-      if (config.formula?.id === 'menu_standard') total += 5;
-      if (config.formula?.id === 'menu_student') total += 3;
+    if (config.preset_sandwich) {
+      const basePrice = config.formula?.id === 'menu_kids' ? 8.5 : 10;
+      const extra = Math.max(0, config.preset_sandwich.price - basePrice);
+      total += extra;
     }
 
     const saucesCount = config.sauces.length;
@@ -368,7 +365,7 @@ export default function SandwichBuilder() {
       case 'EXTRAS':
         return <CategoryStep category={menu.find(c => c.id === 'extras')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" />;
       case 'DRINKS':
-        const isStandardMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_kids';
+        const isStandardMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_student' || currentConfig.formula?.id === 'menu_kids';
         return (
           <StepContainer title="Boissons" subtitle="Choisissez votre rafraîchissement">
             <div className="space-y-6">

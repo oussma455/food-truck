@@ -6,8 +6,9 @@ export const ORDER_TYPES: Option[] = [
 ];
 
 export const FORMULAS: Option[] = [
-  { id: "menu_standard", name: "Menu Complet", price: 14.5, description: "Sandwich + Boisson au choix" },
-  { id: "sandwich_only", name: "Sandwich Seul", price: 9.5, description: "Le sandwich sans boisson" },
+  { id: "menu_standard", name: "Menu Complet", price: 15.0, description: "Sandwich + Boisson au choix" },
+  { id: "menu_student", name: "Menu Étudiant", price: 13.0, description: "Sandwich + Boisson + Frites (sur présentation de carte)" },
+  { id: "sandwich_only", name: "Sandwich Seul", price: 10.0, description: "Le sandwich sans boisson" },
   { id: "menu_kids", name: "Menu Enfant", price: 8.5, description: "Petit Sandwich + Boisson + Surprise" },
 ];
 
