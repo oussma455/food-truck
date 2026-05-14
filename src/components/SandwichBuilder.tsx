@@ -356,36 +356,64 @@ export default function SandwichBuilder() {
       
       {/* Persistent Navigation & Total Bar */}
       <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 bg-background/95 backdrop-blur-3xl border-t border-gray-900 p-4 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-        <div className="flex items-center justify-between">
-          {/* Tab Menu */}
-          <button
-            onClick={() => setActiveTab('menu')}
-            className={cn(
-              "flex-1 flex flex-col items-center gap-1 py-1 transition-all duration-300",
-              activeTab === 'menu' ? "text-primary scale-110" : "text-gray-500"
-            )}
-          >
-            <Utensils size={18} />
-            <span className="text-[8px] font-black uppercase tracking-widest text-white">Carte</span>
-          </button>
+        <div className="flex flex-col gap-4">
+          {/* Navigation Action Button (Suivant/Retour) - High Visibility on Mobile */}
+          {activeTab === 'menu' && (
+            <div className="flex gap-2">
+              <motion.button 
+                whileTap={{ scale: 0.95 }}
+                onClick={handleBack} 
+                className={cn(
+                  "flex-1 py-3 rounded-xl border border-white/10 bg-black font-black text-[9px] uppercase tracking-widest text-white transition-all", 
+                  step === 'ORDER_TYPE' ? "hidden" : ""
+                )}
+              >
+                Retour
+              </motion.button>
+              
+              {['EXTRAS', 'DRINKS', 'DESSERTS'].includes(step) && (
+                <motion.button 
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleNext()} 
+                  className="flex-[2.5] bg-white text-black font-black py-3 rounded-xl uppercase text-[10px] tracking-widest shadow-2xl flex items-center justify-center gap-2"
+                >
+                  {step === 'DESSERTS' ? "VOIR LE RÉSUMÉ" : "CONTINUER"} <ChevronRight size={14} />
+                </motion.button>
+              )}
+            </div>
+          )}
 
-          {/* Real-time Total Display (Central) */}
-          <div className="flex-1 flex flex-col items-center border-x border-gray-800 px-2">
-            <p className="text-[7px] text-gray-500 font-black uppercase tracking-widest mb-0.5">Total à payer</p>
-            <p className="text-lg font-black text-white tracking-tighter leading-none">{calculateTotal().toFixed(2)}€</p>
+          <div className="flex items-center justify-between">
+            {/* Tab Menu */}
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={cn(
+                "flex-1 flex flex-col items-center gap-1 py-1 transition-all duration-300",
+                activeTab === 'menu' ? "text-primary scale-110" : "text-gray-500"
+              )}
+            >
+              <Utensils size={18} />
+              <span className="text-[8px] font-black uppercase tracking-widest text-white">Carte</span>
+            </button>
+
+            {/* Real-time Total Display (Central) */}
+            <div className="flex-1 flex flex-col items-center border-x border-gray-800 px-2">
+              <p className="text-[7px] text-gray-500 font-black uppercase tracking-widest mb-0.5">Total à payer</p>
+              <p className="text-lg font-black text-white tracking-tighter leading-none">{calculateTotal().toFixed(2)}€</p>
+            </div>
+
+            {/* Tab Cart */}
+            <button
+              onClick={() => setActiveTab('cart')}
+              className={cn(
+                "flex-1 flex flex-col items-center gap-1 py-1 transition-all duration-300",
+                activeTab === 'cart' ? "text-primary scale-110" : "text-gray-500"
+              )}
+            >
+              <ShoppingCart size={18} />
+              <span className="text-[8px] font-black uppercase tracking-widest text-white">Commande</span>
+            </button>
           </div>
-
-          {/* Tab Cart */}
-          <button
-            onClick={() => setActiveTab('cart')}
-            className={cn(
-              "flex-1 flex flex-col items-center gap-1 py-1 transition-all duration-300",
-              activeTab === 'cart' ? "text-primary scale-110" : "text-gray-500"
-            )}
-          >
-            <ShoppingCart size={18} />
-            <span className="text-[8px] font-black uppercase tracking-widest text-white">Commande</span>
-          </button>
         </div>
       </footer>
     </div>
