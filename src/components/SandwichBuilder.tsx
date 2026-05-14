@@ -642,6 +642,26 @@ export default function SandwichBuilder() {
 
       {/* Main Content - Scrollable Area */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-32">
+        {/* Real-time Price Ticker */}
+        <div className="sticky top-0 z-30 mb-6 -mx-2">
+          <motion.div 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-2xl"
+          >
+            <div>
+              <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total en temps réel</p>
+              <p className="text-xl font-black text-white tracking-tighter">{calculateTotal().toFixed(2)}€</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[8px] text-primary font-black uppercase tracking-widest">À payer maintenant</p>
+              <p className="text-lg font-black text-primary tracking-tighter">
+                {(calculateTotal() * (isCouscousMode ? 0.5 : 0.3)).toFixed(2)}€
+              </p>
+            </div>
+          </motion.div>
+        </div>
+
         {/* Progress Bar */}
         <div className="mb-8 px-2">
           <div className="flex justify-between mb-2">
