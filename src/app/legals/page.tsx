@@ -1,54 +1,126 @@
 "use client";
 
 import React from "react";
-import { ShieldCheck, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function LegalsPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 md:p-12">
-      <div className="max-w-2xl mx-auto">
-        <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-8 text-sm uppercase font-bold tracking-widest">
-          <ArrowLeft size={16} /> Retour
+    <div className="min-h-screen bg-black text-white p-6 md:p-12 font-sans selection:bg-primary selection:text-white">
+      <div className="max-w-3xl mx-auto">
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 text-primary uppercase text-[10px] font-black tracking-widest hover:underline mb-8"
+        >
+          <ArrowLeft size={14} /> Retour à l'accueil
         </Link>
 
-        <header className="mb-12">
-          <ShieldCheck className="text-primary mb-4" size={48} />
-          <h1 className="text-4xl font-serif font-bold">Mentions Légales & RGPD</h1>
-          <p className="text-gray-500 mt-2">Dernière mise à jour : 14 mai 2026</p>
-        </header>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-12"
+        >
+          <header className="border-b border-gray-800 pb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <ShieldCheck className="text-primary" size={32} />
+              <h1 className="text-3xl font-serif italic text-white">Mentions Légales & RGPD</h1>
+            </div>
+            <p className="text-gray-500 text-xs uppercase tracking-widest font-bold">
+              Dernière mise à jour : {new Date().toLocaleDateString('fr-FR')}
+            </p>
+          </header>
 
-        <div className="space-y-8 text-gray-300 leading-relaxed">
-          <section>
-            <h2 className="text-xl font-bold text-white mb-3">1. Éditeur du Site</h2>
-            <p>Le site Gourmet Truck est édité par [Votre Nom/Entreprise], situé à [Votre Adresse].</p>
-            <p className="mt-2">Contact : <a href="tel:+33600000000" className="text-primary hover:underline">+33 6 00 00 00 00</a></p>
+          <section className="space-y-4">
+            <h2 className="text-xl text-primary font-black uppercase tracking-widest text-[12px]">1. Éditeur du site</h2>
+            <div className="bg-secondary/10 p-6 rounded-2xl border border-gray-800/50 space-y-2 text-sm text-gray-300">
+              <p><strong className="text-white">Nom de l'entreprise :</strong> ***NOM DE VOTRE FOOD TRUCK***</p>
+              <p><strong className="text-white">Forme juridique :</strong> ***STATUT JURIDIQUE (ex: Auto-entreprise, SASU, SARL)***</p>
+              <p><strong className="text-white">SIRET :</strong> ***VOTRE NUMÉRO SIRET***</p>
+              <p><strong className="text-white">Siège social :</strong> ***VOTRE ADRESSE POSTALE COMPLÈTE***</p>
+              <p><strong className="text-white">Email de contact :</strong> ***VOTRE ADRESSE EMAIL***</p>
+              <p><strong className="text-white">Téléphone :</strong> ***VOTRE NUMÉRO DE TÉLÉPHONE***</p>
+              <p><strong className="text-white">Directeur de la publication :</strong> ***VOTRE NOM ET PRÉNOM***</p>
+            </div>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-white mb-3">2. Protection des Données (RGPD)</h2>
-            <p>Conformément au Règlement Général sur la Protection des Données (RGPD), nous vous informons que nous recueillons vos données (Nom et Numéro de téléphone) exclusivement pour :</p>
-            <ul className="list-disc ml-5 mt-3 space-y-2">
-              <li>Identifier votre commande en cuisine.</li>
-              <li>Vous contacter en cas de problème avec votre préparation.</li>
-              <li>Gérer votre programme de fidélité via votre numéro de téléphone.</li>
-            </ul>
+          <section className="space-y-4">
+            <h2 className="text-xl text-primary font-black uppercase tracking-widest text-[12px]">2. Hébergement</h2>
+            <div className="bg-secondary/10 p-6 rounded-2xl border border-gray-800/50 space-y-2 text-sm text-gray-300">
+              <p>Ce site est hébergé par <strong>Vercel Inc.</strong></p>
+              <p>440 N Barranca Ave #4133, Covina, CA 91723, États-Unis</p>
+              <p>Site web : vercel.com</p>
+            </div>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-white mb-3">3. Conservation & Droits</h2>
-            <p>Vos données sont conservées pour une durée maximale de 24 mois après votre dernière commande. Vous disposez d&apos;un droit d&apos;accès, de rectification et de suppression de vos données en nous contactant par téléphone.</p>
+          <section className="space-y-4">
+            <h2 className="text-xl text-primary font-black uppercase tracking-widest text-[12px]">3. Conditions Générales de Vente (CGV) & Acomptes</h2>
+            <div className="bg-secondary/10 p-6 rounded-2xl border border-gray-800/50 space-y-4 text-sm text-gray-300 leading-relaxed">
+              <p>
+                <strong>Commandes en ligne :</strong> Toute commande passée sur ce site implique l'acceptation intégrale des présentes conditions. 
+                Afin de valider définitivement une commande et d'éviter les "commandes fantômes", le paiement d'un <strong>acompte obligatoire</strong> est requis lors de la validation du panier.
+              </p>
+              <ul className="list-disc pl-5 space-y-2 text-gray-400">
+                <li><strong className="text-white">Commandes Classiques :</strong> Un acompte de 30% du montant total est exigé.</li>
+                <li><strong className="text-white">Pré-commandes (ex: Couscous) :</strong> Un acompte de 50% du montant total est exigé, compte tenu des délais de préparation (24h à l'avance).</li>
+              </ul>
+              <p>
+                Le solde de la commande sera à régler sur place, lors du retrait au food truck, par carte bancaire, espèces ou titre restaurant.
+              </p>
+              <p className="text-amber-500/80 italic">
+                En cas de non-présentation pour retirer la commande, l'acompte versé sera conservé par l'établissement à titre de dédommagement pour les frais engagés et les denrées périssables.
+              </p>
+            </div>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-white mb-3">4. Hébergement</h2>
-            <p>Le site est hébergé par Vercel Inc., situé au 340 S Lemon Ave #1150, Walnut, CA 91789, USA.</p>
+          <section className="space-y-4">
+            <h2 className="text-xl text-primary font-black uppercase tracking-widest text-[12px]">4. Protection des Données Personnelles (RGPD)</h2>
+            <div className="bg-secondary/10 p-6 rounded-2xl border border-gray-800/50 space-y-4 text-sm text-gray-300 leading-relaxed">
+              <p>
+                Dans le cadre de la prise de commande en ligne, nous collectons les données suivantes : <strong>Nom et Numéro de téléphone</strong>.
+              </p>
+              <p>
+                Ces données sont strictement nécessaires pour :
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-gray-400">
+                <li>Traiter et préparer votre commande.</li>
+                <li>Vous contacter en cas de problème ou de retard.</li>
+                <li>Gérer notre programme de fidélité VIP (sauvegardé localement).</li>
+              </ul>
+              <p>
+                Conformément à la loi "Informatique et Libertés" et au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition de vos données personnelles. 
+                Pour exercer ce droit, veuillez nous contacter à l'adresse email mentionnée dans la section "Éditeur du site".
+              </p>
+            </div>
           </section>
-        </div>
 
-        <footer className="mt-16 pt-8 border-t border-gray-800 text-center">
-          <p className="text-[10px] text-gray-600 uppercase tracking-widest">Gourmet Truck © 2026 - Tous droits réservés</p>
-        </footer>
+          <section className="space-y-4">
+            <h2 className="text-xl text-primary font-black uppercase tracking-widest text-[12px]">5. Cookies</h2>
+            <div className="bg-secondary/10 p-6 rounded-2xl border border-gray-800/50 space-y-4 text-sm text-gray-300 leading-relaxed">
+              <p>
+                Notre application utilise le stockage local de votre navigateur (LocalStorage) de manière strictement fonctionnelle, sans aucun traçage publicitaire. 
+                Nous stockons uniquement :
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-gray-400">
+                <li>Vos points de fidélité associés à votre numéro de téléphone.</li>
+                <li>Les préférences d'affichage (ex: notifications).</li>
+              </ul>
+              <p>
+                En utilisant ce site pour commander, vous acceptez l'utilisation de ce stockage fonctionnel indispensable au bon fonctionnement du service.
+              </p>
+            </div>
+          </section>
+          
+          <div className="pt-8 flex justify-center border-t border-gray-800">
+             <Link 
+              href="/" 
+              className="premium-gradient px-8 py-4 rounded-full text-background font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-transform"
+            >
+              J'ai compris, commander
+            </Link>
+          </div>
+
+        </motion.div>
       </div>
     </div>
   );
