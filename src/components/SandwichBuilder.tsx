@@ -551,16 +551,27 @@ export default function SandwichBuilder() {
         return <CategoryStep category={{...menu.find(c => c.id === 'extras')!, options: availableExtras}} config={currentConfig} setConfig={setCurrentConfig} onNext={() => handleNext('EXTRAS')} type="multiple" />;
       case 'DRINKS':
         const availableDrinks = getAvailableOptions('drinks');
-        const isStandardMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_student' || currentConfig.formula?.id === 'menu_kids';
+        const formulaIdDrinksStep = currentConfig.formula?.id || '';
+        const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaIdDrinksStep);
+        const isCouscousDrinksStep = formulaIdDrinksStep.startsWith('s');
+        
+        let quotaText = "";
+        if (isStandardMenu) quotaText = "1 Boisson comprise !";
+        if (isCouscousDrinksStep) {
+          if (formulaIdDrinksStep === 's1') quotaText = "2 Boissons (cannettes/eau) offertes !";
+          if (formulaIdDrinksStep === 's2') quotaText = "3 Boissons (cannettes/eau) offertes !";
+          if (formulaIdDrinksStep === 's3') quotaText = "4 Cannettes OU 1 Bouteille 1.5L offerte !";
+        }
+
         return (
           <StepContainer title="Boissons" subtitle="Choisissez votre rafraîchissement">
             <div className="space-y-6">
-              {isStandardMenu && availableDrinks.length > 0 && (
+              {quotaText && availableDrinks.length > 0 && (
                 <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center gap-3 animate-bounce">
-                  <div className="bg-primary p-2 rounded-lg text-background">
+                  <div className="bg-primary p-2 rounded-lg text-white">
                     <CupSoda size={18} />
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Boisson comprise dans votre menu !</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">{quotaText}</p>
                 </div>
               )}
               <SideSelector label="Boissons" options={availableDrinks} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
