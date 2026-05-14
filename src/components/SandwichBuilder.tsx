@@ -875,10 +875,28 @@ interface CheckoutScreenProps {
 
 function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculateTotal, rgpdAccepted, setRgpdAccepted, isSubmitting, onSubmit, onAddAnother, isCouscousMode }: CheckoutScreenProps) {
   const allItems = [...cart, currentConfig];
+  const total = calculateTotal();
   
+  // Logic for Deposit
+  const depositRate = isCouscousMode ? 0.50 : 0.30;
+  const depositAmount = total * depositRate;
+  const balanceAmount = total - depositAmount;
+
   return (
     <StepContainer title="Résumé" subtitle="Finalisez votre commande">
       <div className="space-y-4 mb-8 mt-4 overflow-y-auto max-h-[50vh] pr-2">
+        {/* Deposit Warning */}
+        <div className="bg-primary/10 border border-primary/30 p-4 rounded-2xl mb-2">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="text-primary" size={18} />
+            <p className="text-[10px] font-black uppercase tracking-widest text-white">Paiement d&apos;acompte obligatoire</p>
+          </div>
+          <p className="text-[9px] text-gray-400 leading-relaxed">
+            Pour valider votre commande et éviter les commandes fantômes, un acompte de <span className="text-primary font-bold">{isCouscousMode ? "50%" : "30%"}</span> est requis. 
+            Le reste sera à régler sur place lors du retrait.
+          </p>
+        </div>
+
         <div className="bg-secondary/20 p-4 rounded-xl border border-gray-800 space-y-3 mb-6">
           <p className="text-[10px] text-primary font-black uppercase tracking-widest mb-2 flex justify-between items-center">
             <span>Votre Panier ({allItems.length})</span>
@@ -946,12 +964,35 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
       </div>
 
       <div className="bg-secondary/30 rounded-3xl p-6 border border-gray-800/50 mb-12 shadow-2xl">
-        <div className="flex justify-between items-center border-b border-gray-800 pb-5 mb-5">
-          <span className="text-xl font-serif text-white italic">Total ({allItems.length})</span>
-          <span className="text-3xl font-black text-primary tracking-tighter">{calculateTotal().toFixed(2)}€</span>
+        <div className="space-y-3 mb-6">
+          <div className="flex justify-between items-center text-gray-500 text-[10px] font-black uppercase tracking-widest">
+            <span>Total Commande</span>
+            <span>{total.toFixed(2)}€</span>
+          </div>
+          <div className="flex justify-between items-center text-white text-xs font-black uppercase tracking-widest bg-white/5 p-3 rounded-xl border border-white/10">
+            <span className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              Acompte à payer ({isCouscousMode ? "50%" : "30%"})
+            </span>
+            <span className="text-primary text-xl">{depositAmount.toFixed(2)}€</span>
+          </div>
+          <div className="flex justify-between items-center text-gray-600 text-[9px] font-bold uppercase tracking-widest px-1">
+            <span>Reste à payer sur place</span>
+            <span>{balanceAmount.toFixed(2)}€</span>
+          </div>
         </div>
-        <button onClick={onSubmit} disabled={isSubmitting} className="w-full premium-gradient text-background font-black py-5 rounded-2xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 tracking-[0.2em] uppercase text-[11px]">
-          {isSubmitting ? <div className="w-5 h-5 border-3 border-background border-t-transparent rounded-full animate-spin" /> : <><Check size={20} strokeWidth={3} /> Confirmer la commande</>}
+
+        <button onClick={onSubmit} disabled={isSubmitting} className="w-full premium-gradient text-background font-black py-5 rounded-2xl shadow-xl shadow-primary/20 flex flex-col items-center justify-center gap-1 active:scale-95 disabled:opacity-50 tracking-[0.1em] uppercase">
+          {isSubmitting ? (
+            <div className="w-5 h-5 border-3 border-background border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <div className="flex items-center gap-2 text-[11px]">
+                <CreditCard size={18} strokeWidth={3} /> Payer l&apos;acompte ({depositAmount.toFixed(2)}€)
+              </div>
+              <span className="text-[7px] opacity-70">Paiement sécurisé • Validation immédiate</span>
+            </>
+          )}
         </button>
       </div>
     </StepContainer>
