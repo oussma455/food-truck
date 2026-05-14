@@ -18,14 +18,9 @@ interface ManualOrderModalProps {
   onOrderCreated: (order: Order) => void;
 }
 
-interface ExtendedConfig extends SandwichConfig {
-  drinks: Option[];
-  desserts: Option[];
-}
-
 export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: ManualOrderModalProps) {
   const [step, setStep] = useState(0);
-  const [config, setConfig] = useState<ExtendedConfig>({
+  const [config, setConfig] = useState<SandwichConfig>({
     formula: undefined,
     sauces: [],
     extras: [],
@@ -52,15 +47,22 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
       } else {
         setConfig({ ...config, sauces: [...config.sauces, option] });
       }
-    } else {
-      const key = catId as keyof ExtendedConfig;
-      const currentList = config[key] as Option[] || [];
-      const isSelected = currentList.find((item) => item.id === option.id);
+    } else if (catId === "drinks" || catId === "desserts") {
+      const key = catId as 'drinks' | 'desserts';
+      const currentList = config[key] || [];
+      const existing = currentList.find(i => i.option.id === option.id);
       
-      if (isSelected) {
-        setConfig({ ...config, [key]: currentList.filter((item) => item.id !== option.id) });
+      if (existing) {
+        setConfig({ ...config, [key]: currentList.filter(i => i.option.id !== option.id) });
       } else {
-        setConfig({ ...config, [key]: [...currentList, option] });
+        setConfig({ ...config, [key]: [...currentList, { option, quantity: 1 }] });
+      }
+    } else if (catId === "extras") {
+      const isSelected = config.extras.find((e) => e.id === option.id);
+      if (isSelected) {
+        setConfig({ ...config, extras: config.extras.filter((e) => e.id !== option.id) });
+      } else {
+        setConfig({ ...config, extras: [...config.extras, option] });
       }
     }
   };
@@ -72,8 +74,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
     if (catId === "meat") return config.meat?.id === optionId;
     if (catId === "sauces") return config.sauces.some((s) => s.id === optionId);
     if (catId === "extras") return config.extras.some((e) => e.id === optionId);
-    if (catId === "drinks") return (config.drinks || []).some((d) => d.id === optionId);
-    if (catId === "desserts") return (config.desserts || []).some((d) => d.id === optionId);
+    if (catId === "drinks") return (config.drinks || []).some((d) => d.option.id === optionId);
+    if (catId === "desserts") return (config.desserts || []).some((d) => d.option.id === optionId);
     return false;
   };
 
@@ -88,8 +90,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
     total += (totalSaucePrice - sauceDiscount);
 
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
-    total += (config.drinks || []).reduce((acc, d) => acc + d.price, 0);
-    total += (config.desserts || []).reduce((acc, d) => acc + d.price, 0);
+    total += (config.drinks || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     return total;
   };
 
@@ -116,6 +118,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
       status: "pending",
       payment_status: "unpaid",
       payment_method: "on_site",
+      order_type: "takeaway",
+      pickup_time: "Dès que possible",
       created_at: new Date().toISOString(),
     };
 
@@ -140,12 +144,12 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
             <h2 className="text-xl font-serif font-bold text-primary">Prise de commande manuelle</h2>
             <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">Saisie rapide - Appel Téléphonique</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-            <X size={20} className="text-gray-400" />
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white">
+            <X size={20} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 text-white">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
@@ -189,24 +193,18 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
                   <li className="flex justify-between"><span className="text-gray-500">Viande:</span><span className={config.meat ? "text-white" : "text-red-500/50 italic"}>{config.meat?.name || "Non choisi"}</span></li>
                   <li className="flex justify-between"><span className="text-gray-500">Sauces:</span><span className="text-white text-right">{config.sauces.map(s => s.name).join(", ") || "Aucune"}</span></li>
                   {config.extras.length > 0 && <li className="flex justify-between"><span className="text-gray-500">Extras:</span><span className="text-white text-right">{config.extras.map(e => e.name).join(", ")}</span></li>}
-                  {(config.drinks || []).length > 0 && <li className="flex justify-between"><span className="text-gray-500">Boissons:</span><span className="text-white text-right">{config.drinks?.map(d => d.name).join(", ")}</span></li>}
-                  {(config.desserts || []).length > 0 && <li className="flex justify-between"><span className="text-gray-500">Desserts:</span><span className="text-white text-right">{config.desserts?.map(d => d.name).join(", ")}</span></li>}
+                  {(config.drinks || []).length > 0 && <li className="flex justify-between"><span className="text-gray-500">Boissons:</span><span className="text-white text-right">{config.drinks?.map(d => d.option.name + ' x' + d.quantity).join(", ")}</span></li>}
+                  {(config.desserts || []).length > 0 && <li className="flex justify-between"><span className="text-gray-500">Desserts:</span><span className="text-white text-right">{config.desserts?.map(d => d.option.name + ' x' + d.quantity).join(", ")}</span></li>}
                 </ul>
                 <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center">
-                  <span className="font-serif font-bold">Total</span>
+                  <span className="font-serif font-bold text-white">Total</span>
                   <span className="text-lg font-bold text-primary">{calculateTotal().toFixed(2)}€</span>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Nom du client</label>
-                  <input type="text" placeholder="Ex: Client Téléphone" className="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm outline-none focus:border-primary transition-all" value={clientInfo.name} onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })} />
-                </div>
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Téléphone</label>
-                  <input type="tel" placeholder="06..." className="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm outline-none focus:border-primary transition-all" value={clientInfo.phone} onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })} />
-                </div>
+                <input type="text" placeholder="Nom du client" className="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm outline-none focus:border-primary transition-all text-white" value={clientInfo.name} onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })} />
+                <input type="tel" placeholder="Téléphone" className="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm outline-none focus:border-primary transition-all text-white" value={clientInfo.phone} onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })} />
               </div>
 
               <button onClick={handleSubmit} className="w-full premium-gradient text-background font-bold py-4 rounded-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest shadow-lg shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all mt-4"><Plus size={18} />Valider la commande</button>

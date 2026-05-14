@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Order } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, CheckCircle2, PhoneCall, Plus } from "lucide-react";
@@ -78,7 +78,35 @@ export default function AdminDashboard() {
     audio.play().catch(e => console.log("Audio play blocked"));
   };
 
-  // ... (reste des fonctions identiques)
+  const updateStatus = (id: string, newStatus: Order["status"]) => {
+    setOrders(
+      orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
+    );
+  };
+
+  const handleOrderCreated = (newOrder: Order) => {
+    setOrders([newOrder, ...orders]);
+    playNotificationSound();
+  };
+
+  const cancelOrder = (id: string) => {
+    if (window.confirm("Voulez-vous vraiment annuler cette commande ?")) {
+      setOrders(orders.filter(o => o.id !== id));
+    }
+  };
+
+  const addToBlacklist = (phone: string) => {
+    const current = JSON.parse(localStorage.getItem("blacklisted_phones") || "[]");
+    if (!current.includes(phone)) {
+      localStorage.setItem("blacklisted_phones", JSON.stringify([...current, phone]));
+      alert(`Le numéro ${phone} a été banni des commandes sur place.`);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_auth");
+    window.location.reload();
+  };
 
   return (
     <div className={cn("min-h-screen bg-[#050505] text-white transition-all", isKitchenMode ? "p-2" : "p-4 md:p-8")}>
@@ -250,24 +278,40 @@ function OrderCard({
     >
       <div className="flex justify-between items-start mb-4">
         <div>
+          <div className="flex items-center gap-2 mb-1">
+            {order.order_type === 'takeaway' ? <ShoppingCart size={14} className="text-primary" /> : <MapPin size={14} className="text-primary" />}
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary">{order.order_type === 'takeaway' ? 'À Emporter' : 'Sur Place'}</span>
+          </div>
           <h3 className={cn("font-bold text-white", isKitchenMode ? "text-2xl" : "text-lg")}>{order.client_name}</h3>
           <p className="text-xs text-gray-500 font-mono tracking-tighter">{order.client_phone}</p>
         </div>
-        {!isKitchenMode && (
-          <div
-            className={cn(
-              "text-[10px] font-bold px-3 py-1 rounded-full border",
-              order.payment_status === "paid"
-                ? "bg-green-500/10 text-green-500 border-green-500/30"
-                : "bg-red-500/10 text-red-500 border-red-500/30"
-            )}
-          >
-            {order.payment_status === "paid" ? "PAYÉ" : "À PAYER"}
+        <div className="text-right">
+          <div className="flex items-center justify-end gap-1 text-amber-500 mb-2">
+            <Clock size={12} />
+            <span className="text-[10px] font-bold uppercase">{order.pickup_time}</span>
           </div>
-        )}
+          {!isKitchenMode && (
+            <div
+              className={cn(
+                "text-[10px] font-bold px-3 py-1 rounded-full border inline-block",
+                order.payment_status === "paid"
+                  ? "bg-green-500/10 text-green-500 border-green-500/30"
+                  : "bg-red-500/10 text-red-500 border-red-500/30"
+              )}
+            >
+              {order.payment_status === "paid" ? "PAYÉ" : "À PAYER"}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className={cn("bg-black/60 rounded-xl mb-5 space-y-2", isKitchenMode ? "p-6" : "p-4")}>
+        {order.config.formula && (
+           <div className="flex justify-between items-center pb-2 mb-2 border-b border-gray-800/50">
+           <span className="text-primary font-black uppercase tracking-widest text-[10px]">Formule</span>
+           <span className="text-white font-bold text-xs">{order.config.formula.name}</span>
+         </div>
+        )}
         <div className="flex justify-between items-center">
           <span className={cn("text-primary font-bold uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[10px]")}>Pain</span>
           <span className={cn("text-gray-300", isKitchenMode ? "text-xl font-bold" : "text-xs")}>{order.config.bread?.name}</span>
@@ -280,16 +324,16 @@ function OrderCard({
           <span className={cn("text-primary font-bold uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[10px]")}>Sauces</span>
           <span className={cn("text-gray-300 text-right", isKitchenMode ? "text-lg" : "text-xs")}>{order.config.sauces.map((s) => s.name).join(", ")}</span>
         </div>
-        {order.config.extras.length > 0 && (
-          <div className="flex justify-between items-center">
-            <span className={cn("text-primary font-bold uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[10px]")}>Extras</span>
-            <span className={cn("text-amber-400 font-bold text-right", isKitchenMode ? "text-lg" : "text-xs")}>{order.config.extras.map((e) => e.name).join(", ")}</span>
-          </div>
-        )}
         {order.config.drinks && order.config.drinks.length > 0 && (
           <div className="flex justify-between items-center">
             <span className={cn("text-primary font-bold uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[10px]")}>Boissons</span>
-            <span className={cn("text-gray-300 text-right", isKitchenMode ? "text-lg" : "text-xs")}>{order.config.drinks.map((d) => d.name).join(", ")}</span>
+            <span className={cn("text-gray-300 text-right", isKitchenMode ? "text-lg" : "text-xs")}>{order.config.drinks.map((d) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
+          </div>
+        )}
+        {order.config.desserts && order.config.desserts.length > 0 && (
+          <div className="flex justify-between items-center">
+            <span className={cn("text-primary font-bold uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[10px]")}>Desserts</span>
+            <span className={cn("text-gray-300 text-right", isKitchenMode ? "text-lg" : "text-xs")}>{order.config.desserts.map((d) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
           </div>
         )}
       </div>
@@ -305,7 +349,6 @@ function OrderCard({
           <button
             onClick={onCancel}
             className="p-3 rounded-xl border border-gray-700 text-gray-500 hover:text-white hover:border-white transition-all"
-            title="Annuler la commande"
           >
             <XCircle size={18} />
           </button>

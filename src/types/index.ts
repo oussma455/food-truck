@@ -13,13 +13,13 @@ export interface Category {
 
 export interface SandwichConfig {
   formula?: Option;
-  preset_sandwich?: string; // Nom du sandwich déjà composé
+  preset_sandwich?: string;
   bread?: Option;
   meat?: Option;
   sauces: Option[];
   extras: Option[];
-  drinks: { option: Option; quantity: number }[];
-  desserts: { option: Option; quantity: number }[];
+  drinks?: { option: Option; quantity: number }[];
+  desserts?: { option: Option; quantity: number }[];
 }
 
 export interface Order {
