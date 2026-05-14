@@ -28,7 +28,7 @@ interface CheckoutScreenProps {
   isCouscousMode: boolean;
 }
 
-// Production Version 1.7 - Cache Buster & Final Verification
+// Production Version 1.9 - Absolute Fixes
 export default function SandwichBuilder() {
   const [isOpen] = useState(() => {
     if (typeof window !== "undefined") {
@@ -336,14 +336,20 @@ export default function SandwichBuilder() {
         const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaIdDrinksStep);
         const isCouscousStep = formulaIdDrinksStep.startsWith('COUSCOUS_');
         
-        let q = isStandardMenu ? 1 : 0;
-        if (isCouscousStep) {
+        let q = 0;
+        if (isStandardMenu) q = 1;
+        else if (isCouscousStep) {
           if (formulaIdDrinksStep === 'COUSCOUS_S1') q = 2;
           else if (formulaIdDrinksStep === 'COUSCOUS_S2') q = 3;
           else if (formulaIdDrinksStep === 'COUSCOUS_S3') q = 4;
         }
 
-        let quotaT = isStandardMenu ? "1 Boisson comprise !" : isCouscousStep ? (formulaIdDrinksStep === 'COUSCOUS_S3' ? "4 Cannettes OU 1 Bouteille 1.5L offerte !" : `${q} Boissons offertes !`) : "";
+        let quotaT = "";
+        if (isStandardMenu) quotaT = "1 Boisson comprise !";
+        else if (isCouscousStep) {
+          if (formulaIdDrinksStep === 'COUSCOUS_S3') quotaT = "4 Cannettes OU 1 Bouteille 1.5L offerte !";
+          else quotaT = `${q} Boissons offertes !`;
+        }
 
         const availableDrinks = getAvailableOptions('drinks');
         const cans = availableDrinks.filter(d => !d.name.includes('1.5L') && !d.name.includes('2L'));
