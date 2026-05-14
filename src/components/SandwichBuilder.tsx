@@ -931,7 +931,9 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
                 onClick={() => setOrderInfo({...orderInfo, paymentMethod: method.id as PaymentMethod})} 
                 className={cn(
                   "py-3 rounded-xl border text-[10px] font-black transition-all flex items-center justify-center gap-2", 
-                  orderInfo.paymentMethod === method.id ? "bg-primary text-background border-primary" : "border-gray-800 text-gray-600"
+                  orderInfo.paymentMethod === method.id 
+                    ? "bg-primary text-background border-primary shadow-lg shadow-primary/20" 
+                    : "border-gray-800 text-white hover:border-gray-600 bg-white/5"
                 )}
               >
                 {method.icon} {method.name}
@@ -945,14 +947,37 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
             <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Temps de retrait estimé</label>
             <div className="grid grid-cols-3 gap-2">
               {["15 min", "30 min", "45 min"].map(time => (
-                <button key={time} onClick={() => setOrderInfo({...orderInfo, pickupTime: time})} className={cn("py-2.5 rounded-xl border text-[10px] font-black transition-all", orderInfo.pickupTime === time ? "bg-primary text-background border-primary shadow-md shadow-primary/10" : "border-gray-800 text-gray-600")}>{time}</button>
+                <button 
+                  key={time} 
+                  onClick={() => setOrderInfo({...orderInfo, pickupTime: time})} 
+                  className={cn(
+                    "py-2.5 rounded-xl border text-[10px] font-black transition-all", 
+                    orderInfo.pickupTime === time 
+                      ? "bg-primary text-background border-primary shadow-md shadow-primary/10" 
+                      : "border-gray-800 text-white hover:border-gray-600 bg-white/5"
+                  )}
+                >
+                  {time}
+                </button>
               ))}
             </div>
           </div>
         )}
 
-        <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="VOTRE NOM" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
-        <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="NUMÉRO DE TÉLÉPHONE" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
+        <input 
+          type="text" 
+          value={orderInfo.name} 
+          onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} 
+          placeholder="VOTRE NOM" 
+          className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-500" 
+        />
+        <input 
+          type="tel" 
+          value={orderInfo.phone} 
+          onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} 
+          placeholder="NUMÉRO DE TÉLÉPHONE" 
+          className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-500" 
+        />
         
         <div className="flex gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
           <button onClick={() => setRgpdAccepted(!rgpdAccepted)} className={cn("w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 shadow-sm", rgpdAccepted ? "bg-primary border-primary text-background" : "border-gray-700 hover:border-primary/50")}>
