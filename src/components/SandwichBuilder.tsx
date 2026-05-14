@@ -291,12 +291,13 @@ function Confetti() {
   const [particles, setParticles] = useState<Array<{x: number, y: number, rotate: number, color: string}>>([]);
   
   useEffect(() => {
-    setParticles([...Array(60)].map(() => ({
+    const newParticles = [...Array(60)].map(() => ({
       x: (Math.random() - 0.5) * 1000,
       y: (Math.random() - 0.5) * 1000,
       rotate: Math.random() * 720,
       color: ["bg-primary", "bg-white", "bg-yellow-600", "bg-amber-200"][Math.floor(Math.random() * 4)]
-    })));
+    }));
+    setParticles(newParticles);
   }, []);
 
   return (

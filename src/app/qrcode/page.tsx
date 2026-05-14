@@ -9,7 +9,9 @@ export default function QRCodePage() {
   const [url, setUrl] = useState("");
 
   useEffect(() => {
-    setUrl(window.location.origin);
+    if (typeof window !== "undefined") {
+      setUrl(window.location.origin);
+    }
   }, []);
 
   return (

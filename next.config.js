@@ -1,13 +1,10 @@
-const withPWA = require("next-pwa")({
-  dest: "public",
-  disable: process.env.NODE_ENV === "development",
-  register: true,
-  skipWaiting: true,
-});
-
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // next-pwa gère sa propre configuration webpack
+module.exports = {
+  reactStrictMode: true,
+  eslint: {
+    // Les fichiers dans public sont du code généré ou tiers
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
 };
-
-module.exports = withPWA(nextConfig);

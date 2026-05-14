@@ -6,7 +6,12 @@ import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("admin_auth") === "true";
+    }
+    return false;
+  });
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -26,10 +31,7 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    const auth = localStorage.getItem("admin_auth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    }
+    // Initial check handled by useState initializer
   }, []);
 
   if (isAuthenticated) {

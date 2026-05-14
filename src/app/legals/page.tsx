@@ -38,7 +38,7 @@ export default function LegalsPage() {
 
           <section>
             <h2 className="text-xl font-bold text-white mb-3">3. Conservation & Droits</h2>
-            <p>Vos données sont conservées pour une durée maximale de 24 mois après votre dernière commande. Vous disposez d'un droit d'accès, de rectification et de suppression de vos données en nous contactant par téléphone.</p>
+            <p>Vos données sont conservées pour une durée maximale de 24 mois après votre dernière commande. Vous disposez d&apos;un droit d&apos;accès, de rectification et de suppression de vos données en nous contactant par téléphone.</p>
           </section>
 
           <section>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Order, Category } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, CheckCircle2, PhoneCall, Plus, ShoppingCart, MapPin, TrendingUp, DollarSign, Package } from "lucide-react";
+import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, PhoneCall, Plus, ShoppingCart, MapPin, TrendingUp, DollarSign, Package } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import ManualOrderModal from "./ManualOrderModal";
