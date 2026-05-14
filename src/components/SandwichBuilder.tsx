@@ -408,56 +408,47 @@ export default function SandwichBuilder() {
           </StepContainer>
         );
       case 'COUSCOUS':
-        const availableCouscousTypes = getAvailableOptions('couscous_type');
         const availableCouscousSizes = getAvailableOptions('couscous_size');
         return (
-          <StepContainer title="Couscous Maison" subtitle="Choisissez votre régal (24h à l'avance)">
-            <div className="space-y-8">
-              <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center gap-4">
-                <Clock className="text-amber-500 shrink-0" size={24} />
-                <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest leading-relaxed">Attention : Le couscous est préparé à la demande. Votre commande sera prête demain à la même heure.</p>
+          <StepContainer title="Couscous Maison" subtitle="Taille de la tablée (24h à l'avance)">
+            <div className="space-y-6">
+              <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center gap-4 animate-pulse">
+                <Clock className="text-amber-500 shrink-0" size={20} />
+                <p className="text-[9px] text-amber-500 font-black uppercase tracking-widest leading-tight">Réservation 24h à l'avance obligatoire pour le Couscous.</p>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">1. Taille de la tablée</label>
-                <div className="grid grid-cols-1 gap-3">
-                  {availableCouscousSizes.map(size => (
-                    <OptionCard 
-                      key={size.id} 
-                      option={size} 
-                      isSelected={currentConfig.formula?.id === size.id} 
-                      onClick={() => setCurrentConfig({...currentConfig, formula: size})} 
-                    />
-                  ))}
-                </div>
+              <div className="grid grid-cols-1 gap-3">
+                {availableCouscousSizes.map(size => (
+                  <OptionCard 
+                    key={size.id} 
+                    option={size} 
+                    isSelected={currentConfig.formula?.id === size.id} 
+                    onClick={() => {
+                      setCurrentConfig({...currentConfig, formula: size});
+                      setTimeout(() => handleNext('COUSCOUS'), 300);
+                    }} 
+                  />
+                ))}
               </div>
-
-              <div className="space-y-4">
-                <label className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">2. Accompagnement viande</label>
-                <div className="grid grid-cols-1 gap-3">
-                  {availableCouscousTypes.map(type => (
-                    <OptionCard 
-                      key={type.id} 
-                      option={type} 
-                      isSelected={currentConfig.preset_sandwich?.id === type.id} 
-                      onClick={() => setCurrentConfig({...currentConfig, preset_sandwich: type})} 
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <button 
-                onClick={() => {
-                  if (!currentConfig.formula || !currentConfig.preset_sandwich) {
-                    alert("Veuillez choisir la taille et le type de viande.");
-                    return;
-                  }
-                  setStep('CHECKOUT');
-                }}
-                className="w-full premium-gradient text-background font-black py-5 rounded-2xl shadow-xl shadow-primary/20 uppercase tracking-widest text-[11px]"
-              >
-                Confirmer le choix
-              </button>
+            </div>
+          </StepContainer>
+        );
+      case 'COUSCOUS_MEAT':
+        const availableCouscousTypes = getAvailableOptions('couscous_type');
+        return (
+          <StepContainer title="Couscous Maison" subtitle="Choisissez l'accompagnement">
+            <div className="grid grid-cols-1 gap-3">
+              {availableCouscousTypes.map(type => (
+                <OptionCard 
+                  key={type.id} 
+                  option={type} 
+                  isSelected={currentConfig.preset_sandwich?.id === type.id} 
+                  onClick={() => {
+                    setCurrentConfig({...currentConfig, preset_sandwich: type});
+                    setTimeout(() => handleNext('COUSCOUS_MEAT'), 300);
+                  }} 
+                />
+              ))}
             </div>
           </StepContainer>
         );
