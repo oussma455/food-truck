@@ -27,8 +27,15 @@ export default function SandwichBuilder() {
   const [menu] = useState<Category[]>(() => {
     if (typeof window !== "undefined") {
       const savedMenu = localStorage.getItem("truck_menu");
-      const currentMenu = savedMenu ? JSON.parse(savedMenu) : SANDWICH_CATEGORIES;
-      return currentMenu;
+      if (savedMenu) {
+        const parsedMenu = JSON.parse(savedMenu);
+        // On fusionne pour s'assurer que les nouvelles catégories (couscous) sont présentes
+        const mergedMenu = [...SANDWICH_CATEGORIES].map(baseCat => {
+          const savedCat = parsedMenu.find((c: Category) => c.id === baseCat.id);
+          return savedCat || baseCat;
+        });
+        return mergedMenu;
+      }
     }
     return SANDWICH_CATEGORIES;
   });
