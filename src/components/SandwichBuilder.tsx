@@ -577,9 +577,12 @@ export default function SandwichBuilder() {
           if (formulaIdDrinksStep === 's3') quotaText = "4 Cannettes OU 1 Bouteille 1.5L offerte !";
         }
 
+        const cans = availableDrinks.filter(d => !d.name.includes('1.5L') && !d.name.includes('2L'));
+        const bottles = availableDrinks.filter(d => d.name.includes('1.5L') || d.name.includes('2L'));
+
         return (
           <StepContainer title="Boissons" subtitle="Choisissez votre rafraîchissement">
-            <div className="space-y-6">
+            <div className="space-y-8">
               {quotaText && availableDrinks.length > 0 && (
                 <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center gap-3 animate-bounce">
                   <div className="bg-primary p-2 rounded-lg text-white">
@@ -588,7 +591,16 @@ export default function SandwichBuilder() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary">{quotaText}</p>
                 </div>
               )}
-              <SideSelector label="Boissons" options={availableDrinks} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
+              
+              <div className="space-y-6">
+                <SideSelector label="Cannettes & Petits formats" options={cans} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
+                
+                {bottles.length > 0 && (
+                  <div className="pt-4 border-t border-gray-900">
+                    <SideSelector label="Grandes Bouteilles (1.5L / 2L)" options={bottles} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
+                  </div>
+                )}
+              </div>
             </div>
           </StepContainer>
         );
