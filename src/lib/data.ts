@@ -20,11 +20,22 @@ export const CREATION_MODES: Option[] = [
 export const SANDWICH_CATEGORIES: Category[] = [
   {
     id: "presets",
-    name: "Nos Signatures",
+    name: "Nos Signatures & Best-Of",
     options: [
-      { id: "p1", name: "Le Gourmet", price: 15, description: "Bœuf Effiloché (12h), Maison Truffée, Cheddar Fondu" },
-      { id: "p2", name: "L'Oriental", price: 14, description: "Pita, Poulet Grillé, Algérienne, Avocat" },
-      { id: "p3", name: "Le Veggie Royal", price: 13, description: "Falafel Maison, Sauce Blanche, Oignons Frits" },
+      { id: "p1", name: "Le Grand Gourmet", price: 16, description: "Bœuf Effiloché, Maison Truffée, Brie de Meaux, Oignons Confits" },
+      { id: "p2", name: "Le Poulet Braisé", price: 14, description: "Poulet Mariné, Mayo Maison, Salade, Tomate, Avocat" },
+      { id: "p3", name: "Le Smash Style", price: 15, description: "Double Steak, Cheddar, Sauce Secrète, Cornichons, Oignons Rouges" },
+      { id: "p4", name: "L'Oriental Mix", price: 14, description: "Kefta, Poulet, Sauce Blanche, Harissa, Poivrons Grillés" },
+      { id: "p5", name: "Le Veggie Royal", price: 13, description: "Falafel Maison, Sauce Blanche, Oignons Frits, Aubergines" },
+    ],
+  },
+  {
+    id: "kids_menu",
+    name: "Menus Enfants",
+    options: [
+      { id: "k1", name: "Menu Junior Burger", price: 8, description: "Petit Steak, Ketchup, Fromage, Frites, Jus" },
+      { id: "k2", name: "Menu Nuggets Maison", price: 8, description: "6 Nuggets, Frites, Sauce BBQ douce, Jus" },
+      { id: "k3", name: "Menu Mini Pita", price: 8, description: "Poulet émincé, Mayo douce, Frites, Jus" },
     ],
   },
   {

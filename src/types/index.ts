@@ -32,6 +32,7 @@ export interface SandwichConfig {
   meat?: Option;
   sauces: Option[];
   extras: Option[];
+  removed_ingredients?: string[];
   drinks?: { option: Option; quantity: number }[];
   desserts?: { option: Option; quantity: number }[];
 }
