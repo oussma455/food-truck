@@ -370,15 +370,15 @@ export default function SandwichBuilder() {
       <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-32 relative bg-background"><AnimatePresence mode="wait"><motion.div key={activeTab === 'menu' ? `${activeTab}-${step}` : activeTab} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }} className="min-h-full">{renderTabContent()}</motion.div></AnimatePresence></main>
       
       {/* Persistent Navigation & Total Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 bg-background/95 backdrop-blur-3xl border-t border-gray-900 p-4 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-        <div className="flex flex-col gap-4">
-          {/* Navigation Action Button (Suivant/Retour) - High Visibility on Mobile */}
+      <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 bg-background/95 backdrop-blur-2xl border-t border-gray-900 p-3 pb-5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-col gap-2.5">
+          {/* Navigation Action Button (Suivant/Retour) - More Compact */}
           <div className="flex gap-2">
             <motion.button 
               whileTap={{ scale: 0.95 }}
               onClick={handleBack} 
               className={cn(
-                "flex-1 py-3 rounded-xl border border-white/10 bg-black font-black text-[9px] uppercase tracking-widest text-white transition-all", 
+                "flex-1 py-2.5 rounded-xl border border-white/10 bg-black font-black text-[8px] uppercase tracking-widest text-white transition-all", 
                 step === 'ORDER_TYPE' ? "hidden" : ""
               )}
             >
@@ -389,18 +389,18 @@ export default function SandwichBuilder() {
               <motion.button 
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleNext()} 
-                className="flex-[2.5] bg-white text-black font-black py-3 rounded-xl uppercase text-[10px] tracking-widest shadow-2xl flex items-center justify-center gap-2"
+                className="flex-[2.5] bg-white text-black font-black py-2.5 rounded-xl uppercase text-[9px] tracking-widest shadow-xl flex items-center justify-center gap-2"
               >
-                {step === 'DESSERTS' ? "VOIR LE RÉSUMÉ" : "CONTINUER"} <ChevronRight size={14} />
+                {step === 'DESSERTS' ? "VOIR LE RÉSUMÉ" : "CONTINUER"} <ChevronRight size={12} />
               </motion.button>
             )}
           </div>
 
-          <div className="flex items-center justify-center py-1">
-            {/* Real-time Total Display (Central) */}
-            <div className="flex flex-col items-center px-6">
-              <p className="text-[7px] text-gray-500 font-black uppercase tracking-widest mb-0.5">Total à payer</p>
-              <p className="text-xl font-black text-white tracking-tighter leading-none">{calculateTotal().toFixed(2)}€</p>
+          <div className="flex items-center justify-center">
+            {/* Real-time Total Display - Compact Version */}
+            <div className="flex items-baseline gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+              <p className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Total :</p>
+              <p className="text-sm font-black text-white tracking-tighter">{calculateTotal().toFixed(2)}€</p>
             </div>
           </div>
         </div>
