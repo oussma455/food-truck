@@ -14,7 +14,21 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Production Version 1.2 - Final Structural Cleanup
+interface CheckoutScreenProps {
+  orderInfo: { name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway"; paymentMethod: PaymentMethod };
+  setOrderInfo: React.Dispatch<React.SetStateAction<{ name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway"; paymentMethod: PaymentMethod }>>;
+  cart: SandwichConfig[];
+  currentConfig: SandwichConfig;
+  calculateTotal: () => number;
+  rgpdAccepted: boolean;
+  setRgpdAccepted: (val: boolean) => void;
+  isSubmitting: boolean;
+  onSubmit: () => void;
+  onAddAnother: () => void;
+  isCouscousMode: boolean;
+}
+
+// Production Version 1.4 - Type Fix & Final Clean
 export default function SandwichBuilder() {
   const [isOpen] = useState(() => {
     if (typeof window !== "undefined") {
@@ -61,8 +75,10 @@ export default function SandwichBuilder() {
     sauces: [], extras: [], drinks: [], desserts: [],
   });
 
-  const [orderInfo, setOrderInfo] = useState({
-    name: "", phone: "", type: "takeaway" as const, pickupTime: "15 min", paymentMethod: "card" as PaymentMethod
+  const [orderInfo, setOrderInfo] = useState<{
+    name: string; phone: string; type: "on_site" | "takeaway"; pickupTime: string; paymentMethod: PaymentMethod
+  }>({
+    name: "", phone: "", type: "takeaway", pickupTime: "15 min", paymentMethod: "card"
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -256,7 +272,9 @@ export default function SandwichBuilder() {
           </StepContainer>
         );
       case 'EXTRAS':
-        return <CategoryStep category={{...menu.find(c => c.id === 'extras')!, options: getAvailableOptions('extras')}} config={currentConfig} setConfig={setCurrentConfig} onNext={() => handleNext('EXTRAS')} type="multiple" />;
+        const extrasCat = menu.find(c => c.id === 'extras');
+        if (!extrasCat) return null;
+        return <CategoryStep category={{...extrasCat, options: getAvailableOptions('extras')}} config={currentConfig} setConfig={setCurrentConfig} onNext={() => handleNext('EXTRAS')} type="multiple" />;
       case 'DRINKS':
         const fId = currentConfig.formula?.id || '';
         let quotaT = fId === 's3' ? "4 Cannettes OU 1 Bouteille 1.5L offerte !" : fId.startsWith('s') ? `${fId === 's1' ? '2' : '3'} Boissons offertes !` : "1 Boisson comprise !";
@@ -336,7 +354,7 @@ export default function SandwichBuilder() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden max-w-md mx-auto font-sans">
+    <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden max-w-md mx-auto font-sans text-white">
       <AnimatePresence>{showConfetti && <Confetti />}</AnimatePresence>
       <AnimatePresence>{isProcessing && (
         <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center">
@@ -390,7 +408,7 @@ function SideSelector({ label, options, config, setConfig, type }: { label: stri
       const newQty = Math.max(0, existing.quantity + delta);
       if (newQty === 0) setConfig({ ...config, [type]: current.filter(i => i.option.id !== option.id) });
       else setConfig({ ...config, [type]: current.map(i => i.option.id === option.id ? { ...i, quantity: newQty } : i) });
-    } else if (delta > 0) setConfig({ ...config, [type]: [...current, { option, quantity: 1 }] });
+    } else if (delta > 0) { setConfig({ ...config, [type]: [...current, { option, quantity: 1 }] }); }
   };
   return (<div className="space-y-4"><h3 className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">{label}</h3><div className="grid grid-cols-1 gap-3">{options.map(opt => (<div key={opt.id} className="premium-card p-4 flex justify-between items-center bg-secondary/5 border border-gray-800"><div><p className="font-black text-[10px] uppercase text-gray-300">{opt.name}</p><p className="text-[9px] text-gray-600 font-mono">{opt.price.toFixed(2)}€</p></div><div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800"><button onClick={() => update(opt, -1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button><span className="text-xs font-black w-4 text-center text-primary">{getQty(opt.id)}</span><button onClick={() => update(opt, 1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button></div></div>))}</div></div>);
 }
