@@ -125,8 +125,8 @@ export default function SandwichBuilder() {
     const sauceDiscount = Math.min(totalSaucePrice, 1.0); 
     total += (totalSaucePrice - sauceDiscount);
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
-    total += config.drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    total += config.desserts.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    total += (config.drinks || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     if (loyaltyPoints >= 9) return 0;
     return total;
   };
