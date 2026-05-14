@@ -332,17 +332,6 @@ export default function SandwichBuilder() {
       default: return null;
     }
   };
-      case 'DESSERTS':
-        return (
-          <StepContainer title="Desserts" subtitle="Une touche sucrée ?">
-            <SideSelector label="Desserts" options={getAvailableOptions('desserts')} config={currentConfig} setConfig={setCurrentConfig} type="desserts" />
-          </StepContainer>
-        );
-      case 'CHECKOUT':
-        return <CheckoutScreen orderInfo={orderInfo} setOrderInfo={setOrderInfo} cart={cart} currentConfig={currentConfig} calculateTotal={calculateTotal} rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted} isSubmitting={isSubmitting} onSubmit={handleSubmitOrder} onAddAnother={() => setActiveTab('menu')} isCouscousMode={isCouscousMode} />;
-      default: return null;
-    }
-  };
 
   const renderTabContent = () => {
     switch (activeTab) {
