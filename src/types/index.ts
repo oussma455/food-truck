@@ -13,12 +13,13 @@ export interface Category {
 
 export interface SandwichConfig {
   formula?: Option;
+  preset_sandwich?: string; // Nom du sandwich déjà composé
   bread?: Option;
   meat?: Option;
   sauces: Option[];
   extras: Option[];
-  drinks?: Option[];
-  desserts?: Option[];
+  drinks: { option: Option; quantity: number }[];
+  desserts: { option: Option; quantity: number }[];
 }
 
 export interface Order {
@@ -30,5 +31,7 @@ export interface Order {
   status: 'pending' | 'preparing' | 'ready' | 'completed';
   payment_status: 'unpaid' | 'paid';
   payment_method: 'online' | 'on_site';
+  order_type: 'on_site' | 'takeaway';
+  pickup_time: string; // ex: "15 min", "12h30"
   created_at: string;
 }

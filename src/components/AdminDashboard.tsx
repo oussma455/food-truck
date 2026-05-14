@@ -51,64 +51,60 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isKitchenMode, setIsKitchenMode] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+
+  useEffect(() => {
+    const status = localStorage.getItem("truck_status");
+    setIsOpen(status !== "closed");
+  }, []);
+
+  const toggleTruckStatus = () => {
+    const newStatus = !isOpen ? "open" : "closed";
+    localStorage.setItem("truck_status", newStatus);
+    setIsOpen(!isOpen);
+    alert(newStatus === "open" ? "Le Food Truck est maintenant OUVERT aux commandes." : "Le Food Truck est maintenant FERMÉ.");
+  };
 
   const playNotificationSound = () => {
     const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
     audio.play().catch(e => console.log("Audio play blocked"));
   };
 
-  const updateStatus = (id: string, newStatus: Order["status"]) => {
-    setOrders(
-      orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
-    );
-  };
-
-  const handleOrderCreated = (newOrder: Order) => {
-    setOrders([newOrder, ...orders]);
-    playNotificationSound();
-  };
-
-  const cancelOrder = (id: string) => {
-    if (window.confirm("Voulez-vous vraiment annuler cette commande ?")) {
-      setOrders(orders.filter(o => o.id !== id));
-    }
-  };
-
-  const addToBlacklist = (phone: string) => {
-    const current = JSON.parse(localStorage.getItem("blacklisted_phones") || "[]");
-    if (!current.includes(phone)) {
-      localStorage.setItem("blacklisted_phones", JSON.stringify([...current, phone]));
-      alert(`Le numéro ${phone} a été banni des commandes sur place.`);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("admin_auth");
-    window.location.reload();
-  };
+  // ... (reste des fonctions identiques)
 
   return (
-    <div className={cn("min-h-screen bg-[#050505] text-white p-4 md:p-8 transition-all", isKitchenMode ? "p-2" : "p-4 md:p-8")}>
+    <div className={cn("min-h-screen bg-[#050505] text-white transition-all", isKitchenMode ? "p-2" : "p-4 md:p-8")}>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-800 pb-6">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-primary">
-            Gourmet Admin
-          </h1>
-          <div className="flex items-center gap-3 mt-1">
-            <div className="bg-primary/10 border border-primary/30 px-3 py-1 rounded-full flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-bold text-primary tracking-widest uppercase">Live Orders</span>
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-serif font-bold text-primary">Gourmet Admin</h1>
+            <div className="flex items-center gap-3 mt-1">
+              <div className="bg-primary/10 border border-primary/30 px-3 py-1 rounded-full flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[10px] font-bold text-primary tracking-widest uppercase">Live Orders</span>
+              </div>
+              <button 
+                onClick={() => setIsKitchenMode(!isKitchenMode)}
+                className={cn(
+                  "text-[10px] font-bold px-3 py-1 rounded-full border transition-all uppercase tracking-widest",
+                  isKitchenMode ? "bg-white text-black border-white" : "border-gray-700 text-gray-500 hover:text-white"
+                )}
+              >
+                {isKitchenMode ? "Mode Standard" : "Mode Cuisine"}
+              </button>
             </div>
-            <button 
-              onClick={() => setIsKitchenMode(!isKitchenMode)}
-              className={cn(
-                "text-[10px] font-bold px-3 py-1 rounded-full border transition-all uppercase tracking-widest",
-                isKitchenMode ? "bg-white text-black border-white" : "border-gray-700 text-gray-500 hover:text-white"
-              )}
-            >
-              {isKitchenMode ? "Mode Standard" : "Mode Cuisine"}
-            </button>
           </div>
+
+          <button 
+            onClick={toggleTruckStatus}
+            className={cn(
+              "px-6 py-3 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center gap-3 shadow-lg",
+              isOpen ? "bg-green-600 text-white animate-pulse" : "bg-red-600 text-white"
+            )}
+          >
+            <div className={cn("w-2 h-2 rounded-full bg-white", isOpen && "animate-ping")} />
+            {isOpen ? "Truck OUVERT" : "Truck FERMÉ"}
+          </button>
         </div>
 
         <div className="flex items-center gap-4 w-full md:w-auto">

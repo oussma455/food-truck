@@ -2,11 +2,28 @@ import { Category } from "@/types";
 
 export const SANDWICH_CATEGORIES: Category[] = [
   {
+    id: "selection_type",
+    name: "Comment voulez-vous commander ?",
+    options: [
+      { id: "st1", name: "Créations du Chef (Prêt à l'emploi)", price: 0 },
+      { id: "st2", name: "Personnaliser mon Sandwich", price: 0 },
+    ],
+  },
+  {
+    id: "presets",
+    name: "Les Créations du Chef",
+    options: [
+      { id: "p1", name: "Le Gourmet (Bœuf, Maison Truffée, Cheddar)", price: 15 },
+      { id: "p2", name: "L'Oriental (Pita, Poulet, Algérienne, Avocat)", price: 14 },
+      { id: "p3", name: "Le Veggie Royal (Falafel, Blanche, Oignons Frits)", price: 13 },
+    ],
+  },
+  {
     id: "formula",
     name: "Choisissez votre formule",
     options: [
       { id: "f1", name: "Sandwich Seul", price: 0 },
-      { id: "f2", name: "Menu Complet (Sandwich + Boisson + Dessert)", price: 5 },
+      { id: "f2", name: "Menu Complet (Boisson + Dessert)", price: 5 },
     ],
   },
   {
