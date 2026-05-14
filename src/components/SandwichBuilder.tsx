@@ -195,20 +195,42 @@ export default function SandwichBuilder() {
 
   const calculateItemTotal = (config: SandwichConfig) => {
     let total = config.formula?.price || 0;
+    const isMenu = config.formula?.id === 'menu_standard' || config.formula?.id === 'menu_student' || config.formula?.id === 'menu_kids';
     
-    if (config.preset_sandwich) {
-      const basePrice = config.formula?.id === 'menu_kids' ? 8.5 : 10;
-      const extra = Math.max(0, config.preset_sandwich.price - basePrice);
+    // 1. Signature Sandwich Surcharge (Base sandwich is 10€)
+    if (config.preset_sandwich && config.formula?.id !== 'menu_kids') {
+      const extra = Math.max(0, config.preset_sandwich.price - 10);
       total += extra;
     }
 
+    // 2. Sauces: 2 free, then 0.50€ each
     const saucesCount = config.sauces.length;
-    const extraSauces = Math.max(0, saucesCount - 2);
-    total += extraSauces * 0.5;
+    const paidSauces = Math.max(0, saucesCount - 2);
+    total += paidSauces * 0.5;
     
+    // 3. Extras (always additional)
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
     
-    total += (config.drinks || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    // 4. Drinks (1 free if it's a Menu)
+    const drinks = config.drinks || [];
+    if (isMenu) {
+      if (drinks.length > 0) {
+        // First drink (the cheapest one ideally, but here we take the first unit) is free
+        let freeDrinkUsed = false;
+        drinks.forEach(d => {
+          let qty = d.quantity;
+          if (!freeDrinkUsed && qty > 0) {
+            qty -= 1; // One unit is free
+            freeDrinkUsed = true;
+          }
+          total += d.option.price * qty;
+        });
+      }
+    } else {
+      total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    }
+
+    // 5. Desserts (always additional for now, as not specified in formula description)
     total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     
     return total;
