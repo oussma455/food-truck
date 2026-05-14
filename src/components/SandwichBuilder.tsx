@@ -226,16 +226,31 @@ export default function SandwichBuilder() {
     // 3. Extras (always additional)
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
     
-    // 4. Drinks (1 free if it's a Menu)
+    // 4. Drinks (1 free per person if it's a Menu)
     const drinks = config.drinks || [];
-    if (isMenu) {
+    let drinkQuota = 0;
+    if (isMenu) drinkQuota = 1;
+    if (isCouscous) {
+      if (formulaId === 's1') drinkQuota = 2;
+      if (formulaId === 's2') drinkQuota = 3;
+      if (formulaId === 's3') drinkQuota = 4;
+    }
+
+    if (drinkQuota > 0) {
       const totalDrinkQty = drinks.reduce((acc, d) => acc + d.quantity, 0);
       if (totalDrinkQty > 0) {
-        // Logic: Total price of all drinks - price of one drink
-        // To be fair to the customer, we subtract the price of the most expensive single drink unit
-        const totalDrinksPrice = drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-        const maxSingleDrinkPrice = Math.max(...drinks.map(d => d.option.price));
-        total += (totalDrinksPrice - maxSingleDrinkPrice);
+        // Create a flat list of all selected drink prices
+        const allDrinksPrices: number[] = [];
+        drinks.forEach(d => {
+          for (let i = 0; i < d.quantity; i++) {
+            allDrinksPrices.push(d.option.price);
+          }
+        });
+        
+        // Sort by price descending and remove the 'quota' most expensive drinks
+        allDrinksPrices.sort((a, b) => b - a);
+        const paidDrinks = allDrinksPrices.slice(drinkQuota);
+        total += paidDrinks.reduce((acc, p) => acc + p, 0);
       }
     } else {
       total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);

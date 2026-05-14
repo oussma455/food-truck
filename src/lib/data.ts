@@ -57,11 +57,14 @@ export const SANDWICH_CATEGORIES: Category[] = [
     id: "drinks",
     name: "Boissons",
     options: [
-      { id: "d1", name: "Coca-Cola", price: 2, isAvailable: true },
-      { id: "d2", name: "Fanta Orange", price: 2, isAvailable: true },
-      { id: "d3", name: "Ice Tea Pêche", price: 2, isAvailable: true },
-      { id: "d4", name: "Eau Minérale", price: 1.5, isAvailable: true },
+      { id: "d1", name: "Coca-Cola (33cl)", price: 2, isAvailable: true },
+      { id: "d2", name: "Fanta Orange (33cl)", price: 2, isAvailable: true },
+      { id: "d3", name: "Ice Tea Pêche (33cl)", price: 2, isAvailable: true },
+      { id: "d4", name: "Eau Minérale (50cl)", price: 1.5, isAvailable: true },
       { id: "d5", name: "Jus d'Orange", price: 2.5, isAvailable: true },
+      { id: "d6", name: "Coca-Cola (1.5L)", price: 4.5, isAvailable: true },
+      { id: "d7", name: "Sprite (1.5L)", price: 4.5, isAvailable: true },
+      { id: "d8", name: "Oasis Tropical (2L)", price: 5, isAvailable: true },
     ],
   },
   {
