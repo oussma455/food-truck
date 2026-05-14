@@ -36,15 +36,17 @@ export interface SandwichConfig {
   desserts?: { option: Option; quantity: number }[];
 }
 
+export type PaymentMethod = 'card' | 'resto_card' | 'cash' | 'online';
+
 export interface Order {
   id: string;
   client_name: string;
   client_phone: string;
-  config: SandwichConfig;
+  items: SandwichConfig[];
   total_price: number;
   status: 'pending' | 'preparing' | 'ready' | 'completed';
   payment_status: 'unpaid' | 'paid';
-  payment_method: 'online' | 'on_site';
+  payment_method: PaymentMethod;
   order_type: 'on_site' | 'takeaway';
   pickup_time: string;
   created_at: string;

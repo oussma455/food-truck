@@ -105,7 +105,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
       id: "MAN-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
       client_name: clientInfo.name || "Client Téléphone",
       client_phone: clientInfo.phone || "Non renseigné",
-      config: {
+      items: [{
         formula: config.formula,
         preset_sandwich: config.preset_sandwich,
         bread: config.bread,
@@ -114,11 +114,11 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
         extras: config.extras,
         drinks: config.drinks,
         desserts: config.desserts,
-      },
+      }],
       total_price: calculateTotal(),
       status: "pending",
       payment_status: "unpaid",
-      payment_method: "on_site",
+      payment_method: "cash",
       order_type: "takeaway",
       pickup_time: "Dès que possible",
       created_at: new Date().toISOString(),

@@ -18,14 +18,14 @@ const MOCK_ORDERS: Order[] = [
     id: "1",
     client_name: "Jean D.",
     client_phone: "0601020304",
-    config: {
+    items: [{
       bread: { id: "b2", name: "Pain Brioché", price: 1.5 },
       meat: { id: "m1", name: "Bœuf Effiloché (12h)", price: 5 },
       sauces: [{ id: "s1", name: "Maison Truffée", price: 0.5 }],
       extras: [{ id: "e1", name: "Cheddar Fondu", price: 1 }],
       drinks: [],
       desserts: [],
-    },
+    }],
     total_price: 18,
     status: "pending",
     payment_status: "paid",
@@ -38,18 +38,18 @@ const MOCK_ORDERS: Order[] = [
     id: "2",
     client_name: "Marie L.",
     client_phone: "0611223344",
-    config: {
+    items: [{
       bread: { id: "b1", name: "Baguette Tradition", price: 0 },
       meat: { id: "m2", name: "Poulet Mariné", price: 4 },
       sauces: [{ id: "s2", name: "Algérienne", price: 0 }],
       extras: [],
       drinks: [],
       desserts: [],
-    },
+    }],
     total_price: 14,
     status: "preparing",
     payment_status: "unpaid",
-    payment_method: "on_site",
+    payment_method: "card",
     order_type: "on_site",
     pickup_time: "Dès que possible",
     created_at: new Date().toISOString(),
@@ -337,37 +337,41 @@ function OrderCard({ order, onNext, onCancel, isReady, isKitchenMode = false }: 
         </div>
       </div>
 
-      <div className={cn("bg-black/60 rounded-xl mb-4 space-y-2 border border-gray-800/50", isKitchenMode ? "p-6" : "p-3")}>
-        {order.config.formula && (
-           <div className="flex justify-between items-center pb-2 mb-1 border-b border-gray-800/30">
-           <span className="text-primary font-black uppercase tracking-widest text-[8px]">Formule</span>
-           <span className="text-white font-bold text-[10px]">{order.config.formula.name}</span>
-         </div>
-        )}
-        <div className="flex justify-between items-center">
-          <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Pain</span>
-          <span className={cn("text-gray-300 font-bold", isKitchenMode ? "text-xl" : "text-[10px]")}>{order.config.bread?.name}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Viande</span>
-          <span className={cn("text-white font-black", isKitchenMode ? "text-2xl" : "text-[10px]")}>{order.config.meat?.name}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Sauces</span>
-          <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.sauces.map((s) => s.name).join(", ")}</span>
-        </div>
-        {order.config.drinks && order.config.drinks.length > 0 && (
-          <div className="flex justify-between items-center">
-            <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Boissons</span>
-            <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.drinks.map((d) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
+      <div className="space-y-4">
+        {order.items.map((item, idx) => (
+          <div key={idx} className={cn("bg-black/60 rounded-xl space-y-2 border border-gray-800/50", isKitchenMode ? "p-6" : "p-3")}>
+            {item.formula && (
+               <div className="flex justify-between items-center pb-2 mb-1 border-b border-gray-800/30">
+               <span className="text-primary font-black uppercase tracking-widest text-[8px]">Formule</span>
+               <span className="text-white font-bold text-[10px]">{item.formula.name}</span>
+             </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Pain</span>
+              <span className={cn("text-gray-300 font-bold", isKitchenMode ? "text-xl" : "text-[10px]")}>{item.bread?.name}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Viande</span>
+              <span className={cn("text-white font-black", isKitchenMode ? "text-2xl" : "text-[10px]")}>{item.meat?.name}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Sauces</span>
+              <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{item.sauces.map((s) => s.name).join(", ")}</span>
+            </div>
+            {item.drinks && item.drinks.length > 0 && (
+              <div className="flex justify-between items-center">
+                <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Boissons</span>
+                <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{item.drinks.map((d) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
+              </div>
+            )}
+            {item.desserts && item.desserts.length > 0 && (
+              <div className="flex justify-between items-center">
+                <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Desserts</span>
+                <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{item.desserts.map((d) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
+              </div>
+            )}
           </div>
-        )}
-        {order.config.desserts && order.config.desserts.length > 0 && (
-          <div className="flex justify-between items-center">
-            <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Desserts</span>
-            <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{order.config.desserts.map((d) => `${d.option.name} x${d.quantity}`).join(", ")}</span>
-          </div>
-        )}
+        ))}
       </div>
 
       <div className="flex justify-between items-center pt-2">

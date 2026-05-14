@@ -4,10 +4,11 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SANDWICH_CATEGORIES, ORDER_TYPES, FORMULAS, CREATION_MODES } from "@/lib/data";
 import { SandwichConfig, Option, Category, StepId } from "@/types";
-import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star } from "lucide-react";
+import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star, CreditCard, Wallet, UtensilsCrossed } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
+import { PaymentMethod } from "@/types";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -30,7 +31,8 @@ export default function SandwichBuilder() {
     return SANDWICH_CATEGORIES;
   });
 
-  const [config, setConfig] = useState<SandwichConfig>({
+  const [cart, setCart] = useState<SandwichConfig[]>([]);
+  const [currentConfig, setCurrentConfig] = useState<SandwichConfig>({
     sauces: [],
     extras: [],
     drinks: [],
@@ -42,11 +44,13 @@ export default function SandwichBuilder() {
     phone: string;
     type: "on_site" | "takeaway";
     pickupTime: string;
+    paymentMethod: PaymentMethod;
   }>({ 
     name: "", 
     phone: "", 
     type: "takeaway",
-    pickupTime: "15 min"
+    pickupTime: "15 min",
+    paymentMethod: "card"
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,7 +75,7 @@ export default function SandwichBuilder() {
         setStep('CREATION_MODE');
         break;
       case 'CREATION_MODE':
-        if (config.creation_mode === 'signature') {
+        if (currentConfig.creation_mode === 'signature') {
           setStep('PRESETS');
         } else {
           setStep('BUILD_BREAD');
@@ -90,18 +94,34 @@ export default function SandwichBuilder() {
         setStep('EXTRAS');
         break;
       case 'EXTRAS':
-        if (config.formula?.id === 'sandwich_only') {
-          setStep('CHECKOUT');
+        if (currentConfig.formula?.id === 'sandwich_only') {
+          goToCheckout();
         } else {
           setStep('SIDES');
         }
         break;
       case 'SIDES':
-        setStep('CHECKOUT');
+        goToCheckout();
         break;
       default:
         break;
     }
+  };
+
+  const goToCheckout = () => {
+    // Add current config to cart if not already there (though we'll handle multi-add specifically)
+    setStep('CHECKOUT');
+  };
+
+  const handleAddAnother = () => {
+    setCart([...cart, currentConfig]);
+    setCurrentConfig({
+      sauces: [],
+      extras: [],
+      drinks: [],
+      desserts: [],
+    });
+    setStep('FORMULA');
   };
 
   const handleBack = () => {
@@ -113,19 +133,19 @@ export default function SandwichBuilder() {
       case 'BUILD_MEAT': setStep('BUILD_BREAD'); break;
       case 'BUILD_SAUCES': setStep('BUILD_MEAT'); break;
       case 'EXTRAS': 
-        if (config.creation_mode === 'signature') setStep('PRESETS');
+        if (currentConfig.creation_mode === 'signature') setStep('PRESETS');
         else setStep('BUILD_SAUCES');
         break;
       case 'SIDES': setStep('EXTRAS'); break;
       case 'CHECKOUT': 
-        if (config.formula?.id === 'sandwich_only') setStep('EXTRAS');
+        if (currentConfig.formula?.id === 'sandwich_only') setStep('EXTRAS');
         else setStep('SIDES');
         break;
       default: break;
     }
   };
 
-  const calculateTotal = () => {
+  const calculateItemTotal = (config: SandwichConfig) => {
     let total = config.formula?.price || 0;
     
     if (config.creation_mode === 'custom') {
@@ -145,6 +165,14 @@ export default function SandwichBuilder() {
     
     total += (config.drinks || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    
+    return total;
+  };
+
+  const calculateTotal = () => {
+    const cartTotal = cart.reduce((acc, item) => acc + calculateItemTotal(item), 0);
+    const currentTotal = calculateItemTotal(currentConfig);
+    const total = cartTotal + currentTotal;
     
     if (loyaltyPoints >= 9) return 0;
     return total;
@@ -167,9 +195,10 @@ export default function SandwichBuilder() {
       setTimeout(() => {
         setIsSubmitting(false);
         setStep('ORDER_TYPE');
-        setConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
+        setCart([]);
+        setCurrentConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
         setShowConfetti(false);
-        alert("Commande validée !");
+        alert("Commande validée ! Merci !");
       }, 2000);
     }, 1500);
   };
@@ -215,8 +244,8 @@ export default function SandwichBuilder() {
                 <div key={formula.id} className="space-y-2">
                   <OptionCard 
                     option={formula} 
-                    isSelected={config.formula?.id === formula.id} 
-                    onClick={() => { setConfig({...config, formula}); handleNext(); }}
+                    isSelected={currentConfig.formula?.id === formula.id} 
+                    onClick={() => { setCurrentConfig({...currentConfig, formula}); handleNext(); }}
                     icon={formula.id === 'menu_student' ? <GraduationCap /> : formula.id === 'menu_kids' ? <Baby /> : <Star />}
                   />
                   {formula.id === 'menu_student' && (
@@ -237,8 +266,8 @@ export default function SandwichBuilder() {
                 <OptionCard 
                   key={mode.id} 
                   option={mode} 
-                  isSelected={config.creation_mode === mode.id} 
-                  onClick={() => { setConfig({...config, creation_mode: mode.id as "signature" | "custom"}); handleNext(); }}
+                  isSelected={currentConfig.creation_mode === mode.id} 
+                  onClick={() => { setCurrentConfig({...currentConfig, creation_mode: mode.id as "signature" | "custom"}); handleNext(); }}
                 />
               ))}
             </div>
@@ -252,32 +281,50 @@ export default function SandwichBuilder() {
                 <OptionCard 
                   key={preset.id} 
                   option={preset} 
-                  isSelected={config.preset_sandwich?.id === preset.id} 
-                  onClick={() => { setConfig({...config, preset_sandwich: preset, bread: undefined, meat: undefined}); handleNext(); }}
+                  isSelected={currentConfig.preset_sandwich?.id === preset.id} 
+                  onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: preset, bread: undefined, meat: undefined}); handleNext(); }}
                 />
               ))}
             </div>
           </StepContainer>
         );
       case 'BUILD_BREAD':
-        return <CategoryStep category={menu.find(c => c.id === 'bread')!} config={config} setConfig={setConfig} onNext={handleNext} type="single" />;
+        return <CategoryStep category={menu.find(c => c.id === 'bread')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="single" />;
       case 'BUILD_MEAT':
-        return <CategoryStep category={menu.find(c => c.id === 'meat')!} config={config} setConfig={setConfig} onNext={handleNext} type="single" />;
+        return <CategoryStep category={menu.find(c => c.id === 'meat')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="single" />;
       case 'BUILD_SAUCES':
-        return <CategoryStep category={menu.find(c => c.id === 'sauces')!} config={config} setConfig={setConfig} onNext={handleNext} type="multiple" limit={2} />;
+        return <CategoryStep category={menu.find(c => c.id === 'sauces')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" limit={2} />;
       case 'EXTRAS':
-        return <CategoryStep category={menu.find(c => c.id === 'extras')!} config={config} setConfig={setConfig} onNext={handleNext} type="multiple" />;
+        return <CategoryStep category={menu.find(c => c.id === 'extras')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" />;
       case 'SIDES':
         return (
           <StepContainer title="Accompagnements" subtitle="Boissons & Desserts">
             <div className="space-y-8">
-              <SideSelector label="Boissons" options={menu.find(c => c.id === 'drinks')!.options} config={config} setConfig={setConfig} type="drinks" />
-              <SideSelector label="Desserts" options={menu.find(c => c.id === 'desserts')!.options} config={config} setConfig={setConfig} type="desserts" />
+              <SideSelector label="Boissons" options={menu.find(c => c.id === 'drinks')!.options} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
+              <SideSelector label="Desserts" options={menu.find(c => c.id === 'desserts')!.options} config={currentConfig} setConfig={setCurrentConfig} type="desserts" />
+              
+              <button 
+                onClick={handleAddAnother}
+                className="w-full py-4 rounded-2xl border-2 border-dashed border-primary/30 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus size={16} /> Ajouter un autre menu
+              </button>
             </div>
           </StepContainer>
         );
       case 'CHECKOUT':
-        return <CheckoutScreen orderInfo={orderInfo} setOrderInfo={setOrderInfo} config={config} calculateTotal={calculateTotal} rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted} isSubmitting={isSubmitting} onSubmit={handleSubmitOrder} />;
+        return <CheckoutScreen 
+          orderInfo={orderInfo} 
+          setOrderInfo={setOrderInfo} 
+          cart={cart}
+          currentConfig={currentConfig}
+          calculateTotal={calculateTotal} 
+          rgpdAccepted={rgpdAccepted} 
+          setRgpdAccepted={setRgpdAccepted} 
+          isSubmitting={isSubmitting} 
+          onSubmit={handleSubmitOrder}
+          onAddAnother={handleAddAnother}
+        />;
       default:
         return null;
     }
@@ -306,9 +353,9 @@ export default function SandwichBuilder() {
             <button 
               onClick={handleNext} 
               disabled={
-                (step === 'BUILD_BREAD' && !config.bread) || 
-                (step === 'BUILD_MEAT' && !config.meat) || 
-                (step === 'PRESETS' && !config.preset_sandwich) ||
+                (step === 'BUILD_BREAD' && !currentConfig.bread) || 
+                (step === 'BUILD_MEAT' && !currentConfig.meat) || 
+                (step === 'PRESETS' && !currentConfig.preset_sandwich) ||
                 (step === 'CHECKOUT')
               }
               className={cn("flex-[2.5] premium-gradient text-background font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all", step === 'CHECKOUT' ? "hidden" : "")}
@@ -440,28 +487,62 @@ function SideSelector({ label, options, config, setConfig, type }: { label: stri
 }
 
 interface CheckoutScreenProps {
-  orderInfo: { name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway" };
-  setOrderInfo: React.Dispatch<React.SetStateAction<{ name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway" }>>;
-  config: SandwichConfig;
+  orderInfo: { name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway"; paymentMethod: PaymentMethod };
+  setOrderInfo: React.Dispatch<React.SetStateAction<{ name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway"; paymentMethod: PaymentMethod }>>;
+  cart: SandwichConfig[];
+  currentConfig: SandwichConfig;
   calculateTotal: () => number;
   rgpdAccepted: boolean;
   setRgpdAccepted: (val: boolean) => void;
   isSubmitting: boolean;
   onSubmit: () => void;
+  onAddAnother: () => void;
 }
 
-function CheckoutScreen({ orderInfo, setOrderInfo, config, calculateTotal, rgpdAccepted, setRgpdAccepted, isSubmitting, onSubmit }: CheckoutScreenProps) {
+function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculateTotal, rgpdAccepted, setRgpdAccepted, isSubmitting, onSubmit, onAddAnother }: CheckoutScreenProps) {
+  const allItems = [...cart, currentConfig];
+  
   return (
     <StepContainer title="Résumé" subtitle="Finalisez votre commande">
-      <div className="space-y-4 mb-8 mt-4">
-        <div className="bg-secondary/20 p-4 rounded-xl border border-gray-800 space-y-1 mb-6">
-          <p className="text-[10px] text-primary font-black uppercase tracking-widest mb-2">Votre Panier</p>
-          {config.formula && <p className="text-xs text-white">● {config.formula.name}</p>}
-          {config.preset_sandwich && <p className="text-xs text-gray-300 ml-3">→ {config.preset_sandwich.name}</p>}
-          {config.bread && <p className="text-xs text-gray-300 ml-3">→ Pain: {config.bread.name}</p>}
-          {config.meat && <p className="text-xs text-gray-300 ml-3">→ Viande: {config.meat.name}</p>}
+      <div className="space-y-4 mb-8 mt-4 overflow-y-auto max-h-[50vh] pr-2">
+        <div className="bg-secondary/20 p-4 rounded-xl border border-gray-800 space-y-3 mb-6">
+          <p className="text-[10px] text-primary font-black uppercase tracking-widest mb-2 flex justify-between items-center">
+            <span>Votre Panier ({allItems.length})</span>
+            <button onClick={onAddAnother} className="text-primary hover:underline text-[8px]">+ AJOUTER</button>
+          </p>
+          {allItems.map((item, idx) => (
+            <div key={idx} className="pb-2 border-b border-gray-800/50 last:border-0 last:pb-0">
+              {item.formula && <p className="text-xs text-white font-bold">● {item.formula.name}</p>}
+              {item.preset_sandwich && <p className="text-xs text-gray-300 ml-3 italic">→ {item.preset_sandwich.name}</p>}
+              {item.bread && <p className="text-xs text-gray-300 ml-3 italic">→ Pain: {item.bread.name}</p>}
+              {item.meat && <p className="text-xs text-gray-300 ml-3 italic">→ Viande: {item.meat.name}</p>}
+            </div>
+          ))}
         </div>
         
+        <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50">
+          <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Paiement souhaité</label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { id: 'card', name: 'CB', icon: <CreditCard size={14} /> },
+              { id: 'resto_card', name: 'Titre Resto', icon: <UtensilsCrossed size={14} /> },
+              { id: 'cash', name: 'Espèces', icon: <Wallet size={14} /> },
+              { id: 'online', name: 'En Ligne', icon: <Star size={14} /> }
+            ].map(method => (
+              <button 
+                key={method.id} 
+                onClick={() => setOrderInfo({...orderInfo, paymentMethod: method.id as PaymentMethod})} 
+                className={cn(
+                  "py-3 rounded-xl border text-[10px] font-black transition-all flex items-center justify-center gap-2", 
+                  orderInfo.paymentMethod === method.id ? "bg-primary text-background border-primary" : "border-gray-800 text-gray-600"
+                )}
+              >
+                {method.icon} {method.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50 shadow-inner">
           <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Temps de retrait estimé</label>
           <div className="grid grid-cols-3 gap-2">
@@ -470,6 +551,7 @@ function CheckoutScreen({ orderInfo, setOrderInfo, config, calculateTotal, rgpdA
             ))}
           </div>
         </div>
+
         <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="VOTRE NOM" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
         <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="NUMÉRO DE TÉLÉPHONE" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
         
@@ -483,7 +565,7 @@ function CheckoutScreen({ orderInfo, setOrderInfo, config, calculateTotal, rgpdA
 
       <div className="bg-secondary/30 rounded-3xl p-6 border border-gray-800/50 mb-12 shadow-2xl">
         <div className="flex justify-between items-center border-b border-gray-800 pb-5 mb-5">
-          <span className="text-xl font-serif text-white italic">Total</span>
+          <span className="text-xl font-serif text-white italic">Total ({allItems.length})</span>
           <span className="text-3xl font-black text-primary tracking-tighter">{calculateTotal().toFixed(2)}€</span>
         </div>
         <button onClick={onSubmit} disabled={isSubmitting} className="w-full premium-gradient text-background font-black py-5 rounded-2xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 tracking-[0.2em] uppercase text-[11px]">
