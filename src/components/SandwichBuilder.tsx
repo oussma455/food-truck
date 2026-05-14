@@ -195,12 +195,20 @@ export default function SandwichBuilder() {
 
   const calculateItemTotal = (config: SandwichConfig) => {
     let total = config.formula?.price || 0;
-    const isMenu = config.formula?.id === 'menu_standard' || config.formula?.id === 'menu_student' || config.formula?.id === 'menu_kids';
-    
-    // 1. Signature Sandwich Surcharge (Base sandwich is 10€)
-    if (config.preset_sandwich && config.formula?.id !== 'menu_kids') {
-      const extra = Math.max(0, config.preset_sandwich.price - 10);
-      total += extra;
+    const formulaId = config.formula?.id || '';
+    const isMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaId);
+    const isCouscous = formulaId.startsWith('s'); // Couscous sizes are s1, s2, s3
+
+    // 1. Sandwich/Meat Surcharge
+    if (config.preset_sandwich) {
+      if (isCouscous) {
+        // Couscous meat surcharge (m1=0, others are extra)
+        total += config.preset_sandwich.price;
+      } else if (formulaId !== 'menu_kids') {
+        // Standard base is 10€ for sandwiches
+        const extra = Math.max(0, config.preset_sandwich.price - 10);
+        total += extra;
+      }
     }
 
     // 2. Sauces: 2 free, then 0.50€ each
@@ -214,23 +222,19 @@ export default function SandwichBuilder() {
     // 4. Drinks (1 free if it's a Menu)
     const drinks = config.drinks || [];
     if (isMenu) {
-      if (drinks.length > 0) {
-        // First drink (the cheapest one ideally, but here we take the first unit) is free
-        let freeDrinkUsed = false;
-        drinks.forEach(d => {
-          let qty = d.quantity;
-          if (!freeDrinkUsed && qty > 0) {
-            qty -= 1; // One unit is free
-            freeDrinkUsed = true;
-          }
-          total += d.option.price * qty;
-        });
+      const totalDrinkQty = drinks.reduce((acc, d) => acc + d.quantity, 0);
+      if (totalDrinkQty > 0) {
+        // Logic: Total price of all drinks - price of one drink
+        // To be fair to the customer, we subtract the price of the most expensive single drink unit
+        const totalDrinksPrice = drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+        const maxSingleDrinkPrice = Math.max(...drinks.map(d => d.option.price));
+        total += (totalDrinksPrice - maxSingleDrinkPrice);
       }
     } else {
       total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     }
 
-    // 5. Desserts (always additional for now, as not specified in formula description)
+    // 5. Desserts (always additional)
     total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     
     return total;
