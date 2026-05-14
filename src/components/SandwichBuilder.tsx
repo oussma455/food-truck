@@ -556,6 +556,7 @@ export default function SandwichBuilder() {
           isSubmitting={isSubmitting} 
           onSubmit={handleSubmitOrder}
           onAddAnother={handleAddAnother}
+          isCouscousMode={isCouscousMode}
         />;
       default:
         return null;
@@ -822,9 +823,10 @@ interface CheckoutScreenProps {
   isSubmitting: boolean;
   onSubmit: () => void;
   onAddAnother: () => void;
+  isCouscousMode: boolean;
 }
 
-function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculateTotal, rgpdAccepted, setRgpdAccepted, isSubmitting, onSubmit, onAddAnother }: CheckoutScreenProps) {
+function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculateTotal, rgpdAccepted, setRgpdAccepted, isSubmitting, onSubmit, onAddAnother, isCouscousMode }: CheckoutScreenProps) {
   const allItems = [...cart, currentConfig];
   
   return (
@@ -842,6 +844,14 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
             </div>
           ))}
         </div>
+
+        {isCouscousMode && (
+          <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl mb-4">
+            <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest text-center">
+              🕒 Commande Couscous : Prête demain à la même heure
+            </p>
+          </div>
+        )}
         
         <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50">
           <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Paiement souhaité</label>
@@ -866,14 +876,16 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
           </div>
         </div>
 
-        <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50 shadow-inner">
-          <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Temps de retrait estimé</label>
-          <div className="grid grid-cols-3 gap-2">
-            {["15 min", "30 min", "45 min"].map(time => (
-              <button key={time} onClick={() => setOrderInfo({...orderInfo, pickupTime: time})} className={cn("py-2.5 rounded-xl border text-[10px] font-black transition-all", orderInfo.pickupTime === time ? "bg-primary text-background border-primary shadow-md shadow-primary/10" : "border-gray-800 text-gray-600")}>{time}</button>
-            ))}
+        {!isCouscousMode && (
+          <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50 shadow-inner">
+            <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Temps de retrait estimé</label>
+            <div className="grid grid-cols-3 gap-2">
+              {["15 min", "30 min", "45 min"].map(time => (
+                <button key={time} onClick={() => setOrderInfo({...orderInfo, pickupTime: time})} className={cn("py-2.5 rounded-xl border text-[10px] font-black transition-all", orderInfo.pickupTime === time ? "bg-primary text-background border-primary shadow-md shadow-primary/10" : "border-gray-800 text-gray-600")}>{time}</button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="VOTRE NOM" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
         <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="NUMÉRO DE TÉLÉPHONE" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
