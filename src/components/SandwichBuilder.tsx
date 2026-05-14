@@ -27,10 +27,16 @@ export default function SandwichBuilder() {
   const [menu] = useState<Category[]>(() => {
     if (typeof window !== "undefined") {
       const savedMenu = localStorage.getItem("truck_menu");
-      return savedMenu ? JSON.parse(savedMenu) : SANDWICH_CATEGORIES;
+      const currentMenu = savedMenu ? JSON.parse(savedMenu) : SANDWICH_CATEGORIES;
+      return currentMenu;
     }
     return SANDWICH_CATEGORIES;
   });
+
+  const getAvailableOptions = (categoryId: string) => {
+    const category = menu.find(c => c.id === categoryId);
+    return category ? category.options.filter(o => o.isAvailable !== false) : [];
+  };
 
   const [cart, setCart] = useState<SandwichConfig[]>([]);
   const [currentConfig, setCurrentConfig] = useState<SandwichConfig>({
@@ -271,7 +277,7 @@ export default function SandwichBuilder() {
                   isSelected={orderInfo.type === type.id} 
                   onClick={() => { 
                     setOrderInfo({...orderInfo, type: type.id as "on_site" | "takeaway"}); 
-                    setTimeout(() => handleNext('ORDER_TYPE'), 300); // Auto-advance with slight delay for visual feedback
+                    setTimeout(() => handleNext('ORDER_TYPE'), 300); 
                   }}
                   icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />}
                 />
@@ -327,10 +333,11 @@ export default function SandwichBuilder() {
           </StepContainer>
         );
       case 'PRESETS':
+        const availablePresets = getAvailableOptions('presets');
         return (
           <StepContainer title="Nos Créations" subtitle="Recettes signatures du Chef">
             <div className="grid grid-cols-1 gap-3">
-              {menu.find(c => c.id === 'presets')?.options.map(preset => (
+              {availablePresets.length > 0 ? availablePresets.map(preset => (
                 <OptionCard 
                   key={preset.id} 
                   option={preset} 
@@ -340,15 +347,20 @@ export default function SandwichBuilder() {
                     setTimeout(() => handleNext('PRESETS'), 300); 
                   }}
                 />
-              ))}
+              )) : (
+                <div className="text-center p-10 bg-secondary/10 rounded-3xl border border-dashed border-gray-800">
+                  <p className="text-gray-500 text-xs uppercase tracking-widest font-black">Toutes nos créations sont épuisées pour aujourd'hui.</p>
+                </div>
+              )}
             </div>
           </StepContainer>
         );
       case 'KIDS_MENU':
+        const availableKids = getAvailableOptions('kids_menu');
         return (
           <StepContainer title="Menu Enfant" subtitle="Choisissez son petit régal">
             <div className="grid grid-cols-1 gap-3">
-              {menu.find(c => c.id === 'kids_menu')?.options.map(kidsItem => (
+              {availableKids.length > 0 ? availableKids.map(kidsItem => (
                 <OptionCard 
                   key={kidsItem.id} 
                   option={kidsItem} 
@@ -358,18 +370,24 @@ export default function SandwichBuilder() {
                     setTimeout(() => handleNext('KIDS_MENU'), 300); 
                   }}
                 />
-              ))}
+              ) : (
+                <div className="text-center p-10 bg-secondary/10 rounded-3xl border border-dashed border-gray-800">
+                  <p className="text-gray-500 text-xs uppercase tracking-widest font-black">Menu enfant indisponible.</p>
+                </div>
+              )}
             </div>
           </StepContainer>
         );
       case 'EXTRAS':
-        return <CategoryStep category={menu.find(c => c.id === 'extras')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" />;
+        const availableExtras = getAvailableOptions('extras');
+        return <CategoryStep category={{...menu.find(c => c.id === 'extras')!, options: availableExtras}} config={currentConfig} setConfig={setCurrentConfig} onNext={() => handleNext('EXTRAS')} type="multiple" />;
       case 'DRINKS':
+        const availableDrinks = getAvailableOptions('drinks');
         const isStandardMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_student' || currentConfig.formula?.id === 'menu_kids';
         return (
           <StepContainer title="Boissons" subtitle="Choisissez votre rafraîchissement">
             <div className="space-y-6">
-              {isStandardMenu && (
+              {isStandardMenu && availableDrinks.length > 0 && (
                 <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center gap-3 animate-bounce">
                   <div className="bg-primary p-2 rounded-lg text-background">
                     <CupSoda size={18} />
@@ -377,15 +395,16 @@ export default function SandwichBuilder() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary">Boisson comprise dans votre menu !</p>
                 </div>
               )}
-              <SideSelector label="Boissons" options={menu.find(c => c.id === 'drinks')!.options} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
+              <SideSelector label="Boissons" options={availableDrinks} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
             </div>
           </StepContainer>
         );
       case 'DESSERTS':
+        const availableDesserts = getAvailableOptions('desserts');
         return (
           <StepContainer title="Desserts" subtitle="Une petite touche sucrée ?">
             <div className="space-y-8">
-              <SideSelector label="Desserts" options={menu.find(c => c.id === 'desserts')!.options} config={currentConfig} setConfig={setCurrentConfig} type="desserts" />
+              <SideSelector label="Desserts" options={availableDesserts} config={currentConfig} setConfig={setCurrentConfig} type="desserts" />
               
               <button 
                 onClick={handleAddAnother}
@@ -427,6 +446,36 @@ export default function SandwichBuilder() {
 
       {/* Main Content - Scrollable Area */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-32">
+        {/* Progress Bar */}
+        <div className="mb-8 px-2">
+          <div className="flex justify-between mb-2">
+            {['FORMULA', 'PRESETS', 'DRINKS', 'CHECKOUT'].map((s, i) => {
+              const stepsOrder: StepId[] = ['ORDER_TYPE', 'FORMULA', 'PRESETS', 'KIDS_MENU', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'];
+              const currentIndex = stepsOrder.indexOf(step);
+              const stepIndex = stepsOrder.indexOf(s as StepId);
+              const isActive = currentIndex >= stepIndex;
+              
+              return (
+                <div key={s} className="flex flex-col items-center gap-1">
+                  <div className={cn(
+                    "w-2 h-2 rounded-full transition-all duration-500",
+                    isActive ? "bg-primary shadow-[0_0_10px_rgba(255,0,0,0.5)]" : "bg-gray-800"
+                  )} />
+                </div>
+              );
+            })}
+          </div>
+          <div className="h-[2px] w-full bg-gray-900 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ 
+                width: `${Math.min(100, (['ORDER_TYPE', 'FORMULA', 'PRESETS', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'].indexOf(step) / 6) * 100)}%` 
+              }}
+              className="h-full bg-primary"
+            />
+          </div>
+        </div>
+
         <AnimatePresence>
           {showNotifyPrompt && (
             <motion.div 

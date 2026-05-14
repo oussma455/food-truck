@@ -14,52 +14,63 @@ export const FORMULAS: Option[] = [
 
 export const SANDWICH_CATEGORIES: Category[] = [
   {
+    id: "meats",
+    name: "Les Viandes",
+    options: [
+      { id: "m1", name: "Merguez Veritables", price: 0, isAvailable: true },
+      { id: "m2", name: "Viande Hachée Fraîche", price: 0, isAvailable: true },
+      { id: "m3", name: "Kefta Maison", price: 0, isAvailable: true },
+      { id: "m4", name: "Poulet Mariné Paprika", price: 0, isAvailable: true },
+      { id: "m5", name: "Poulet Tandoori", price: 0, isAvailable: true },
+    ],
+  },
+  {
     id: "presets",
     name: "Nos Grillades Signature",
     options: [
-      { id: "p1", name: "L'Original O'Charbon", price: 10, description: "Viande grillée, Oignons caramélisés, Sauce Maison" },
-      { id: "p2", name: "Le Braisé Royal", price: 11, description: "Double viande, Fromage fondant, Bacon grillé" },
-      { id: "p3", name: "Le Spicy Grill", price: 10, description: "Viande épicée, Jalapeños, Sauce Poivre" },
-      { id: "p4", name: "Le Poulet Fumé", price: 10, description: "Filet de poulet braisé, Crème d'avocat, Salade" },
+      { id: "p1", name: "L'Oriental", price: 10, description: "Merguez, Oignons, Sauce Algérienne", isAvailable: true },
+      { id: "p2", name: "Le Classic", price: 10, description: "Viande Hachée, Cheddar, Ketchup/Mayo", isAvailable: true },
+      { id: "p3", name: "Le Kefta Royal", price: 11, description: "Kefta, Œuf, Oignons Caramélisés", isAvailable: true },
+      { id: "p4", name: "Le Spicy Chicken", price: 10, description: "Poulet Tandoori, Jalapeños, Sauce Blanche", isAvailable: true },
     ],
   },
   {
     id: "kids_menu",
     name: "Menu Enfant",
     options: [
-      { id: "k1", name: "Junior Burger", price: 8.5, description: "Petit Steak, Ketchup, Fromage, Frites, Jus" },
-      { id: "k2", name: "Nuggets Maison", price: 8.5, description: "6 Nuggets, Frites, Sauce BBQ douce, Jus" },
-      { id: "k3", name: "Mini Pita Poulet", price: 8.5, description: "Poulet émincé, Mayo douce, Frites, Jus" },
+      { id: "k1", name: "Junior Burger", price: 8.5, description: "Petit Steak, Ketchup, Fromage, Frites, Jus", isAvailable: true },
+      { id: "k2", name: "Nuggets Maison", price: 8.5, description: "6 Nuggets, Frites, Sauce BBQ douce, Jus", isAvailable: true },
+      { id: "k3", name: "Mini Pita Poulet", price: 8.5, description: "Poulet émincé, Mayo douce, Frites, Jus", isAvailable: true },
     ],
   },
   {
     id: "extras",
     name: "Suppléments",
     options: [
-      { id: "e1", name: "Double Fromage", price: 1.5 },
-      { id: "e2", name: "Oeuf à Cheval", price: 1 },
-      { id: "e3", name: "Bacon de Boeuf", price: 2 },
-      { id: "e4", name: "Oignons Frits", price: 0.5 },
+      { id: "e1", name: "Double Fromage", price: 1.5, isAvailable: true },
+      { id: "e2", name: "Oeuf à Cheval", price: 1, isAvailable: true },
+      { id: "e3", name: "Bacon de Boeuf", price: 2, isAvailable: true },
+      { id: "e4", name: "Oignons Frits", price: 0.5, isAvailable: true },
     ],
   },
   {
     id: "drinks",
     name: "Boissons",
     options: [
-      { id: "d1", name: "Coca-Cola", price: 2 },
-      { id: "d2", name: "Fanta Orange", price: 2 },
-      { id: "d3", name: "Ice Tea Pêche", price: 2 },
-      { id: "d4", name: "Eau Minérale", price: 1.5 },
-      { id: "d5", name: "Jus d'Orange", price: 2.5 },
+      { id: "d1", name: "Coca-Cola", price: 2, isAvailable: true },
+      { id: "d2", name: "Fanta Orange", price: 2, isAvailable: true },
+      { id: "d3", name: "Ice Tea Pêche", price: 2, isAvailable: true },
+      { id: "d4", name: "Eau Minérale", price: 1.5, isAvailable: true },
+      { id: "d5", name: "Jus d'Orange", price: 2.5, isAvailable: true },
     ],
   },
   {
     id: "desserts",
     name: "Desserts",
     options: [
-      { id: "dess1", name: "Cookie Géant", price: 3 },
-      { id: "dess2", name: "Tiramisu Spéculos", price: 4.5 },
-      { id: "dess3", name: "Brownie Noix", price: 3.5 },
+      { id: "dess1", name: "Cookie Géant", price: 3, isAvailable: true },
+      { id: "dess2", name: "Tiramisu Spéculos", price: 4.5, isAvailable: true },
+      { id: "dess3", name: "Brownie Noix", price: 3.5, isAvailable: true },
     ],
   },
 ];

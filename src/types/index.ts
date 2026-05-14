@@ -4,6 +4,7 @@ export interface Option {
   price: number;
   image?: string;
   description?: string;
+  isAvailable?: boolean;
 }
 
 export interface Category {

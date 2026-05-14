@@ -108,6 +108,13 @@ export default function AdminDashboard() {
     }
   };
 
+  const toggleItemAvailability = (catIdx: number, optIdx: number) => {
+    const newMenu = [...editableMenu];
+    const item = newMenu[catIdx].options[optIdx];
+    item.isAvailable = item.isAvailable === false ? true : false;
+    saveMenu(newMenu);
+  };
+
   const calculateStats = () => {
     const totalRevenue = orders.reduce((acc, o) => acc + o.total_price, 0);
     const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'ready').length;
@@ -216,19 +223,19 @@ export default function AdminDashboard() {
         {activeTab === 'menu' && (
           <motion.div key="menu" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-4xl mx-auto space-y-6 pb-20">
             {editableMenu.map((cat, catIdx) => (
-              <div key={cat.id} className="premium-card p-6 bg-secondary/5 border-gray-800/50">
-                <h3 className="text-primary font-black uppercase tracking-[0.3em] text-[10px] mb-6 flex items-center justify-between">
-                  <span className="flex items-center gap-2"><Package size={14} /> {cat.name}</span>
+              <div key={cat.id} className="premium-card p-6 bg-secondary/10 border-gray-700">
+                <h3 className="text-white font-black uppercase tracking-[0.3em] text-[10px] mb-6 flex items-center justify-between">
+                  <span className="flex items-center gap-2"><Package size={14} className="text-primary" /> {cat.name}</span>
                   <button 
                     onClick={() => addItem(catIdx)}
-                    className="bg-primary/10 hover:bg-primary/20 text-primary p-2 rounded-lg transition-all flex items-center gap-2 text-[8px] border border-primary/20"
+                    className="bg-white text-black hover:bg-gray-200 px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-[8px] font-black uppercase tracking-widest"
                   >
                     <Plus size={12} /> Ajouter
                   </button>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {cat.options.map((opt, optIdx) => (
-                    <div key={opt.id} className="flex items-center gap-3 bg-black/40 p-3 rounded-xl border border-gray-800/50 group hover:border-primary/30 transition-all">
+                    <div key={opt.id} className="flex items-center gap-3 bg-black/60 p-3 rounded-xl border border-gray-800 group hover:border-white/30 transition-all">
                       <input 
                         type="text" 
                         value={opt.name} 
@@ -237,9 +244,9 @@ export default function AdminDashboard() {
                           newMenu[catIdx].options[optIdx].name = e.target.value;
                           saveMenu(newMenu);
                         }}
-                        className="bg-transparent border-none outline-none text-gray-300 text-xs font-bold flex-1"
+                        className="bg-transparent border-none outline-none text-white text-xs font-bold flex-1"
                       />
-                      <div className="flex items-center gap-1 bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/20">
+                      <div className="flex items-center gap-1 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
                         <input 
                           type="number" 
                           step="0.1"
@@ -249,15 +256,31 @@ export default function AdminDashboard() {
                             newMenu[catIdx].options[optIdx].price = parseFloat(e.target.value);
                             saveMenu(newMenu);
                           }}
-                          className="bg-transparent border-none outline-none text-primary text-xs font-mono w-12 text-right"
+                          className="bg-transparent border-none outline-none text-white text-xs font-mono w-12 text-right"
                         />
-                        <span className="text-primary text-[10px] font-bold">€</span>
+                        <span className="text-gray-400 text-[10px] font-bold">€</span>
                       </div>
+import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, PhoneCall, Plus, ShoppingCart, MapPin, TrendingUp, DollarSign, Package, Power } from "lucide-react";
+
+... (rest of methods)
+
+                      <button 
+                        onClick={() => toggleItemAvailability(catIdx, optIdx)}
+                        className={cn(
+                          "transition-all p-1.5 rounded-lg border",
+                          opt.isAvailable === false 
+                            ? "bg-red-500/20 text-red-500 border-red-500/50" 
+                            : "bg-green-500/20 text-green-500 border-green-500/50"
+                        )}
+                        title={opt.isAvailable === false ? "Activer" : "Désactiver"}
+                      >
+                        <Power size={14} />
+                      </button>
                       <button 
                         onClick={() => deleteItem(catIdx, optIdx)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-500 transition-all p-1"
+                        className="opacity-100 text-white hover:text-red-500 transition-all p-1"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   ))}
