@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SANDWICH_CATEGORIES, ORDER_TYPES, FORMULAS, CREATION_MODES } from "@/lib/data";
 import { SandwichConfig, Option, Category, StepId } from "@/types";
-import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star, CreditCard, Wallet, UtensilsCrossed } from "lucide-react";
+import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star, CreditCard, Wallet, UtensilsCrossed, Bell, X } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
@@ -59,20 +59,24 @@ export default function SandwichBuilder() {
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
 
   useEffect(() => {
-    // Écouter les changements de statut (simulé par polling local storage pour le moment)
+    // Initialisation : on mémorise le statut actuel sans sonner
+    if (typeof window !== "undefined") {
+      const initialStatus = localStorage.getItem("truck_status") || "closed";
+      localStorage.setItem("last_known_status", initialStatus);
+    }
+
     const checkStatus = () => {
-      const currentStatus = localStorage.getItem("truck_status");
-      const lastStatus = localStorage.getItem("last_known_status");
+      const currentStatus = localStorage.getItem("truck_status") || "closed";
+      const lastStatus = localStorage.getItem("last_known_status") || "closed";
       
+      // DING DING uniquement si on passe de FERMÉ à OUVERT
       if (currentStatus === "open" && lastStatus === "closed") {
-        // Le truck vient d'ouvrir ! DING DING
         const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
         audio.play().catch(e => console.log("Audio auto-play blocked"));
-        
-        // Afficher un toast ou une alerte visuelle
         alert("🔔 LE TRUCK EST OUVERT ! C'est l'heure de commander !");
       }
-      localStorage.setItem("last_known_status", currentStatus || "closed");
+      
+      localStorage.setItem("last_known_status", currentStatus);
     };
 
     const interval = setInterval(checkStatus, 3000);

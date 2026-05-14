@@ -118,7 +118,7 @@ export default function AdminDashboard() {
 
   const stats = calculateStats();
 
-  const toggleTruckStatus = () => {
+  const toggleTruckStatus = async () => {
     const newStatus = !isOpen ? "open" : "closed";
     localStorage.setItem("truck_status", newStatus);
     setIsOpen(!isOpen);
@@ -128,8 +128,20 @@ export default function AdminDashboard() {
       const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       audio.play().catch(e => console.log("Audio play blocked by browser"));
       
-      // Ici on appellera l'API de notification plus tard
-      console.log("SIGNAL: Envoi de la notification aux clients...");
+      // Appel de l'API de notification
+      try {
+        const response = await fetch('/api/notifications', {
+          method: 'POST',
+        });
+        const data = await response.json();
+        if (data.success) {
+          console.log("Notification envoyée avec succès !");
+        } else {
+          console.error("Erreur lors de l'envoi de la notification:", data.error);
+        }
+      } catch (err) {
+        console.error("Erreur réseau lors de l'envoi de la notification:", err);
+      }
     }
   };
 
