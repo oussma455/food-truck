@@ -18,8 +18,8 @@ export default function OneSignalProvider({ children }: { children: React.ReactN
         debug: true,
         notifyButton: {
           enable: false,
-        } as any,
-      }).then(() => {
+        },
+      } as any).then(() => {
         console.log("OneSignal: Initialisé avec succès sur " + window.location.origin);
       }).catch(err => {
         console.error("OneSignal: Erreur d'initialisation:", err);

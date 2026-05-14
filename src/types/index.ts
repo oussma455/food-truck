@@ -17,6 +17,7 @@ export type StepId =
   | 'FORMULA' 
   | 'CREATION_MODE' 
   | 'PRESETS' 
+  | 'KIDS_MENU'
   | 'BUILD_BREAD' 
   | 'BUILD_MEAT' 
   | 'BUILD_SAUCES' 

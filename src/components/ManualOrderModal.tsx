@@ -213,7 +213,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
   };
 
   const handleSubmit = () => {
-    let finalItems = [...basket];
+    const finalItems = [...basket];
     if (config.formula && (config.preset_sandwich || (config.bread && config.meat))) {
       finalItems.push(config);
     }

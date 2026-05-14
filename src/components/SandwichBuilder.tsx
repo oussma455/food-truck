@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SANDWICH_CATEGORIES, ORDER_TYPES, FORMULAS, CREATION_MODES } from "@/lib/data";
 import { SandwichConfig, Option, Category, StepId } from "@/types";
+import OneSignal from 'react-onesignal';
 import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star, CreditCard, Wallet, UtensilsCrossed, Bell, X } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -109,7 +110,11 @@ export default function SandwichBuilder() {
         setStep('FORMULA');
         break;
       case 'FORMULA':
-        setStep('CREATION_MODE');
+        if (currentConfig.formula?.id === 'menu_kids') {
+          setStep('KIDS_MENU');
+        } else {
+          setStep('CREATION_MODE');
+        }
         break;
       case 'CREATION_MODE':
         if (currentConfig.creation_mode === 'signature') {
@@ -117,6 +122,9 @@ export default function SandwichBuilder() {
         } else {
           setStep('BUILD_BREAD');
         }
+        break;
+      case 'KIDS_MENU':
+        setStep('SIDES');
         break;
       case 'PRESETS':
         setStep('EXTRAS');
@@ -166,6 +174,7 @@ export default function SandwichBuilder() {
       case 'FORMULA': setStep('ORDER_TYPE'); break;
       case 'CREATION_MODE': setStep('FORMULA'); break;
       case 'PRESETS': setStep('CREATION_MODE'); break;
+      case 'KIDS_MENU': setStep('FORMULA'); break;
       case 'BUILD_BREAD': setStep('CREATION_MODE'); break;
       case 'BUILD_MEAT': setStep('BUILD_BREAD'); break;
       case 'BUILD_SAUCES': setStep('BUILD_MEAT'); break;
@@ -173,7 +182,10 @@ export default function SandwichBuilder() {
         if (currentConfig.creation_mode === 'signature') setStep('PRESETS');
         else setStep('BUILD_SAUCES');
         break;
-      case 'SIDES': setStep('EXTRAS'); break;
+      case 'SIDES': 
+        if (currentConfig.formula?.id === 'menu_kids') setStep('KIDS_MENU');
+        else setStep('EXTRAS'); 
+        break;
       case 'CHECKOUT': 
         if (currentConfig.formula?.id === 'sandwich_only') setStep('EXTRAS');
         else setStep('SIDES');
@@ -325,6 +337,21 @@ export default function SandwichBuilder() {
             </div>
           </StepContainer>
         );
+      case 'KIDS_MENU':
+        return (
+          <StepContainer title="Menu Enfant" subtitle="Choisissez son petit régal">
+            <div className="grid grid-cols-1 gap-3">
+              {menu.find(c => c.id === 'kids_menu')?.options.map(kidsItem => (
+                <OptionCard 
+                  key={kidsItem.id} 
+                  option={kidsItem} 
+                  isSelected={currentConfig.preset_sandwich?.id === kidsItem.id} 
+                  onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: kidsItem, bread: undefined, meat: undefined}); handleNext(); }}
+                />
+              ))}
+            </div>
+          </StepContainer>
+        );
       case 'BUILD_BREAD':
         return <CategoryStep category={menu.find(c => c.id === 'bread')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="single" />;
       case 'BUILD_MEAT':
@@ -420,6 +447,7 @@ export default function SandwichBuilder() {
                 (step === 'BUILD_BREAD' && !currentConfig.bread) || 
                 (step === 'BUILD_MEAT' && !currentConfig.meat) || 
                 (step === 'PRESETS' && !currentConfig.preset_sandwich) ||
+                (step === 'KIDS_MENU' && !currentConfig.preset_sandwich) ||
                 (step === 'CHECKOUT')
               }
               className={cn("flex-[2.5] premium-gradient text-background font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all", step === 'CHECKOUT' ? "hidden" : "")}
