@@ -342,19 +342,19 @@ export default function SandwichBuilder() {
                   setIsCouscousMode(true);
                   setStep('COUSCOUS');
                 }}
-                className="w-full bg-secondary/20 p-5 rounded-2xl flex items-center justify-between gap-4 border border-primary/30 group relative overflow-hidden"
+                className="w-full bg-white p-5 rounded-2xl flex items-center justify-between gap-4 border border-white group relative overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)]"
               >
                 <div className="flex items-center gap-4">
-                  <div className="bg-primary/20 p-2.5 rounded-xl text-primary group-hover:rotate-12 transition-transform">
+                  <div className="bg-primary p-2.5 rounded-xl text-white group-hover:rotate-12 transition-transform">
                     <Utensils size={20} />
                   </div>
                   <div className="text-left">
-                    <span className="text-white font-black uppercase tracking-widest text-[11px] block">Pré-commander Couscous</span>
-                    <span className="text-gray-500 text-[8px] uppercase font-bold tracking-widest">Réservé 24h à l'avance • 2 à 4 pers.</span>
+                    <span className="text-primary font-black uppercase tracking-widest text-[11px] block">Pré-commander Couscous</span>
+                    <span className="text-gray-900/60 text-[8px] uppercase font-bold tracking-widest">Réservé 24h à l'avance • 2 à 4 pers.</span>
                   </div>
                 </div>
-                <div className="w-5 h-5 rounded-full border border-primary/30 flex items-center justify-center group-hover:bg-primary transition-all">
-                  <Plus size={10} className="text-primary group-hover:text-background" />
+                <div className="w-5 h-5 rounded-full border border-primary flex items-center justify-center group-hover:bg-primary transition-all">
+                  <Plus size={10} className="text-primary group-hover:text-white" />
                 </div>
               </motion.button>
             </div>
