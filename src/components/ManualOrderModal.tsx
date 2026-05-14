@@ -22,6 +22,7 @@ interface ManualOrderModalProps {
 export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menuCategories }: ManualOrderModalProps) {
   const [step, setStep] = useState(0);
   const [orderType, setOrderType] = useState<'on_site' | 'takeaway'>('takeaway');
+  const [basket, setBasket] = useState<SandwichConfig[]>([]);
   const [config, setConfig] = useState<SandwichConfig>({
     sauces: [],
     extras: [],
@@ -38,6 +39,38 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
   ];
 
   const currentCategory = modalCategories[step];
+
+  const resetCurrentConfig = () => {
+    setConfig({
+      formula: undefined,
+      creation_mode: undefined,
+      preset_sandwich: undefined,
+      bread: undefined,
+      meat: undefined,
+      sauces: [],
+      extras: [],
+      drinks: [],
+      desserts: [],
+    });
+    // Return to the first category after order_type/formula/creation_mode
+    // usually we want to start at "Formula" for the next item
+    const formulaStep = modalCategories.findIndex(c => c.id === 'formula');
+    setStep(formulaStep !== -1 ? formulaStep : 0);
+  };
+
+  const addItemToBasket = () => {
+    if (!config.formula) {
+      alert("Veuillez choisir une formule pour cet article.");
+      return;
+    }
+    if (!config.preset_sandwich && (!config.bread || !config.meat)) {
+      alert("Veuillez configurer le sandwich (Signature ou Pain+Viande).");
+      return;
+    }
+
+    setBasket([...basket, config]);
+    resetCurrentConfig();
+  };
 
   const handleOptionToggle = (option: Option) => {
     const catId = currentCategory.id;
@@ -123,34 +156,42 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     return false;
   };
 
-  const calculateTotal = () => {
-    let total = config.formula?.price || 0;
+  const calculateItemPrice = (item: SandwichConfig) => {
+    let total = item.formula?.price || 0;
     
-    if (config.creation_mode === 'signature' && config.preset_sandwich) {
-      total = Math.max(total, config.preset_sandwich.price);
-    } else if (config.creation_mode === 'custom') {
-      if (config.bread) total += config.bread.price;
-      if (config.meat) total += config.meat.price;
+    if (item.creation_mode === 'signature' && item.preset_sandwich) {
+      total = Math.max(total, item.preset_sandwich.price);
+    } else if (item.creation_mode === 'custom') {
+      if (item.bread) total += item.bread.price;
+      if (item.meat) total += item.meat.price;
     }
 
-    const totalSaucePrice = config.sauces.reduce((acc, s) => acc + s.price, 0);
+    const totalSaucePrice = item.sauces.reduce((acc, s) => acc + s.price, 0);
     const sauceDiscount = Math.min(totalSaucePrice, 1.0); 
     total += (totalSaucePrice - sauceDiscount);
 
-    total += config.extras.reduce((acc, e) => acc + e.price, 0);
-    total += (config.drinks || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    total += item.extras.reduce((acc, e) => acc + e.price, 0);
+    total += (item.drinks || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    total += (item.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     return total;
   };
 
+  const calculateTotal = () => {
+    const basketTotal = basket.reduce((acc, item) => acc + calculateItemPrice(item), 0);
+    const currentTotal = (config.formula || config.preset_sandwich) ? calculateItemPrice(config) : 0;
+    return basketTotal + currentTotal;
+  };
+
   const handleSubmit = () => {
-    if (!config.formula) {
-      alert("Veuillez choisir une formule.");
-      return;
+    let finalItems = [...basket];
+    
+    // Si l'article actuel est configuré, on l'ajoute aussi
+    if (config.formula && (config.preset_sandwich || (config.bread && config.meat))) {
+      finalItems.push(config);
     }
 
-    if (!config.preset_sandwich && (!config.bread || !config.meat)) {
-      alert("Veuillez choisir un sandwich signature ou composer votre propre sandwich (pain + viande).");
+    if (finalItems.length === 0) {
+      alert("Veuillez ajouter au moins un article à la commande.");
       return;
     }
 
@@ -158,17 +199,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       id: "MAN-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
       client_name: clientInfo.name || "Client Téléphone",
       client_phone: clientInfo.phone || "Non renseigné",
-      items: [{
-        formula: config.formula,
-        creation_mode: config.creation_mode,
-        preset_sandwich: config.preset_sandwich,
-        bread: config.bread,
-        meat: config.meat,
-        sauces: config.sauces,
-        extras: config.extras,
-        drinks: config.drinks,
-        desserts: config.desserts,
-      }],
+      items: finalItems,
       total_price: calculateTotal(),
       status: "pending",
       payment_status: "unpaid",
@@ -183,17 +214,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     
     setStep(0);
     setOrderType('takeaway');
-    setConfig({
-      formula: undefined,
-      creation_mode: undefined,
-      preset_sandwich: undefined,
-      bread: undefined,
-      meat: undefined,
-      sauces: [],
-      extras: [],
-      drinks: [],
-      desserts: [],
-    });
+    setBasket([]);
+    resetCurrentConfig();
     setClientInfo({ name: "Client Téléphone", phone: "" });
   };
 
@@ -254,25 +276,52 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
             <div className="space-y-6">
               <div className="bg-secondary/30 rounded-xl p-5 border border-gray-800/50">
-                <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest mb-4">Récapitulatif</h4>
-                <ul className="space-y-2 text-xs">
-                  <li className="flex justify-between"><span className="text-gray-500">Service:</span><span className="text-white uppercase font-bold">{orderType === 'takeaway' ? 'À Emporter' : 'Sur Place'}</span></li>
-                  <li className="flex justify-between"><span className="text-gray-500">Formule:</span><span className={config.formula ? "text-white" : "text-red-500/50 italic"}>{config.formula?.name || "Non choisi"}</span></li>
-                  {config.preset_sandwich ? (
-                    <li className="flex justify-between"><span className="text-gray-500">Signature:</span><span className="text-white">{config.preset_sandwich.name}</span></li>
-                  ) : (
-                    <>
-                      <li className="flex justify-between"><span className="text-gray-500">Pain:</span><span className={config.bread ? "text-white" : "text-red-500/50 italic"}>{config.bread?.name || "Non choisi"}</span></li>
-                      <li className="flex justify-between"><span className="text-gray-500">Viande:</span><span className={config.meat ? "text-white" : "text-red-500/50 italic"}>{config.meat?.name || "Non choisi"}</span></li>
-                    </>
-                  )}
-                  <li className="flex justify-between"><span className="text-gray-500">Sauces:</span><span className="text-white text-right">{config.sauces.map(s => s.name).join(", ") || "Aucune"}</span></li>
-                  {config.extras.length > 0 && <li className="flex justify-between"><span className="text-gray-500">Extras:</span><span className="text-white text-right">{config.extras.map(e => e.name).join(", ")}</span></li>}
-                  {(config.drinks || []).length > 0 && <li className="flex justify-between"><span className="text-gray-500">Boissons:</span><span className="text-white text-right">{config.drinks?.map(d => d.option.name + ' x' + d.quantity).join(", ")}</span></li>}
-                  {(config.desserts || []).length > 0 && <li className="flex justify-between"><span className="text-gray-500">Desserts:</span><span className="text-white text-right">{config.desserts?.map(d => d.option.name + ' x' + d.quantity).join(", ")}</span></li>}
-                </ul>
-                <div className="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center">
-                  <span className="font-serif font-bold text-white">Total</span>
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest">Récapitulatif</h4>
+                  <span className="text-[8px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">{orderType === 'takeaway' ? 'À Emporter' : 'Sur Place'}</span>
+                </div>
+                
+                <div className="max-h-[200px] overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+                  {basket.map((item, idx) => (
+                    <div key={idx} className="bg-black/40 p-3 rounded-lg border border-gray-800 relative group">
+                      <button 
+                        onClick={() => setBasket(basket.filter((_, i) => i !== idx))}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <X size={10} />
+                      </button>
+                      <p className="text-[10px] font-bold text-white">{item.formula?.name}</p>
+                      <p className="text-[9px] text-gray-400">{item.preset_sandwich?.name || `${item.bread?.name} + ${item.meat?.name}`}</p>
+                      <p className="text-[9px] text-primary mt-1">{calculateItemPrice(item).toFixed(2)}€</p>
+                    </div>
+                  ))}
+
+                  {/* Article en cours de configuration */}
+                  <div className="border-l-2 border-primary/30 pl-3 py-1">
+                    <p className="text-[10px] text-primary font-bold uppercase tracking-widest mb-2">Article en cours</p>
+                    <ul className="space-y-1 text-[10px]">
+                      <li className="flex justify-between"><span className="text-gray-500">Formule:</span><span className={config.formula ? "text-white" : "text-red-500/50 italic"}>{config.formula?.name || "Non choisi"}</span></li>
+                      {config.preset_sandwich ? (
+                        <li className="flex justify-between"><span className="text-gray-500">Signature:</span><span className="text-white">{config.preset_sandwich.name}</span></li>
+                      ) : (
+                        <>
+                          <li className="flex justify-between"><span className="text-gray-500">Pain:</span><span className={config.bread ? "text-white" : "text-red-500/50 italic"}>{config.bread?.name || "Non choisi"}</span></li>
+                          <li className="flex justify-between"><span className="text-gray-500">Viande:</span><span className={config.meat ? "text-white" : "text-red-500/50 italic"}>{config.meat?.name || "Non choisi"}</span></li>
+                        </>
+                      )}
+                      <li className="flex justify-between"><span className="text-gray-500">Sauces:</span><span className="text-white text-right">{config.sauces.map(s => s.name).join(", ") || "Aucune"}</span></li>
+                    </ul>
+                    <button 
+                      onClick={addItemToBasket}
+                      className="w-full mt-3 py-2 border border-primary/30 text-primary rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-primary/10 transition-all"
+                    >
+                      + Ajouter un autre article
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-800 flex justify-between items-center">
+                  <span className="font-serif font-bold text-white">Total Commande</span>
                   <span className="text-lg font-bold text-primary">{calculateTotal().toFixed(2)}€</span>
                 </div>
               </div>
