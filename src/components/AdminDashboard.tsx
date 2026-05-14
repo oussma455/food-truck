@@ -79,6 +79,25 @@ export default function AdminDashboard() {
     localStorage.setItem("truck_menu", JSON.stringify(newMenu));
   };
 
+  const addItem = (catIdx: number) => {
+    const newMenu = [...editableMenu];
+    const newId = Math.random().toString(36).substr(2, 5).toUpperCase();
+    newMenu[catIdx].options.push({
+      id: newId,
+      name: "NOUVEAU PRODUIT",
+      price: 0
+    });
+    saveMenu(newMenu);
+  };
+
+  const deleteItem = (catIdx: number, optIdx: number) => {
+    if (window.confirm("Supprimer cet article ?")) {
+      const newMenu = [...editableMenu];
+      newMenu[catIdx].options.splice(optIdx, 1);
+      saveMenu(newMenu);
+    }
+  };
+
   const calculateStats = () => {
     const totalRevenue = orders.reduce((acc, o) => acc + o.total_price, 0);
     const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'ready').length;
@@ -167,8 +186,14 @@ export default function AdminDashboard() {
           <motion.div key="menu" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-4xl mx-auto space-y-6 pb-20">
             {editableMenu.map((cat, catIdx) => (
               <div key={cat.id} className="premium-card p-6 bg-secondary/5 border-gray-800/50">
-                <h3 className="text-primary font-black uppercase tracking-[0.3em] text-[10px] mb-6 flex items-center gap-2">
-                  <Package size={14} /> {cat.name}
+                <h3 className="text-primary font-black uppercase tracking-[0.3em] text-[10px] mb-6 flex items-center justify-between">
+                  <span className="flex items-center gap-2"><Package size={14} /> {cat.name}</span>
+                  <button 
+                    onClick={() => addItem(catIdx)}
+                    className="bg-primary/10 hover:bg-primary/20 text-primary p-2 rounded-lg transition-all flex items-center gap-2 text-[8px] border border-primary/20"
+                  >
+                    <Plus size={12} /> Ajouter
+                  </button>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {cat.options.map((opt, optIdx) => (
@@ -197,6 +222,12 @@ export default function AdminDashboard() {
                         />
                         <span className="text-primary text-[10px] font-bold">€</span>
                       </div>
+                      <button 
+                        onClick={() => deleteItem(catIdx, optIdx)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-500 transition-all p-1"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   ))}
                 </div>
