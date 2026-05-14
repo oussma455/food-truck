@@ -375,8 +375,19 @@ function OrderCard({ order, onNext, onCancel, isReady, isKitchenMode = false }: 
             <span className="text-[9px] font-black uppercase tracking-tighter">{order.pickup_time}</span>
           </div>
           {!isKitchenMode && (
-            <div className={cn("text-[8px] font-black px-2 py-0.5 rounded-full border inline-block tracking-widest", order.payment_status === "paid" ? "bg-green-500/10 text-green-500 border-green-500/30" : "bg-red-500/10 text-red-500 border-red-500/30")}>
-              {order.payment_status === "paid" ? "PAYÉ" : "À PAYER"}
+            <div className="flex flex-col items-end gap-1 mt-2">
+              {order.deposit_status === 'paid' ? (
+                <>
+                  <span className="text-[8px] font-black px-2 py-0.5 rounded-full border bg-green-500/10 text-green-500 border-green-500/30 uppercase tracking-widest">
+                    Acompte Payé ({order.deposit_amount?.toFixed(2)}€)
+                  </span>
+                  <span className="text-[9px] text-primary font-bold">Reste: {(order.total_price - (order.deposit_amount || 0)).toFixed(2)}€ ({order.payment_method === 'card' ? 'CB' : order.payment_method === 'resto_card' ? 'TR' : 'Esp'})</span>
+                </>
+              ) : (
+                <span className="text-[8px] font-black px-2 py-0.5 rounded-full border bg-red-500/10 text-red-500 border-red-500/30 uppercase tracking-widest">
+                  {order.payment_method === 'card' ? 'CB' : order.payment_method === 'resto_card' ? 'Titre Resto' : 'Espèces'} (Non payé)
+                </span>
+              )}
             </div>
           )}
         </div>

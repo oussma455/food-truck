@@ -46,8 +46,11 @@ export interface Order {
   client_phone: string;
   items: SandwichConfig[];
   total_price: number;
+  deposit_amount?: number;
+  deposit_status?: 'pending' | 'paid' | 'failed';
+  deposit_method?: 'sumup_card' | 'sumup_resto';
   status: 'pending' | 'preparing' | 'ready' | 'completed';
-  payment_status: 'unpaid' | 'paid';
+  payment_status: 'unpaid' | 'partial' | 'paid';
   payment_method: PaymentMethod;
   order_type: 'on_site' | 'takeaway';
   pickup_time: string;
