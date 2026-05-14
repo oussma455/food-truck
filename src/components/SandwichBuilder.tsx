@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SANDWICH_CATEGORIES } from "@/lib/data";
-import { SandwichConfig, Option, Category } from "@/types";
-import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield } from "lucide-react";
+import { SANDWICH_CATEGORIES, ORDER_TYPES, FORMULAS, CREATION_MODES } from "@/lib/data";
+import { SandwichConfig, Option, Category, StepId } from "@/types";
+import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
@@ -20,7 +20,8 @@ export default function SandwichBuilder() {
     }
     return true;
   });
-  const [step, setStep] = useState(0);
+
+  const [step, setStep] = useState<StepId>('ORDER_TYPE');
   const [menu] = useState<Category[]>(() => {
     if (typeof window !== "undefined") {
       const savedMenu = localStorage.getItem("truck_menu");
@@ -28,119 +29,123 @@ export default function SandwichBuilder() {
     }
     return SANDWICH_CATEGORIES;
   });
+
   const [config, setConfig] = useState<SandwichConfig>({
     sauces: [],
     extras: [],
     drinks: [],
     desserts: [],
   });
-  const [orderInfo, setOrderInfo] = useState({ 
+
+  const [orderInfo, setOrderInfo] = useState<{
+    name: string;
+    phone: string;
+    type: "on_site" | "takeaway";
+    pickupTime: string;
+  }>({ 
     name: "", 
     phone: "", 
-    payment: "on_site" as "online" | "on_site",
-    type: "takeaway" as "on_site" | "takeaway",
+    type: "takeaway",
     pickupTime: "15 min"
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
 
   useEffect(() => {
-    // Initial loading handled by useState initializers
-
-    if (step === menu.length && orderInfo.phone) {
+    if (step === 'CHECKOUT' && orderInfo.phone) {
       const history = JSON.parse(localStorage.getItem(`loyalty_${orderInfo.phone}`) || "0");
-      // Use a timeout or a microtask to avoid synchronous update during render cycle
       const timer = setTimeout(() => setLoyaltyPoints(history), 0);
       return () => clearTimeout(timer);
     }
-  }, [step, orderInfo.phone, menu.length]);
+  }, [step, orderInfo.phone]);
 
-  const currentCategory = menu[step];
-
-  const handleOptionToggle = (option: Option) => {
-    const catId = currentCategory.id;
-    if (catId === "selection_type") {
-      setConfig({ ...config, preset_sandwich: option.id === "st1" ? "pending" : undefined });
-      setStep(option.id === "st1" ? 1 : 2);
-      return;
-    }
-    if (catId === "presets") {
-      setConfig({ ...config, preset_sandwich: option.name, bread: undefined, meat: undefined });
-      setStep(2);
-      return;
-    }
-    if (catId === "formula") {
-      setConfig({ ...config, formula: option });
-    } else if (catId === "bread") {
-      setConfig({ ...config, bread: option });
-    } else if (catId === "meat") {
-      setConfig({ ...config, meat: option });
-    } else if (catId === "sauces") {
-      const isSelected = config.sauces.find((s) => s.id === option.id);
-      if (isSelected) {
-        setConfig({ ...config, sauces: config.sauces.filter((s) => s.id !== option.id) });
-      } else {
-        setConfig({ ...config, sauces: [...config.sauces, option] });
-      }
-    } else if (catId === "extras") {
-      const isSelected = config.extras.find((e) => e.id === option.id);
-      if (isSelected) {
-        setConfig({ ...config, extras: config.extras.filter((e) => e.id !== option.id) });
-      } else {
-        setConfig({ ...config, extras: [...config.extras, option] });
-      }
-    }
-  };
-
-  const updateQuantity = (catId: 'drinks' | 'desserts', option: Option, delta: number) => {
-    const currentList = config[catId] || [];
-    const existing = currentList.find(i => i.option.id === option.id);
-    if (existing) {
-      const newQty = Math.max(0, existing.quantity + delta);
-      if (newQty === 0) {
-        setConfig({ ...config, [catId]: currentList.filter(i => i.option.id !== option.id) });
-      } else {
-        setConfig({ ...config, [catId]: currentList.map(i => i.option.id === option.id ? { ...i, quantity: newQty } : i) });
-      }
-    } else if (delta > 0) {
-      setConfig({ ...config, [catId]: [...currentList, { option, quantity: 1 }] });
+  const handleNext = () => {
+    switch (step) {
+      case 'ORDER_TYPE':
+        setStep('FORMULA');
+        break;
+      case 'FORMULA':
+        setStep('CREATION_MODE');
+        break;
+      case 'CREATION_MODE':
+        if (config.creation_mode === 'signature') {
+          setStep('PRESETS');
+        } else {
+          setStep('BUILD_BREAD');
+        }
+        break;
+      case 'PRESETS':
+        setStep('EXTRAS');
+        break;
+      case 'BUILD_BREAD':
+        setStep('BUILD_MEAT');
+        break;
+      case 'BUILD_MEAT':
+        setStep('BUILD_SAUCES');
+        break;
+      case 'BUILD_SAUCES':
+        setStep('EXTRAS');
+        break;
+      case 'EXTRAS':
+        if (config.formula?.id === 'sandwich_only') {
+          setStep('CHECKOUT');
+        } else {
+          setStep('SIDES');
+        }
+        break;
+      case 'SIDES':
+        setStep('CHECKOUT');
+        break;
+      default:
+        break;
     }
   };
 
-  const isOptionSelected = (optionId: string) => {
-    const catId = currentCategory.id;
-    if (catId === "formula") return config.formula?.id === optionId;
-    if (catId === "bread") return config.bread?.id === optionId;
-    if (catId === "meat") return config.meat?.id === optionId;
-    if (catId === "presets") return config.preset_sandwich === menu[1].options.find(o => o.id === optionId)?.name;
-    if (catId === "sauces") return config.sauces.some((s) => s.id === optionId);
-    if (catId === "extras") return config.extras.some((e) => e.id === optionId);
-    return false;
-  };
-
-  const getQuantity = (catId: 'drinks' | 'desserts', optionId: string) => {
-    return config[catId]?.find(i => i.option.id === optionId)?.quantity || 0;
+  const handleBack = () => {
+    switch (step) {
+      case 'FORMULA': setStep('ORDER_TYPE'); break;
+      case 'CREATION_MODE': setStep('FORMULA'); break;
+      case 'PRESETS': setStep('CREATION_MODE'); break;
+      case 'BUILD_BREAD': setStep('CREATION_MODE'); break;
+      case 'BUILD_MEAT': setStep('BUILD_BREAD'); break;
+      case 'BUILD_SAUCES': setStep('BUILD_MEAT'); break;
+      case 'EXTRAS': 
+        if (config.creation_mode === 'signature') setStep('PRESETS');
+        else setStep('BUILD_SAUCES');
+        break;
+      case 'SIDES': setStep('EXTRAS'); break;
+      case 'CHECKOUT': 
+        if (config.formula?.id === 'sandwich_only') setStep('EXTRAS');
+        else setStep('SIDES');
+        break;
+      default: break;
+    }
   };
 
   const calculateTotal = () => {
-    let total = 10;
-    if (config.formula) total += config.formula.price;
-    if (config.preset_sandwich && config.preset_sandwich !== "pending") {
-      const preset = menu[1].options.find(o => o.name === config.preset_sandwich);
-      total = preset?.price || 10;
-      if (config.formula?.id === "f2") total += 5;
-    } else {
+    let total = config.formula?.price || 0;
+    
+    if (config.creation_mode === 'custom') {
       if (config.bread) total += config.bread.price;
       if (config.meat) total += config.meat.price;
+    } else if (config.preset_sandwich) {
+      total = Math.max(total, config.preset_sandwich.price);
+      if (config.formula?.id === 'menu_standard') total += 5;
+      if (config.formula?.id === 'menu_student') total += 3;
     }
+
     const totalSaucePrice = config.sauces.reduce((acc, s) => acc + s.price, 0);
     const sauceDiscount = Math.min(totalSaucePrice, 1.0); 
     total += (totalSaucePrice - sauceDiscount);
+    
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
+    
     total += (config.drinks || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    
     if (loyaltyPoints >= 9) return 0;
     return total;
   };
@@ -161,7 +166,7 @@ export default function SandwichBuilder() {
       setShowConfetti(true);
       setTimeout(() => {
         setIsSubmitting(false);
-        setStep(0);
+        setStep('ORDER_TYPE');
         setConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
         setShowConfetti(false);
         alert("Commande validée !");
@@ -184,6 +189,100 @@ export default function SandwichBuilder() {
     );
   }
 
+  const renderStep = () => {
+    switch (step) {
+      case 'ORDER_TYPE':
+        return (
+          <StepContainer title="Bienvenue" subtitle="Sur place ou à emporter ?">
+            <div className="grid grid-cols-1 gap-4">
+              {ORDER_TYPES.map(type => (
+                <OptionCard 
+                  key={type.id} 
+                  option={type} 
+                  isSelected={orderInfo.type === type.id} 
+                  onClick={() => { setOrderInfo({...orderInfo, type: type.id as "on_site" | "takeaway"}); handleNext(); }}
+                  icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />}
+                />
+              ))}
+            </div>
+          </StepContainer>
+        );
+      case 'FORMULA':
+        return (
+          <StepContainer title="Formule" subtitle="Choisissez votre plaisir">
+            <div className="grid grid-cols-1 gap-3">
+              {FORMULAS.map(formula => (
+                <div key={formula.id} className="space-y-2">
+                  <OptionCard 
+                    option={formula} 
+                    isSelected={config.formula?.id === formula.id} 
+                    onClick={() => { setConfig({...config, formula}); handleNext(); }}
+                    icon={formula.id === 'menu_student' ? <GraduationCap /> : formula.id === 'menu_kids' ? <Baby /> : <Star />}
+                  />
+                  {formula.id === 'menu_student' && (
+                    <p className="text-[10px] text-amber-500 font-bold px-4 italic animate-pulse">
+                      * Une carte étudiante valide vous sera demandée au comptoir.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </StepContainer>
+        );
+      case 'CREATION_MODE':
+        return (
+          <StepContainer title="Votre Sandwich" subtitle="Comment le voulez-vous ?">
+            <div className="grid grid-cols-1 gap-4">
+              {CREATION_MODES.map(mode => (
+                <OptionCard 
+                  key={mode.id} 
+                  option={mode} 
+                  isSelected={config.creation_mode === mode.id} 
+                  onClick={() => { setConfig({...config, creation_mode: mode.id as "signature" | "custom"}); handleNext(); }}
+                />
+              ))}
+            </div>
+          </StepContainer>
+        );
+      case 'PRESETS':
+        return (
+          <StepContainer title="Nos Créations" subtitle="Recettes signatures du Chef">
+            <div className="grid grid-cols-1 gap-3">
+              {menu.find(c => c.id === 'presets')?.options.map(preset => (
+                <OptionCard 
+                  key={preset.id} 
+                  option={preset} 
+                  isSelected={config.preset_sandwich?.id === preset.id} 
+                  onClick={() => { setConfig({...config, preset_sandwich: preset, bread: undefined, meat: undefined}); handleNext(); }}
+                />
+              ))}
+            </div>
+          </StepContainer>
+        );
+      case 'BUILD_BREAD':
+        return <CategoryStep category={menu.find(c => c.id === 'bread')!} config={config} setConfig={setConfig} onNext={handleNext} type="single" />;
+      case 'BUILD_MEAT':
+        return <CategoryStep category={menu.find(c => c.id === 'meat')!} config={config} setConfig={setConfig} onNext={handleNext} type="single" />;
+      case 'BUILD_SAUCES':
+        return <CategoryStep category={menu.find(c => c.id === 'sauces')!} config={config} setConfig={setConfig} onNext={handleNext} type="multiple" limit={2} />;
+      case 'EXTRAS':
+        return <CategoryStep category={menu.find(c => c.id === 'extras')!} config={config} setConfig={setConfig} onNext={handleNext} type="multiple" />;
+      case 'SIDES':
+        return (
+          <StepContainer title="Accompagnements" subtitle="Boissons & Desserts">
+            <div className="space-y-8">
+              <SideSelector label="Boissons" options={menu.find(c => c.id === 'drinks')!.options} config={config} setConfig={setConfig} type="drinks" />
+              <SideSelector label="Desserts" options={menu.find(c => c.id === 'desserts')!.options} config={config} setConfig={setConfig} type="desserts" />
+            </div>
+          </StepContainer>
+        );
+      case 'CHECKOUT':
+        return <CheckoutScreen orderInfo={orderInfo} setOrderInfo={setOrderInfo} config={config} calculateTotal={calculateTotal} rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted} isSubmitting={isSubmitting} onSubmit={handleSubmitOrder} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col p-6 bg-background text-foreground pb-40 relative overflow-hidden">
       <AnimatePresence>{showConfetti && <Confetti />}</AnimatePresence>
@@ -196,90 +295,25 @@ export default function SandwichBuilder() {
 
       <div className="flex-1 flex flex-col">
         <AnimatePresence mode="wait">
-          {step < menu.length ? (
-            <motion.div key={currentCategory.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
-              <div className="mb-6 flex justify-between items-end">
-                <div>
-                  <span className="text-[10px] text-primary font-black tracking-[0.2em] uppercase">Sélection</span>
-                  <h2 className="text-2xl font-serif mt-1 italic">{currentCategory.name}</h2>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                {currentCategory?.options.map((option) => (
-                  <div key={option.id} className={cn(
-                    "premium-card transition-all duration-500 flex justify-between items-center group relative",
-                    (isOptionSelected(option.id) || getQuantity(currentCategory.id as "drinks" | "desserts", option.id) > 0) ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(212,175,55,0.1)]" : "hover:border-primary/40",
-                    (currentCategory.id === 'drinks' || currentCategory.id === 'desserts') ? "p-4" : "p-5"
-                  )}>
-                    <div onClick={() => (currentCategory.id !== 'drinks' && currentCategory.id !== 'desserts') && handleOptionToggle(option)} className="flex-1 cursor-pointer">
-                      <p className={cn("font-black text-[11px] uppercase tracking-[0.1em] transition-colors", (isOptionSelected(option.id) || getQuantity(currentCategory.id as "drinks" | "desserts", option.id) > 0) ? "text-primary" : "text-gray-300")}>{option.name}</p>
-                      {option.price > 0 && <span className="text-[10px] text-gray-600 font-mono mt-1 font-bold">+{option.price.toFixed(2)}€</span>}
-                    </div>
-                    {(currentCategory.id === 'drinks' || currentCategory.id === 'desserts') ? (
-                      <div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800 shadow-inner">
-                        <button onClick={() => updateQuantity(currentCategory.id as "drinks" | "desserts", option, -1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button>
-                        <span className="text-xs font-black w-4 text-center text-primary">{getQuantity(currentCategory.id as "drinks" | "desserts", option.id)}</span>
-                        <button onClick={() => updateQuantity(currentCategory.id as "drinks" | "desserts", option, 1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button>
-                      </div>
-                    ) : (
-                      <div onClick={() => handleOptionToggle(option)} className={cn("w-6 h-6 rounded-full border border-primary flex items-center justify-center transition-all duration-700 shadow-lg", isOptionSelected(option.id) ? "bg-primary text-background scale-110 rotate-[360deg]" : "bg-black/40 text-transparent scale-100")}>
-                        <Check size={12} strokeWidth={4} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div key="summary" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
-              <h2 className="text-2xl font-serif mb-6 text-center text-white italic">Finalisation</h2>
-              <div className="space-y-4 mb-8">
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setOrderInfo({...orderInfo, type: "takeaway"})} className={cn("p-4 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center gap-2", orderInfo.type === "takeaway" ? "border-primary bg-primary/10 text-primary shadow-lg shadow-primary/5" : "border-gray-800 text-gray-600")}>
-                    <ShoppingCart size={16} /> À Emporter
-                  </button>
-                  <button onClick={() => setOrderInfo({...orderInfo, type: "on_site"})} className={cn("p-4 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center gap-2", orderInfo.type === "on_site" ? "border-primary bg-primary/10 text-primary shadow-lg shadow-primary/5" : "border-gray-800 text-gray-600")}>
-                    <MapPin size={16} /> Sur Place
-                  </button>
-                </div>
-                <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50 shadow-inner">
-                  <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Temps de retrait</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["15 min", "30 min", "45 min"].map(time => (
-                      <button key={time} onClick={() => setOrderInfo({...orderInfo, pickupTime: time})} className={cn("py-2.5 rounded-xl border text-[10px] font-black transition-all", orderInfo.pickupTime === time ? "bg-primary text-background border-primary shadow-md shadow-primary/10" : "border-gray-800 text-gray-600")}>{time}</button>
-                    ))}
-                  </div>
-                </div>
-                <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="VOTRE NOM" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
-                <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="NUMÉRO DE TÉLÉPHONE" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
-                
-                <div className="flex gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                  <button onClick={() => setRgpdAccepted(!rgpdAccepted)} className={cn("w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 shadow-sm", rgpdAccepted ? "bg-primary border-primary text-background" : "border-gray-700 hover:border-primary/50")}>
-                    {rgpdAccepted && <Check size={14} strokeWidth={4} />}
-                  </button>
-                  <p className="text-[9px] text-gray-500 leading-normal font-medium">J&apos;autorise l&apos;utilisation de mon numéro pour la gestion de ma commande et mon programme VIP. <Link href="/legals" className="text-primary hover:underline font-black">LIRE LES MENTIONS</Link></p>
-                </div>
-              </div>
-
-              <div className="bg-secondary/30 rounded-3xl p-6 border border-gray-800/50 mb-12 shadow-2xl">
-                <div className="flex justify-between items-center border-b border-gray-800 pb-5 mb-5">
-                  <span className="text-xl font-serif text-white italic">Total</span>
-                  <span className="text-3xl font-black text-primary tracking-tighter">{calculateTotal().toFixed(2)}€</span>
-                </div>
-                <button onClick={handleSubmitOrder} disabled={isSubmitting} className="w-full premium-gradient text-background font-black py-5 rounded-2xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 tracking-[0.2em] uppercase text-[11px]">
-                  {isSubmitting ? <div className="w-5 h-5 border-3 border-background border-t-transparent rounded-full animate-spin" /> : <><Check size={20} strokeWidth={3} /> Confirmer la commande</>}
-                </button>
-              </div>
-            </motion.div>
-          )}
+          <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
+            {renderStep()}
+          </motion.div>
         </AnimatePresence>
 
         <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/95 backdrop-blur-2xl border-t border-gray-900 max-w-md mx-auto flex flex-col gap-4 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
           <div className="flex gap-4">
-            <button onClick={() => setStep(Math.max(0, step - 1))} className={cn("flex-1 py-4 rounded-2xl border border-gray-800 font-black text-[10px] uppercase tracking-widest text-gray-600 hover:text-white transition-all", step === 0 ? "opacity-0 pointer-events-none" : "")}>Retour</button>
-            <button onClick={() => setStep(step + 1)} disabled={step < menu.length && ((currentCategory?.id === "bread" && !config.bread) || (currentCategory?.id === "meat" && !config.meat))} className="flex-[2.5] premium-gradient text-background font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-              {step === menu.length - 1 ? "VOIR LE PANIER" : "SUIVANT"}
+            <button onClick={handleBack} className={cn("flex-1 py-4 rounded-2xl border border-gray-800 font-black text-[10px] uppercase tracking-widest text-gray-600 hover:text-white transition-all", step === 'ORDER_TYPE' ? "opacity-0 pointer-events-none" : "")}>Retour</button>
+            <button 
+              onClick={handleNext} 
+              disabled={
+                (step === 'BUILD_BREAD' && !config.bread) || 
+                (step === 'BUILD_MEAT' && !config.meat) || 
+                (step === 'PRESETS' && !config.preset_sandwich) ||
+                (step === 'CHECKOUT')
+              }
+              className={cn("flex-[2.5] premium-gradient text-background font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all", step === 'CHECKOUT' ? "hidden" : "")}
+            >
+              {step === 'SIDES' ? "VOIR LE RÉSUMÉ" : "SUIVANT"}
             </button>
           </div>
           <div className="flex justify-center items-center gap-8 pt-3 border-t border-gray-800/30">
@@ -292,11 +326,178 @@ export default function SandwichBuilder() {
   );
 }
 
+function StepContainer({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+  return (
+    <div className="flex-1">
+      <div className="mb-6">
+        <span className="text-[10px] text-primary font-black tracking-[0.2em] uppercase">{title}</span>
+        <h2 className="text-2xl font-serif mt-1 italic">{subtitle}</h2>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function OptionCard({ option, isSelected, onClick, icon }: { option: Option; isSelected: boolean; onClick: () => void; icon?: React.ReactNode }) {
+  return (
+    <div 
+      onClick={onClick}
+      className={cn(
+        "premium-card p-5 transition-all duration-300 flex justify-between items-center group cursor-pointer border",
+        isSelected ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(212,175,55,0.1)]" : "hover:border-primary/40 border-gray-800"
+      )}
+    >
+      <div className="flex items-center gap-4">
+        {icon && <div className={cn("text-gray-500 group-hover:text-primary transition-colors", isSelected && "text-primary")}>{React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 20 }) : icon}</div>}
+        <div>
+          <p className={cn("font-black text-[11px] uppercase tracking-[0.1em]", isSelected ? "text-primary" : "text-gray-300")}>{option.name}</p>
+          {option.description && <p className="text-[9px] text-gray-600 mt-0.5 leading-tight">{option.description}</p>}
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {option.price > 0 && <span className="text-[10px] text-gray-500 font-mono font-bold">+{option.price.toFixed(2)}€</span>}
+        <div className={cn("w-5 h-5 rounded-full border border-primary flex items-center justify-center transition-all", isSelected ? "bg-primary text-background" : "bg-black/40 text-transparent")}>
+          <Check size={10} strokeWidth={4} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CategoryStep({ category, config, setConfig, onNext, type, limit }: { category: Category; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; onNext: () => void; type: 'single' | 'multiple'; limit?: number }) {
+  const handleToggle = (option: Option) => {
+    if (type === 'single') {
+      setConfig({ ...config, [category.id]: option });
+      onNext();
+    } else {
+      const current = config[category.id as keyof SandwichConfig] as Option[] || [];
+      const isSelected = current.find(s => s.id === option.id);
+      if (isSelected) {
+        setConfig({ ...config, [category.id]: current.filter(s => s.id !== option.id) });
+      } else {
+        if (limit && current.length >= limit) return;
+        setConfig({ ...config, [category.id]: [...current, option] });
+      }
+    }
+  };
+
+  const isSelected = (id: string) => {
+    const val = config[category.id as keyof SandwichConfig];
+    if (Array.isArray(val)) {
+      return (val as (Option | { option: Option; quantity: number })[]).some(i => 
+        'id' in i ? i.id === id : i.option.id === id
+      );
+    }
+    return (val as Option)?.id === id;
+  };
+
+  return (
+    <StepContainer title="Sélection" subtitle={category.name}>
+      <div className="grid grid-cols-1 gap-3">
+        {category.options.map(option => (
+          <OptionCard key={option.id} option={option} isSelected={isSelected(option.id)} onClick={() => handleToggle(option)} />
+        ))}
+      </div>
+    </StepContainer>
+  );
+}
+
+function SideSelector({ label, options, config, setConfig, type }: { label: string; options: Option[]; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; type: 'drinks' | 'desserts' }) {
+  const current = config[type] || [];
+  const getQty = (id: string) => current.find(i => i.option.id === id)?.quantity || 0;
+
+  const update = (option: Option, delta: number) => {
+    const existing = current.find(i => i.option.id === option.id);
+    if (existing) {
+      const newQty = Math.max(0, existing.quantity + delta);
+      if (newQty === 0) setConfig({ ...config, [type]: current.filter(i => i.option.id !== option.id) });
+      else setConfig({ ...config, [type]: current.map(i => i.option.id === option.id ? { ...i, quantity: newQty } : i) });
+    } else if (delta > 0) {
+      setConfig({ ...config, [type]: [...current, { option, quantity: 1 }] });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">{label}</h3>
+      <div className="grid grid-cols-1 gap-3">
+        {options.map(opt => (
+          <div key={opt.id} className="premium-card p-4 flex justify-between items-center bg-secondary/5 border border-gray-800">
+            <div>
+              <p className="font-black text-[10px] uppercase text-gray-300">{opt.name}</p>
+              <p className="text-[9px] text-gray-600 font-mono">{opt.price.toFixed(2)}€</p>
+            </div>
+            <div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800">
+              <button onClick={() => update(opt, -1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button>
+              <span className="text-xs font-black w-4 text-center text-primary">{getQty(opt.id)}</span>
+              <button onClick={() => update(opt, 1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface CheckoutScreenProps {
+  orderInfo: { name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway" };
+  setOrderInfo: React.Dispatch<React.SetStateAction<{ name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway" }>>;
+  config: SandwichConfig;
+  calculateTotal: () => number;
+  rgpdAccepted: boolean;
+  setRgpdAccepted: (val: boolean) => void;
+  isSubmitting: boolean;
+  onSubmit: () => void;
+}
+
+function CheckoutScreen({ orderInfo, setOrderInfo, config, calculateTotal, rgpdAccepted, setRgpdAccepted, isSubmitting, onSubmit }: CheckoutScreenProps) {
+  return (
+    <StepContainer title="Résumé" subtitle="Finalisez votre commande">
+      <div className="space-y-4 mb-8 mt-4">
+        <div className="bg-secondary/20 p-4 rounded-xl border border-gray-800 space-y-1 mb-6">
+          <p className="text-[10px] text-primary font-black uppercase tracking-widest mb-2">Votre Panier</p>
+          {config.formula && <p className="text-xs text-white">● {config.formula.name}</p>}
+          {config.preset_sandwich && <p className="text-xs text-gray-300 ml-3">→ {config.preset_sandwich.name}</p>}
+          {config.bread && <p className="text-xs text-gray-300 ml-3">→ Pain: {config.bread.name}</p>}
+          {config.meat && <p className="text-xs text-gray-300 ml-3">→ Viande: {config.meat.name}</p>}
+        </div>
+        
+        <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50 shadow-inner">
+          <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Temps de retrait estimé</label>
+          <div className="grid grid-cols-3 gap-2">
+            {["15 min", "30 min", "45 min"].map(time => (
+              <button key={time} onClick={() => setOrderInfo({...orderInfo, pickupTime: time})} className={cn("py-2.5 rounded-xl border text-[10px] font-black transition-all", orderInfo.pickupTime === time ? "bg-primary text-background border-primary shadow-md shadow-primary/10" : "border-gray-800 text-gray-600")}>{time}</button>
+            ))}
+          </div>
+        </div>
+        <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="VOTRE NOM" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
+        <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="NUMÉRO DE TÉLÉPHONE" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-700" />
+        
+        <div className="flex gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+          <button onClick={() => setRgpdAccepted(!rgpdAccepted)} className={cn("w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 shadow-sm", rgpdAccepted ? "bg-primary border-primary text-background" : "border-gray-700 hover:border-primary/50")}>
+            {rgpdAccepted && <Check size={14} strokeWidth={4} />}
+          </button>
+          <p className="text-[9px] text-gray-500 leading-normal font-medium">J&apos;autorise l&apos;utilisation de mon numéro pour la gestion de ma commande et mon programme VIP. <Link href="/legals" className="text-primary hover:underline font-black">LIRE LES MENTIONS</Link></p>
+        </div>
+      </div>
+
+      <div className="bg-secondary/30 rounded-3xl p-6 border border-gray-800/50 mb-12 shadow-2xl">
+        <div className="flex justify-between items-center border-b border-gray-800 pb-5 mb-5">
+          <span className="text-xl font-serif text-white italic">Total</span>
+          <span className="text-3xl font-black text-primary tracking-tighter">{calculateTotal().toFixed(2)}€</span>
+        </div>
+        <button onClick={onSubmit} disabled={isSubmitting} className="w-full premium-gradient text-background font-black py-5 rounded-2xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 tracking-[0.2em] uppercase text-[11px]">
+          {isSubmitting ? <div className="w-5 h-5 border-3 border-background border-t-transparent rounded-full animate-spin" /> : <><Check size={20} strokeWidth={3} /> Confirmer la commande</>}
+        </button>
+      </div>
+    </StepContainer>
+  );
+}
+
 function Confetti() {
-  const [particles, setParticles] = useState<Array<{x: number, y: number, rotate: number, color: string}>>([]);
+  const [particles, setParticles] = useState<Array<{x: number; y: number; rotate: number; color: string}>>([]);
   
   useEffect(() => {
-    // Use a timeout to avoid synchronous update during mount
     const timer = setTimeout(() => {
       const newParticles = [...Array(60)].map(() => ({
         x: (Math.random() - 0.5) * 1000,
@@ -313,11 +514,6 @@ function Confetti() {
     <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">
       {particles.map((p, i) => (
         <motion.div key={i} initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }} animate={{ opacity: 0, x: p.x, y: p.y, rotate: p.rotate, scale: 0 }} transition={{ duration: 3, ease: "easeOut" }} className={cn("absolute w-2 h-2 rounded-sm", p.color)} />
-      ))}
-    </div>
-  );
-}
-r)} />
       ))}
     </div>
   );

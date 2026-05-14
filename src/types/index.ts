@@ -3,6 +3,7 @@ export interface Option {
   name: string;
   price: number;
   image?: string;
+  description?: string;
 }
 
 export interface Category {
@@ -11,9 +12,22 @@ export interface Category {
   options: Option[];
 }
 
+export type StepId = 
+  | 'ORDER_TYPE' 
+  | 'FORMULA' 
+  | 'CREATION_MODE' 
+  | 'PRESETS' 
+  | 'BUILD_BREAD' 
+  | 'BUILD_MEAT' 
+  | 'BUILD_SAUCES' 
+  | 'EXTRAS' 
+  | 'SIDES' 
+  | 'CHECKOUT';
+
 export interface SandwichConfig {
   formula?: Option;
-  preset_sandwich?: string;
+  creation_mode?: 'signature' | 'custom';
+  preset_sandwich?: Option;
   bread?: Option;
   meat?: Option;
   sauces: Option[];
@@ -32,6 +46,6 @@ export interface Order {
   payment_status: 'unpaid' | 'paid';
   payment_method: 'online' | 'on_site';
   order_type: 'on_site' | 'takeaway';
-  pickup_time: string; // ex: "15 min", "12h30"
+  pickup_time: string;
   created_at: string;
 }

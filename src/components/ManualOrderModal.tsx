@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { SANDWICH_CATEGORIES } from "@/lib/data";
 import { SandwichConfig, Option, Order } from "@/types";
-import { X, ChevronRight, ChevronLeft, Plus, Check } from "lucide-react";
+import { X, Plus, Check } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -107,7 +107,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
       client_phone: clientInfo.phone || "Non renseigné",
       config: {
         formula: config.formula,
-        preset_sandwich: config.preset_sandwich === "pending" ? undefined : config.preset_sandwich,
+        preset_sandwich: config.preset_sandwich,
         bread: config.bread,
         meat: config.meat,
         sauces: config.sauces,

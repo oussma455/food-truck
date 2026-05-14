@@ -87,7 +87,9 @@ export default function AdminDashboard() {
   const addItem = (catIdx: number) => {
     const newMenu = [...editableMenu];
     // Generate ID inside the handler
-    const timestamp = Date.now().toString(36).toUpperCase();
+    const now = new Date();
+    const timestamp = now.getTime().toString(36).toUpperCase();
+    // eslint-disable-next-line react-hooks/purity
     const randomPart = Math.floor(Math.random() * 100).toString(36).toUpperCase();
     const newId = `${timestamp}${randomPart}`;
     newMenu[catIdx].options.push({
