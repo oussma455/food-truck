@@ -28,7 +28,7 @@ interface CheckoutScreenProps {
   isCouscousMode: boolean;
 }
 
-// Production Version 1.5 - Final Logic & UI Sync
+// Production Version 1.6 - ABSOLUTE LOGIC ISOLATION
 export default function SandwichBuilder() {
   const [isOpen] = useState(() => {
     if (typeof window !== "undefined") {
@@ -38,7 +38,7 @@ export default function SandwichBuilder() {
   });
 
   const [step, setStep] = useState<StepId>('ORDER_TYPE');
-  const [activeTab, setActiveTab] = useState<'menu' | 'cart' | 'loyalty'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'cart'>('menu');
   const [isCouscousMode, setIsCouscousMode] = useState(false);
   
   const [menu] = useState<Category[]>(() => {
@@ -92,20 +92,20 @@ export default function SandwichBuilder() {
     const formulaId = config.formula?.id || '';
     const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaId);
 
-    // Sandwich Surcharge
+    // Sandwich Surcharge (Only add if > 10€ and not Kids Menu)
     if (config.preset_sandwich && formulaId !== 'menu_kids') {
       const extra = Math.max(0, config.preset_sandwich.price - 10);
       total += extra;
     }
 
-    // Sauces
+    // Sauces: 2 free, then 0.50€
     const saucesCount = config.sauces.length;
     total += Math.max(0, saucesCount - 2) * 0.5;
 
     // Extras
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
     
-    // Drinks (1 free for menus, Cans only)
+    // Drinks: 1 free for menus, 0 for Sandwich Seul
     const drinks = config.drinks || [];
     const drinkQuota = isStandardMenu ? 1 : 0;
 
@@ -115,8 +115,6 @@ export default function SandwichBuilder() {
                                .sort((a, b) => b - a);
       const paidCans = cansPrices.slice(drinkQuota);
       total += paidCans.reduce((acc, p) => acc + p, 0);
-      
-      // Bottles always paid
       total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L'))
                      .reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     } else {
@@ -131,12 +129,10 @@ export default function SandwichBuilder() {
     let total = config.formula?.price || 0;
     const formulaId = config.formula?.id || '';
 
-    // Meat Surcharge
     if (config.preset_sandwich) {
       total += config.preset_sandwich.price;
     }
 
-    // Drinks Quota
     const drinks = config.drinks || [];
     let drinkQuota = 0;
     if (formulaId === 'COUSCOUS_S1') drinkQuota = 2;
@@ -146,7 +142,6 @@ export default function SandwichBuilder() {
     if (formulaId === 'COUSCOUS_S3') {
       const totalBottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + d.quantity, 0);
       if (totalBottles >= 1) {
-        // Special case: 1 bottle free, rest paid
         const bottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).sort((a, b) => b.option.price - a.option.price);
         total += (totalBottles - 1) * bottles[0].option.price;
         total += drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
@@ -154,26 +149,17 @@ export default function SandwichBuilder() {
       }
     }
 
-    // Standard Couscous drink quota (Cans only)
-    const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
-                             .flatMap(d => Array(d.quantity).fill(d.option.price))
-                             .sort((a, b) => b - a);
+    const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
     const paidCans = cansPrices.slice(drinkQuota);
     total += paidCans.reduce((acc, p) => acc + p, 0);
-    
-    // Bottles paid unless handled in S3 exception above
-    total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L'))
-                   .reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-
+    total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     return total;
   };
 
   const calculateItemTotal = (config: SandwichConfig) => {
     const formulaId = config.formula?.id || '';
-    if (formulaId.startsWith('COUSCOUS_')) {
-      return calculateCouscousTotal(config);
-    }
+    if (formulaId.startsWith('COUSCOUS_')) return calculateCouscousTotal(config);
     return calculateGrilladeTotal(config);
   };
 
@@ -187,7 +173,7 @@ export default function SandwichBuilder() {
     const currentStep = overrideStep || step;
     switch (currentStep) {
       case 'ORDER_TYPE': 
-        setIsCouscousMode(false); // Reset mode by default
+        setIsCouscousMode(false); 
         setStep('FORMULA'); 
         break;
       case 'FORMULA':
@@ -211,12 +197,16 @@ export default function SandwichBuilder() {
       case 'DRINKS':
         const fId = currentConfig.formula?.id || '';
         const isM = ['menu_standard', 'menu_student', 'menu_kids'].includes(fId);
-        const isC = fId.startsWith('s');
+        const isC = fId.startsWith('COUSCOUS_');
         let q = isM ? 1 : 0;
-        if (isC) q = fId === 's1' ? 2 : fId === 's2' ? 3 : 4;
+        if (isC) {
+          if (fId === 'COUSCOUS_S1') q = 2;
+          else if (fId === 'COUSCOUS_S2') q = 3;
+          else if (fId === 'COUSCOUS_S3') q = 4;
+        }
         const totalQ = (currentConfig.drinks || []).reduce((acc, d) => acc + d.quantity, 0);
         if (q > 0 && totalQ < q) {
-          alert(`Votre formule inclut ${q} boisson(s) !`);
+          alert(`Votre formule inclut ${q} boisson(s) ! Veuillez les choisir.`);
           return;
         }
         setStep('DESSERTS');
@@ -252,9 +242,6 @@ export default function SandwichBuilder() {
       }, 2000);
     }, 1500);
   };
-
-  const [showNotifyPrompt, setShowNotifyPrompt] = useState(true);
-  const enableNotifications = () => { setShowNotifyPrompt(false); alert("Notifications activées !"); };
 
   const renderStep = () => {
     switch (step) {
@@ -311,10 +298,10 @@ export default function SandwichBuilder() {
           <StepContainer title="Nos Créations" subtitle="Recettes signatures">
             <div className="grid grid-cols-1 gap-3">
               {getAvailableOptions('presets').map(p => {
-                // If standard menu selected, show only surcharge vs base 10€
-                const surchargeVal = currentConfig.formula?.id !== 'sandwich_only' ? Math.max(0, p.price - 10) : p.price;
+                const isMenu = ['menu_standard', 'menu_student'].includes(currentConfig.formula?.id || '');
+                const surchargeVal = isMenu ? Math.max(0, p.price - 10) : p.price;
                 return (
-                  <OptionCard key={p.id} option={p} isSelected={currentConfig.preset_sandwich?.id === p.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: p}); setTimeout(() => handleNext('PRESETS'), 300); }} surchargeValue={surchargeVal} />
+                  <OptionCard key={p.id} option={p} isSelected={currentConfig.preset_sandwich?.id === p.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: p}); setTimeout(() => handleNext('PRESETS'), 300); }} surchargeValue={surchargeVal} hidePrice={isMenu && surchargeVal === 0} />
                 );
               })}
             </div>
@@ -337,12 +324,16 @@ export default function SandwichBuilder() {
       case 'DRINKS':
         const formulaIdDrinksStep = currentConfig.formula?.id || '';
         const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaIdDrinksStep);
-        const isCouscousStep = ['s1', 's2', 's3'].includes(formulaIdDrinksStep);
+        const isCouscousStep = formulaIdDrinksStep.startsWith('COUSCOUS_');
         
         let q = isStandardMenu ? 1 : 0;
-        if (isCouscousStep) q = formulaIdDrinksStep === 's1' ? 2 : formulaIdDrinksStep === 's2' ? 3 : 4;
+        if (isCouscousStep) {
+          if (formulaIdDrinksStep === 'COUSCOUS_S1') q = 2;
+          else if (formulaIdDrinksStep === 'COUSCOUS_S2') q = 3;
+          else if (formulaIdDrinksStep === 'COUSCOUS_S3') q = 4;
+        }
 
-        let quotaT = isStandardMenu ? "1 Boisson comprise !" : isCouscousStep ? (formulaIdDrinksStep === 's3' ? "4 Cannettes OU 1 Bouteille 1.5L offerte !" : `${q} Boissons offertes !`) : "";
+        let quotaT = isStandardMenu ? "1 Boisson comprise !" : isCouscousStep ? (formulaIdDrinksStep === 'COUSCOUS_S3' ? "4 Cannettes OU 1 Bouteille 1.5L offerte !" : `${q} Boissons offertes !`) : "";
 
         const availableDrinks = getAvailableOptions('drinks');
         const cans = availableDrinks.filter(d => !d.name.includes('1.5L') && !d.name.includes('2L'));
@@ -357,7 +348,7 @@ export default function SandwichBuilder() {
                 </div>
               )}
               <SideSelector label="Cannettes & Petits formats" options={cans} config={currentConfig} setConfig={setCurrentConfig} type="drinks" quota={q} />
-              {bottles.length > 0 && <SideSelector label="Grandes Bouteilles (1.5L / 2L)" options={bottles} config={currentConfig} setConfig={setCurrentConfig} type="drinks" quota={formulaIdDrinksStep === 's3' ? 1 : 0} />}
+              {bottles.length > 0 && <SideSelector label="Grandes Bouteilles (1.5L / 2L)" options={bottles} config={currentConfig} setConfig={setCurrentConfig} type="drinks" quota={formulaIdDrinksStep === 'COUSCOUS_S3' ? 1 : 0} />}
             </div>
           </StepContainer>
         );
@@ -528,10 +519,8 @@ function CategoryStep({ category, config, setConfig, onNext, type, limit, isSauc
     <StepContainer title="Sélection" subtitle={category.name}>
       <div className="grid grid-cols-1 gap-3">
         {category.options.map(option => {
-          // Sauce logic: first 2 are free
           const currentList = config[category.id as keyof SandwichConfig] as Option[] || [];
           const isIncluded = isSauceStep && currentList.length < 2 && !isSelected(option.id);
-
           return (
             <OptionCard 
               key={option.id} 
@@ -551,18 +540,14 @@ function CategoryStep({ category, config, setConfig, onNext, type, limit, isSauc
 function SideSelector({ label, options, config, setConfig, type, quota }: { label: string; options: Option[]; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; type: 'drinks' | 'desserts', quota?: number }) {
   const current = config[type] || [];
   const getQty = (id: string) => current.find(i => i.option.id === id)?.quantity || 0;
-
   const update = (option: Option, delta: number) => {
     const existing = current.find(i => i.option.id === option.id);
     if (existing) {
       const newQty = Math.max(0, existing.quantity + delta);
       if (newQty === 0) setConfig({ ...config, [type]: current.filter(i => i.option.id !== option.id) });
       else setConfig({ ...config, [type]: current.map(i => i.option.id === option.id ? { ...i, quantity: newQty } : i) });
-    } else if (delta > 0) {
-      setConfig({ ...config, [type]: [...current, { option, quantity: 1 }] });
-    }
+    } else if (delta > 0) { setConfig({ ...config, [type]: [...current, { option, quantity: 1 }] }); }
   };
-
   return (
     <div className="space-y-4">
       <h3 className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">{label}</h3>
@@ -571,24 +556,13 @@ function SideSelector({ label, options, config, setConfig, type, quota }: { labe
           const qty = getQty(opt.id);
           const isCan = !opt.name.includes('1.5L') && !opt.name.includes('2L');
           const isFreeUnitAvailable = type === 'drinks' && isCan && quota && quota > 0;
-
           return (
             <div key={opt.id} className="premium-card p-4 flex justify-between items-center bg-secondary/5 border border-gray-800">
               <div>
                 <p className="font-black text-[10px] uppercase text-gray-300">{opt.name}</p>
-                <p className="text-[9px] text-gray-600 font-mono">
-                  {isFreeUnitAvailable ? "1ère OFFERTE" : `${opt.price.toFixed(2)}€`}
-                </p>
+                <p className="text-[9px] text-gray-600 font-mono">{isFreeUnitAvailable ? "1ère OFFERTE" : `${opt.price.toFixed(2)}€`}</p>
               </div>
-              <div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800">
-                <button onClick={() => update(opt, -1)} className="p-2 hover:text-primary transition-colors text-gray-500">
-                  <Minus size={14} />
-                </button>
-                <span className="text-xs font-black w-4 text-center text-primary">{qty}</span>
-                <button onClick={() => update(opt, 1)} className="p-2 hover:text-primary transition-colors text-gray-500">
-                  <Plus size={14} />
-                </button>
-              </div>
+              <div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800"><button onClick={() => update(opt, -1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button><span className="text-xs font-black w-4 text-center text-primary">{qty}</span><button onClick={() => update(opt, 1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button></div>
             </div>
           );
         })}
@@ -606,7 +580,7 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
 
   return (
     <StepContainer title="Résumé" subtitle="Finalisez votre commande">
-      <div className="space-y-4 mb-8 mt-4 overflow-y-auto max-h-[50vh] pr-2">
+      <div className="space-y-4 mb-8 mt-4 overflow-y-auto max-h-[50vh] pr-2 text-white">
         <div className="bg-primary/10 border border-primary/30 p-4 rounded-2xl mb-2"><div className="flex items-center gap-3 mb-2"><Shield className="text-primary" size={18} /><p className="text-[10px] font-black uppercase tracking-widest text-white">Paiement d&apos;acompte obligatoire</p></div><p className="text-[9px] text-gray-400 leading-relaxed">Pour valider votre commande et éviter les commandes fantômes, un acompte de <span className="text-primary font-bold">{isCouscousMode ? "50%" : "30%"}</span> est requis. Le reste sera à régler sur place lors du retrait.</p></div>
         <div className="bg-secondary/20 p-4 rounded-xl border border-gray-800 space-y-3 mb-6"><p className="text-[10px] text-primary font-black uppercase tracking-widest mb-2 flex justify-between items-center"><span>Votre Panier ({allItems.length})</span>{!isCouscousMode && <button onClick={onAddAnother} className="text-primary hover:underline text-[8px]">+ AJOUTER</button>}</p>{allItems.map((item, idx) => (<div key={idx} className="pb-2 border-b border-gray-800/50 last:border-0 last:pb-0">{item.formula && <p className="text-xs text-white font-bold">● {item.formula.name}</p>}{item.preset_sandwich && <p className="text-xs text-gray-300 ml-3 italic">→ {item.preset_sandwich.name}</p>}</div>))}</div>
         {isCouscousMode && <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl mb-4"><p className="text-[10px] text-amber-500 font-black uppercase tracking-widest text-center">🕒 Commande Couscous : Prête demain à la même heure</p></div>}
