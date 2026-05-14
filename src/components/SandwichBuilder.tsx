@@ -288,10 +288,21 @@ export default function SandwichBuilder() {
 }
 
 function Confetti() {
+  const [particles, setParticles] = useState<Array<{x: number, y: number, rotate: number, color: string}>>([]);
+  
+  useEffect(() => {
+    setParticles([...Array(60)].map(() => ({
+      x: (Math.random() - 0.5) * 1000,
+      y: (Math.random() - 0.5) * 1000,
+      rotate: Math.random() * 720,
+      color: ["bg-primary", "bg-white", "bg-yellow-600", "bg-amber-200"][Math.floor(Math.random() * 4)]
+    })));
+  }, []);
+
   return (
     <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">
-      {[...Array(60)].map((_, i) => (
-        <motion.div key={i} initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }} animate={{ opacity: 0, x: (Math.random() - 0.5) * 1000, y: (Math.random() - 0.5) * 1000, rotate: Math.random() * 720, scale: 0 }} transition={{ duration: 3, ease: "easeOut" }} className={cn("absolute w-2 h-2 rounded-sm", ["bg-primary", "bg-white", "bg-yellow-600", "bg-amber-200"][Math.floor(Math.random() * 4)])} />
+      {particles.map((p, i) => (
+        <motion.div key={i} initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }} animate={{ opacity: 0, x: p.x, y: p.y, rotate: p.rotate, scale: 0 }} transition={{ duration: 3, ease: "easeOut" }} className={cn("absolute w-2 h-2 rounded-sm", p.color)} />
       ))}
     </div>
   );
