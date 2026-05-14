@@ -12,17 +12,20 @@ export default function OneSignalProvider({ children }: { children: React.ReactN
       OneSignal.init({
         appId: appId,
         allowLocalhostAsSecureOrigin: true,
-        serviceWorkerPath: '/OneSignalSDKWorker.js', // Chemin absolu
-        debug: true, // Active les logs OneSignal dans la console
+        serviceWorkerPath: '/OneSignalSDKWorker.js',
+        // On force l'utilisation de l'origine pour correspondre à la config OneSignal
+        serviceWorkerParam: { scope: '/' },
+        debug: true,
         notifyButton: {
           enable: false,
         } as any,
       }).then(() => {
-        console.log("OneSignal: Initialisé avec succès");
+        console.log("OneSignal: Initialisé avec succès sur " + window.location.origin);
       }).catch(err => {
         console.error("OneSignal: Erreur d'initialisation:", err);
       });
-    } else {
+    }
+ else {
       console.error("OneSignal: NEXT_PUBLIC_ONESIGNAL_APP_ID est manquant dans l'environnement");
     }
   }, []);
