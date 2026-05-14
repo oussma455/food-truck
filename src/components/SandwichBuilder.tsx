@@ -333,19 +333,7 @@ export default function SandwichBuilder() {
         );
       case 'cart':
         return <CheckoutScreen orderInfo={orderInfo} setOrderInfo={setOrderInfo} cart={cart} currentConfig={currentConfig} calculateTotal={calculateTotal} rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted} isSubmitting={isSubmitting} onSubmit={handleSubmitOrder} onAddAnother={() => setActiveTab('menu')} isCouscousMode={isCouscousMode} />;
-      case 'loyalty':
-        return (
-          <div className="min-h-[60vh] py-12 flex flex-col items-center justify-center text-center px-4 text-white">
-            <Star className="text-primary mb-8 animate-pulse" size={48} />
-            <h2 className="text-3xl font-serif italic mb-4">Programme VIP</h2>
-            <p className="text-gray-400 text-sm uppercase tracking-widest font-black mb-8 leading-relaxed">9 commandes = 10ème offerte !</p>
-            <div className="grid grid-cols-5 gap-3 mb-10 bg-secondary/20 p-6 rounded-3xl border border-gray-800 shadow-inner">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className={cn("w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all duration-500 shadow-lg", i < 0 ? "bg-primary border-primary text-background rotate-[360deg] scale-110" : "bg-black/40 border-gray-800 text-gray-800")}><div className="w-1.5 h-1.5 rounded-full bg-current" /></div>
-              ))}
-            </div>
-          </div>
-        );
+      default: return null;
     }
   };
 
@@ -364,11 +352,42 @@ export default function SandwichBuilder() {
         </div>
       )}</AnimatePresence>
       <header className="shrink-0 py-6 px-6 text-center border-b border-gray-900/50 bg-background/80 backdrop-blur-md z-40 relative"><h1 className="text-2xl font-serif font-bold text-primary italic">La Grillade O&apos;Charbon</h1><div className="premium-gradient h-[1px] w-16 mx-auto my-1.5 opacity-50" /><p className="text-gray-500 text-[8px] uppercase tracking-[0.3em] font-bold">L&apos;excellence de la grillade</p></header>
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-48 relative bg-background"><AnimatePresence mode="wait"><motion.div key={activeTab === 'menu' ? `${activeTab}-${step}` : activeTab} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }} className="min-h-full">{renderTabContent()}</motion.div></AnimatePresence></main>
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50">
-        <div className="px-4 pb-2"><motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-[0_-20px_40px_rgba(0,0,0,0.8)] border-b-0 rounded-b-none"><div><p className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total Panier</p><p className="text-xl font-black text-white tracking-tighter">{calculateTotal().toFixed(2)}€</p></div><div className="text-right"><p className="text-[8px] text-primary font-black uppercase tracking-widest">Acompte à payer</p><p className="text-lg font-black text-primary tracking-tighter">{(calculateTotal() * (isCouscousMode ? 0.5 : 0.3)).toFixed(2)}€</p></div></motion.div></div>
-        <footer className="bg-background/95 backdrop-blur-3xl border-t border-gray-900 p-4 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"><div className="flex items-center justify-between gap-1">{[ { id: 'menu', label: 'Carte', icon: <Utensils size={18} /> }, { id: 'cart', label: 'Commande', icon: <ShoppingCart size={18} /> }, { id: 'loyalty', label: 'VIP', icon: <Star size={18} /> } ].map((tab) => (<button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={cn("flex-1 flex flex-col items-center gap-1.5 py-2 transition-all duration-300", activeTab === tab.id ? "text-primary scale-110" : "text-gray-500 hover:text-gray-300")}><div className={cn("p-2 rounded-xl transition-all duration-300", activeTab === tab.id ? "bg-primary/10 shadow-[0_0_15px_rgba(255,0,0,0.1)]" : "")}>{tab.icon}</div><span className="text-[9px] font-black uppercase tracking-widest">{tab.label}</span></button>))}</div></footer>
-      </div>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-32 relative bg-background"><AnimatePresence mode="wait"><motion.div key={activeTab === 'menu' ? `${activeTab}-${step}` : activeTab} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }} className="min-h-full">{renderTabContent()}</motion.div></AnimatePresence></main>
+      
+      {/* Persistent Navigation & Total Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 bg-background/95 backdrop-blur-3xl border-t border-gray-900 p-4 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center justify-between">
+          {/* Tab Menu */}
+          <button
+            onClick={() => setActiveTab('menu')}
+            className={cn(
+              "flex-1 flex flex-col items-center gap-1 py-1 transition-all duration-300",
+              activeTab === 'menu' ? "text-primary scale-110" : "text-gray-500"
+            )}
+          >
+            <Utensils size={18} />
+            <span className="text-[8px] font-black uppercase tracking-widest text-white">Carte</span>
+          </button>
+
+          {/* Real-time Total Display (Central) */}
+          <div className="flex-1 flex flex-col items-center border-x border-gray-800 px-2">
+            <p className="text-[7px] text-gray-500 font-black uppercase tracking-widest mb-0.5">Total à payer</p>
+            <p className="text-lg font-black text-white tracking-tighter leading-none">{calculateTotal().toFixed(2)}€</p>
+          </div>
+
+          {/* Tab Cart */}
+          <button
+            onClick={() => setActiveTab('cart')}
+            className={cn(
+              "flex-1 flex flex-col items-center gap-1 py-1 transition-all duration-300",
+              activeTab === 'cart' ? "text-primary scale-110" : "text-gray-500"
+            )}
+          >
+            <ShoppingCart size={18} />
+            <span className="text-[8px] font-black uppercase tracking-widest text-white">Commande</span>
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }
