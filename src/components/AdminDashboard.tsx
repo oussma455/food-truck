@@ -122,6 +122,15 @@ export default function AdminDashboard() {
     const newStatus = !isOpen ? "open" : "closed";
     localStorage.setItem("truck_status", newStatus);
     setIsOpen(!isOpen);
+    
+    if (newStatus === "open") {
+      // Jouer un son local pour l'admin
+      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      audio.play().catch(e => console.log("Audio play blocked by browser"));
+      
+      // Ici on appellera l'API de notification plus tard
+      console.log("SIGNAL: Envoi de la notification aux clients...");
+    }
   };
 
   const updateStatus = (id: string, newStatus: Order["status"]) => {

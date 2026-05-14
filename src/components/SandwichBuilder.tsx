@@ -59,12 +59,39 @@ export default function SandwichBuilder() {
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
 
   useEffect(() => {
-    if (step === 'CHECKOUT' && orderInfo.phone) {
-      const history = JSON.parse(localStorage.getItem(`loyalty_${orderInfo.phone}`) || "0");
-      const timer = setTimeout(() => setLoyaltyPoints(history), 0);
-      return () => clearTimeout(timer);
+    // Écouter les changements de statut (simulé par polling local storage pour le moment)
+    const checkStatus = () => {
+      const currentStatus = localStorage.getItem("truck_status");
+      const lastStatus = localStorage.getItem("last_known_status");
+      
+      if (currentStatus === "open" && lastStatus === "closed") {
+        // Le truck vient d'ouvrir ! DING DING
+        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+        audio.play().catch(e => console.log("Audio auto-play blocked"));
+        
+        // Afficher un toast ou une alerte visuelle
+        alert("🔔 LE TRUCK EST OUVERT ! C'est l'heure de commander !");
+      }
+      localStorage.setItem("last_known_status", currentStatus || "closed");
+    };
+
+    const interval = setInterval(checkStatus, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const [showNotifyPrompt, setShowNotifyPrompt] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("notify_prompt_shown") !== "true";
     }
-  }, [step, orderInfo.phone]);
+    return false;
+  });
+
+  const enableNotifications = () => {
+    // Logique OneSignal ici
+    console.log("Activation des notifications OneSignal...");
+    localStorage.setItem("notify_prompt_shown", "true");
+    setShowNotifyPrompt(false);
+  };
 
   const handleNext = () => {
     switch (step) {
@@ -339,6 +366,33 @@ export default function SandwichBuilder() {
         <div className="premium-gradient h-[1px] w-24 mx-auto mb-2 opacity-50" />
         <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold">L&apos;art du sandwich premium</p>
       </header>
+
+      <AnimatePresence>
+        {showNotifyPrompt && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mb-6 overflow-hidden"
+          >
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/20 p-2 rounded-lg text-primary">
+                  <Bell size={18} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white">Restez informé</p>
+                  <p className="text-[9px] text-gray-500">Ding ! Soyez prévenu dès que le truck ouvre.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={enableNotifications} className="bg-primary text-background px-3 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest hover:scale-105 transition-all">Activer</button>
+                <button onClick={() => setShowNotifyPrompt(false)} className="text-gray-600 p-2"><X size={14} /></button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex-1 flex flex-col">
         <AnimatePresence mode="wait">
