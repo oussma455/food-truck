@@ -15,7 +15,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Force redeploy - Couscous flow split check
+// Production Version 1.1 - UI Refresh
 export default function SandwichBuilder() {
   const [isOpen] = useState(() => {
     if (typeof window !== "undefined") {
