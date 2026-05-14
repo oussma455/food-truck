@@ -599,12 +599,14 @@ export default function SandwichBuilder() {
             <div className="space-y-8">
               <SideSelector label="Desserts" options={availableDesserts} config={currentConfig} setConfig={setCurrentConfig} type="desserts" />
               
-              <button 
-                onClick={handleAddAnother}
-                className="w-full py-4 rounded-2xl border-2 border-dashed border-primary/30 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
-              >
-                <Plus size={16} /> Ajouter un autre menu
-              </button>
+              {!isCouscousMode && (
+                <button 
+                  onClick={handleAddAnother}
+                  className="w-full py-4 rounded-2xl border-2 border-dashed border-primary/30 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={16} /> Ajouter un autre menu
+                </button>
+              )}
             </div>
           </StepContainer>
         );
