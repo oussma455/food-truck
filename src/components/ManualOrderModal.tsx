@@ -96,17 +96,18 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
   };
 
   const handleSubmit = () => {
-    if (!config.formula || !config.bread || !config.meat) {
-      alert("Commande incomplète (Formule, Pain et Viande obligatoires)");
+    if (!config.formula && !config.preset_sandwich) {
+      alert("Veuillez choisir au moins une formule ou un sandwich.");
       return;
     }
 
     const newOrder: Order = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: "MAN-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
       client_name: clientInfo.name || "Client Téléphone",
       client_phone: clientInfo.phone || "Non renseigné",
       config: {
         formula: config.formula,
+        preset_sandwich: config.preset_sandwich === "pending" ? undefined : config.preset_sandwich,
         bread: config.bread,
         meat: config.meat,
         sauces: config.sauces,
@@ -125,8 +126,9 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated }: Ma
 
     onOrderCreated(newOrder);
     onClose();
+    // Reset complet
     setStep(0);
-    setConfig({ formula: undefined, sauces: [], extras: [], drinks: [], desserts: [] });
+    setConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
     setClientInfo({ name: "Client Téléphone", phone: "" });
   };
 
