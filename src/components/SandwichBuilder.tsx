@@ -150,11 +150,22 @@ export default function SandwichBuilder() {
         setStep('DRINKS');
         break;
       case 'DRINKS':
-        const isMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_student' || currentConfig.formula?.id === 'menu_kids';
-        const hasDrink = currentConfig.drinks && currentConfig.drinks.length > 0;
+        const formulaIdDrinks = currentConfig.formula?.id || '';
+        const isMenuDrinks = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaIdDrinks);
+        const isCouscousDrinks = formulaIdDrinks.startsWith('s');
         
-        if (isMenu && !hasDrink) {
-          alert("Dans votre Menu complet, une boisson est comprise ! Veuillez en choisir une pour continuer.");
+        let expectedDrinks = 0;
+        if (isMenuDrinks) expectedDrinks = 1;
+        if (isCouscousDrinks) {
+          if (formulaIdDrinks === 's1') expectedDrinks = 2;
+          if (formulaIdDrinks === 's2') expectedDrinks = 3;
+          if (formulaIdDrinks === 's3') expectedDrinks = 4;
+        }
+
+        const totalDrinkQty = (currentConfig.drinks || []).reduce((acc, d) => acc + d.quantity, 0);
+        
+        if (expectedDrinks > 0 && totalDrinkQty < expectedDrinks) {
+          alert(`Votre formule inclut ${expectedDrinks} boisson(s) ! Veuillez les choisir pour continuer.`);
           return;
         }
         setStep('DESSERTS');
