@@ -924,8 +924,7 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
             {[
               { id: 'card', name: 'CB', icon: <CreditCard size={14} /> },
               { id: 'resto_card', name: 'Titre Resto', icon: <UtensilsCrossed size={14} /> },
-              { id: 'cash', name: 'Espèces', icon: <Wallet size={14} /> },
-              { id: 'online', name: 'En Ligne', icon: <Star size={14} /> }
+              { id: 'cash', name: 'Espèces', icon: <Wallet size={14} /> }
             ].map(method => (
               <button 
                 key={method.id} 
