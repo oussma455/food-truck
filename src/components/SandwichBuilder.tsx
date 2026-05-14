@@ -25,18 +25,32 @@ export default function SandwichBuilder() {
   });
 
   const [step, setStep] = useState<StepId>('ORDER_TYPE');
-  const [menu] = useState<Category[]>(() => {
+  const [menu, setMenu] = useState<Category[]>(() => {
     if (typeof window !== "undefined") {
       const savedMenu = localStorage.getItem("truck_menu");
+      const baseMenu = [...SANDWICH_CATEGORIES];
+      
       if (savedMenu) {
-        const parsedMenu = JSON.parse(savedMenu);
-        // On fusionne pour s'assurer que les nouvelles catégories (couscous) sont présentes
-        const mergedMenu = [...SANDWICH_CATEGORIES].map(baseCat => {
-          const savedCat = parsedMenu.find((c: Category) => c.id === baseCat.id);
-          return savedCat || baseCat;
-        });
-        return mergedMenu;
+        try {
+          const parsedMenu = JSON.parse(savedMenu);
+          // On s'assure que toutes les catégories et options de base sont présentes
+          return baseMenu.map(baseCat => {
+            const savedCat = parsedMenu.find((c: Category) => c.id === baseCat.id);
+            if (!savedCat) return baseCat;
+            
+            // On fusionne les options pour garder les états 'isAvailable'
+            const mergedOptions = baseCat.options.map(baseOpt => {
+              const savedOpt = savedCat.options.find((o: Option) => o.id === baseOpt.id);
+              return savedOpt ? { ...baseOpt, isAvailable: savedOpt.isAvailable } : baseOpt;
+            });
+            
+            return { ...baseCat, options: mergedOptions };
+          });
+        } catch (e) {
+          console.error("Error parsing menu", e);
+        }
       }
+      return baseMenu;
     }
     return SANDWICH_CATEGORIES;
   });
