@@ -656,32 +656,43 @@ export default function SandwichBuilder() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<'menu' | 'cart' | 'loyalty'>('menu');
+
+  // Helper to get tab icon
+  const getTabIcon = (tab: 'menu' | 'cart' | 'loyalty') => {
+    switch (tab) {
+      case 'menu': return <Utensils size={20} />;
+      case 'cart': return <ShoppingCart size={20} />;
+      case 'loyalty': return <Star size={20} />;
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden max-w-md mx-auto">
       <AnimatePresence>{showConfetti && <Confetti />}</AnimatePresence>
       
       {/* Fixed Header */}
-      <header className="shrink-0 py-6 px-6 text-center border-b border-gray-900/50 bg-background/80 backdrop-blur-md z-40">
+      <header className="shrink-0 py-6 px-6 text-center border-b border-gray-900/50 bg-background/80 backdrop-blur-md z-40 relative">
         <h1 className="text-2xl font-serif font-bold text-primary italic">La Grillade O&apos;Charbon</h1>
         <div className="premium-gradient h-[1px] w-16 mx-auto my-1.5 opacity-50" />
         <p className="text-gray-500 text-[8px] uppercase tracking-[0.3em] font-bold">L&apos;excellence de la grillade</p>
       </header>
 
       {/* Main Content - Scrollable Area */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-32">
-        {/* Real-time Price Ticker */}
-        <div className="sticky top-0 z-30 mb-6 -mx-2">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-2 pb-40 relative scroll-smooth">
+        {/* Real-time Price Ticker - Fixed at top of main area with proper spacing */}
+        <div className="sticky top-0 z-40 pt-2 pb-4 bg-background">
           <motion.div 
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-2xl"
+            className="bg-secondary/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-2xl"
           >
             <div>
-              <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total en temps réel</p>
+              <p className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Total</p>
               <p className="text-xl font-black text-white tracking-tighter">{calculateTotal().toFixed(2)}€</p>
             </div>
             <div className="text-right">
-              <p className="text-[8px] text-primary font-black uppercase tracking-widest">À payer maintenant</p>
+              <p className="text-[8px] text-primary font-black uppercase tracking-widest">Acompte ({isCouscousMode ? "50%" : "30%"})</p>
               <p className="text-lg font-black text-primary tracking-tighter">
                 {(calculateTotal() * (isCouscousMode ? 0.5 : 0.3)).toFixed(2)}€
               </p>
