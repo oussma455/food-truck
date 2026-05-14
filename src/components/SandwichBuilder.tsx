@@ -90,8 +90,8 @@ export default function SandwichBuilder() {
   const calculateItemTotal = (config: SandwichConfig) => {
     let total = config.formula?.price || 0;
     const formulaId = config.formula?.id || '';
-    const isMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaId);
-    const isCouscous = formulaId.startsWith('s');
+    const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaId);
+    const isCouscous = ['s1', 's2', 's3'].includes(formulaId);
 
     if (config.preset_sandwich) {
       if (isCouscous) total += config.preset_sandwich.price;
@@ -102,48 +102,36 @@ export default function SandwichBuilder() {
     }
 
     const saucesCount = config.sauces.length;
-    const paidSauces = Math.max(0, saucesCount - 2);
-    total += paidSauces * 0.5;
+    total += Math.max(0, saucesCount - 2) * 0.5;
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
     
     const drinks = config.drinks || [];
-    let drinkQuota = isMenu ? 1 : 0;
-    if (isCouscous) {
-      if (formulaId === 's1') drinkQuota = 2;
-      if (formulaId === 's2') drinkQuota = 3;
-      if (formulaId === 's3') {
-        const totalBottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + d.quantity, 0);
-        if (totalBottles >= 1) {
-          const bottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).sort((a, b) => b.option.price - a.option.price);
-          total += (totalBottles - 1) * bottles[0].option.price;
-          total += drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-          return total + (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-        } else {
-          drinkQuota = 4;
-        }
+    let drinkQuota = 0;
+    if (isStandardMenu) drinkQuota = 1;
+    else if (formulaId === 's1') drinkQuota = 2;
+    else if (formulaId === 's2') drinkQuota = 3;
+    else if (formulaId === 's3') drinkQuota = 4;
+
+    if (formulaId === 's3') {
+      const totalBottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + d.quantity, 0);
+      if (totalBottles >= 1) {
+        const bottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).sort((a, b) => b.option.price - a.option.price);
+        total += (totalBottles - 1) * bottles[0].option.price;
+        total += drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+        return total + (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
       }
     }
 
-    if (drinkQuota > 0 && formulaId !== 's3') {
-      // Pour les menus standards et Couscous 2/3 pers, seules les canettes peuvent être offertes
+    if (drinkQuota > 0) {
       const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
       const paidCans = cansPrices.slice(drinkQuota);
       total += paidCans.reduce((acc, p) => acc + p, 0);
-      
-      // Les grandes bouteilles sont toujours payantes dans ces menus
       total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    } else if (drinkQuota > 0 && formulaId === 's3') {
-       // Cas Couscous 4 pers où l'utilisateur n'a pris que des canettes
-       const allDrinksPrices = drinks.flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
-       const paidDrinks = allDrinksPrices.slice(drinkQuota);
-       total += paidDrinks.reduce((acc, p) => acc + p, 0);
     } else {
-      // Aucun quota (Sandwich seul)
       total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
     }
 
     total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    
     return total;
   };
 
