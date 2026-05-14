@@ -10,11 +10,16 @@ export default function OneSignalProvider({ children }: { children: React.ReactN
       OneSignal.init({
         appId: appId,
         allowLocalhostAsSecureOrigin: true,
+        serviceWorkerPath: 'OneSignalSDKWorker.js',
         notifyButton: {
           enable: false,
-        } as any, // Bypass strict type check for partial notifyButton config
+        } as any,
       }).then(() => {
         console.log("OneSignal Initialized");
+        // Optionnel : vérifier si l'utilisateur est déjà abonné
+        if (OneSignal.Notifications.permission) {
+          console.log("Permission statut:", OneSignal.Notifications.permissionNative);
+        }
       });
     }
   }, []);

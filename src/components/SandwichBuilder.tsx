@@ -90,11 +90,17 @@ export default function SandwichBuilder() {
     return false;
   });
 
-  const enableNotifications = () => {
-    // Logique OneSignal ici
-    console.log("Activation des notifications OneSignal...");
-    localStorage.setItem("notify_prompt_shown", "true");
-    setShowNotifyPrompt(false);
+  const enableNotifications = async () => {
+    try {
+      console.log("Demande d'activation OneSignal...");
+      await OneSignal.Notifications.requestPermission();
+      localStorage.setItem("notify_prompt_shown", "true");
+      setShowNotifyPrompt(false);
+      console.log("Permission demandée avec succès");
+    } catch (err) {
+      console.error("Erreur lors de la demande de permission OneSignal:", err);
+      alert("Une erreur est survenue lors de l'activation des notifications.");
+    }
   };
 
   const handleNext = () => {
