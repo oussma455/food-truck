@@ -15,14 +15,11 @@ export interface Category {
 export type StepId = 
   | 'ORDER_TYPE' 
   | 'FORMULA' 
-  | 'CREATION_MODE' 
   | 'PRESETS' 
   | 'KIDS_MENU'
-  | 'BUILD_BREAD' 
-  | 'BUILD_MEAT' 
-  | 'BUILD_SAUCES' 
   | 'EXTRAS' 
-  | 'SIDES' 
+  | 'DRINKS' 
+  | 'DESSERTS' 
   | 'CHECKOUT';
 
 export interface SandwichConfig {

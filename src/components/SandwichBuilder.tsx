@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SANDWICH_CATEGORIES, ORDER_TYPES, FORMULAS, CREATION_MODES } from "@/lib/data";
+import { SANDWICH_CATEGORIES, ORDER_TYPES, FORMULAS } from "@/lib/data";
 import { SandwichConfig, Option, Category, StepId } from "@/types";
 import OneSignal from 'react-onesignal';
-import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star, CreditCard, Wallet, UtensilsCrossed, Bell, X } from "lucide-react";
+import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star, CreditCard, Wallet, UtensilsCrossed, Bell, X, Utensils, Sandwich as BurgerIcon, CupSoda } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
@@ -60,6 +60,15 @@ export default function SandwichBuilder() {
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
 
   useEffect(() => {
+    if (step === 'DRINKS') {
+      const isMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_kids';
+      if (isMenu) {
+        alert("Boisson comprise dans votre menu !");
+      }
+    }
+  }, [step, currentConfig.formula?.id]);
+
+  useEffect(() => {
     // Initialisation : on mémorise le statut actuel sans sonner
     if (typeof window !== "undefined") {
       const initialStatus = localStorage.getItem("truck_status") || "closed";
@@ -104,57 +113,51 @@ export default function SandwichBuilder() {
     }
   };
 
-  const handleNext = () => {
-    switch (step) {
+  const handleNext = (overrideStep?: StepId, formulaId?: string) => {
+    const currentStep = overrideStep || step;
+    
+    switch (currentStep) {
       case 'ORDER_TYPE':
         setStep('FORMULA');
         break;
       case 'FORMULA':
-        if (currentConfig.formula?.id === 'menu_kids') {
+        const selectedFormulaId = formulaId || currentConfig.formula?.id;
+        if (selectedFormulaId === 'menu_kids') {
           setStep('KIDS_MENU');
         } else {
-          setStep('CREATION_MODE');
-        }
-        break;
-      case 'CREATION_MODE':
-        if (currentConfig.creation_mode === 'signature') {
           setStep('PRESETS');
-        } else {
-          setStep('BUILD_BREAD');
         }
         break;
       case 'KIDS_MENU':
-        setStep('SIDES');
+        setStep('DRINKS');
         break;
       case 'PRESETS':
         setStep('EXTRAS');
         break;
-      case 'BUILD_BREAD':
-        setStep('BUILD_MEAT');
-        break;
-      case 'BUILD_MEAT':
-        setStep('BUILD_SAUCES');
-        break;
-      case 'BUILD_SAUCES':
-        setStep('EXTRAS');
-        break;
       case 'EXTRAS':
-        if (currentConfig.formula?.id === 'sandwich_only') {
-          goToCheckout();
-        } else {
-          setStep('SIDES');
-        }
+        setStep('DRINKS');
         break;
-      case 'SIDES':
-        goToCheckout();
+      case 'DRINKS':
+        const isMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_kids';
+        const hasDrink = currentConfig.drinks && currentConfig.drinks.length > 0;
+        
+        if (isMenu && !hasDrink) {
+          alert("Dans votre Menu complet, une boisson est comprise ! Veuillez en choisir une pour continuer.");
+          return;
+        }
+        setStep('DESSERTS');
+        break;
+      case 'DESSERTS':
+        setStep('CHECKOUT');
         break;
       default:
         break;
     }
   };
 
+  const showNextButton = ['EXTRAS', 'DRINKS', 'DESSERTS'].includes(step);
+
   const goToCheckout = () => {
-    // Add current config to cart if not already there (though we'll handle multi-add specifically)
     setStep('CHECKOUT');
   };
 
@@ -172,24 +175,15 @@ export default function SandwichBuilder() {
   const handleBack = () => {
     switch (step) {
       case 'FORMULA': setStep('ORDER_TYPE'); break;
-      case 'CREATION_MODE': setStep('FORMULA'); break;
-      case 'PRESETS': setStep('CREATION_MODE'); break;
+      case 'PRESETS': setStep('FORMULA'); break;
       case 'KIDS_MENU': setStep('FORMULA'); break;
-      case 'BUILD_BREAD': setStep('CREATION_MODE'); break;
-      case 'BUILD_MEAT': setStep('BUILD_BREAD'); break;
-      case 'BUILD_SAUCES': setStep('BUILD_MEAT'); break;
       case 'EXTRAS': 
-        if (currentConfig.creation_mode === 'signature') setStep('PRESETS');
-        else setStep('BUILD_SAUCES');
-        break;
-      case 'SIDES': 
         if (currentConfig.formula?.id === 'menu_kids') setStep('KIDS_MENU');
-        else setStep('EXTRAS'); 
+        else setStep('PRESETS'); 
         break;
-      case 'CHECKOUT': 
-        if (currentConfig.formula?.id === 'sandwich_only') setStep('EXTRAS');
-        else setStep('SIDES');
-        break;
+      case 'DRINKS': setStep('EXTRAS'); break;
+      case 'DESSERTS': setStep('DRINKS'); break;
+      case 'CHECKOUT': setStep('DESSERTS'); break;
       default: break;
     }
   };
@@ -278,7 +272,10 @@ export default function SandwichBuilder() {
                   key={type.id} 
                   option={type} 
                   isSelected={orderInfo.type === type.id} 
-                  onClick={() => { setOrderInfo({...orderInfo, type: type.id as "on_site" | "takeaway"}); handleNext(); }}
+                  onClick={() => { 
+                    setOrderInfo({...orderInfo, type: type.id as "on_site" | "takeaway"}); 
+                    setTimeout(() => handleNext('ORDER_TYPE'), 300); // Auto-advance with slight delay for visual feedback
+                  }}
                   icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />}
                 />
               ))}
@@ -294,8 +291,33 @@ export default function SandwichBuilder() {
                   <OptionCard 
                     option={formula} 
                     isSelected={currentConfig.formula?.id === formula.id} 
-                    onClick={() => { setCurrentConfig({...currentConfig, formula}); handleNext(); }}
-                    icon={formula.id === 'menu_student' ? <GraduationCap /> : formula.id === 'menu_kids' ? <Baby /> : <Star />}
+                    onClick={() => { 
+                      setCurrentConfig({...currentConfig, formula}); 
+                      setTimeout(() => handleNext('FORMULA', formula.id), 300); 
+                    }}
+                    icon={
+                      formula.id === 'menu_standard' ? (
+                        <div className="flex gap-0.5 items-center">
+                          <BurgerIcon size={16} />
+                          <Utensils size={14} className="opacity-70" />
+                          <CupSoda size={14} className="opacity-70" />
+                        </div>
+                      ) : formula.id === 'sandwich_only' ? (
+                        <BurgerIcon size={20} />
+                      ) : formula.id === 'menu_student' ? (
+                        <div className="flex gap-0.5 items-center">
+                          <GraduationCap size={16} />
+                          <BurgerIcon size={14} className="opacity-70" />
+                        </div>
+                      ) : formula.id === 'menu_kids' ? (
+                        <div className="flex gap-0.5 items-center">
+                          <Baby size={16} />
+                          <BurgerIcon size={14} className="opacity-70" />
+                        </div>
+                      ) : (
+                        <Star size={18} />
+                      )
+                    }
                   />
                   {formula.id === 'menu_student' && (
                     <p className="text-[10px] text-amber-500 font-bold px-4 italic animate-pulse">
@@ -303,21 +325,6 @@ export default function SandwichBuilder() {
                     </p>
                   )}
                 </div>
-              ))}
-            </div>
-          </StepContainer>
-        );
-      case 'CREATION_MODE':
-        return (
-          <StepContainer title="Votre Sandwich" subtitle="Comment le voulez-vous ?">
-            <div className="grid grid-cols-1 gap-4">
-              {CREATION_MODES.map(mode => (
-                <OptionCard 
-                  key={mode.id} 
-                  option={mode} 
-                  isSelected={currentConfig.creation_mode === mode.id} 
-                  onClick={() => { setCurrentConfig({...currentConfig, creation_mode: mode.id as "signature" | "custom"}); handleNext(); }}
-                />
               ))}
             </div>
           </StepContainer>
@@ -331,7 +338,10 @@ export default function SandwichBuilder() {
                   key={preset.id} 
                   option={preset} 
                   isSelected={currentConfig.preset_sandwich?.id === preset.id} 
-                  onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: preset, bread: undefined, meat: undefined}); handleNext(); }}
+                  onClick={() => { 
+                    setCurrentConfig({...currentConfig, preset_sandwich: preset, bread: undefined, meat: undefined}); 
+                    setTimeout(() => handleNext('PRESETS'), 300); 
+                  }}
                 />
               ))}
             </div>
@@ -346,25 +356,38 @@ export default function SandwichBuilder() {
                   key={kidsItem.id} 
                   option={kidsItem} 
                   isSelected={currentConfig.preset_sandwich?.id === kidsItem.id} 
-                  onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: kidsItem, bread: undefined, meat: undefined}); handleNext(); }}
+                  onClick={() => { 
+                    setCurrentConfig({...currentConfig, preset_sandwich: kidsItem, bread: undefined, meat: undefined}); 
+                    setTimeout(() => handleNext('KIDS_MENU'), 300); 
+                  }}
                 />
               ))}
             </div>
           </StepContainer>
         );
-      case 'BUILD_BREAD':
-        return <CategoryStep category={menu.find(c => c.id === 'bread')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="single" />;
-      case 'BUILD_MEAT':
-        return <CategoryStep category={menu.find(c => c.id === 'meat')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="single" />;
-      case 'BUILD_SAUCES':
-        return <CategoryStep category={menu.find(c => c.id === 'sauces')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" />;
       case 'EXTRAS':
         return <CategoryStep category={menu.find(c => c.id === 'extras')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" />;
-      case 'SIDES':
+      case 'DRINKS':
+        const isStandardMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_kids';
         return (
-          <StepContainer title="Accompagnements" subtitle="Boissons & Desserts">
-            <div className="space-y-8">
+          <StepContainer title="Boissons" subtitle="Choisissez votre rafraîchissement">
+            <div className="space-y-6">
+              {isStandardMenu && (
+                <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center gap-3 animate-bounce">
+                  <div className="bg-primary p-2 rounded-lg text-background">
+                    <CupSoda size={18} />
+                  </div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Boisson comprise dans votre menu !</p>
+                </div>
+              )}
               <SideSelector label="Boissons" options={menu.find(c => c.id === 'drinks')!.options} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
+            </div>
+          </StepContainer>
+        );
+      case 'DESSERTS':
+        return (
+          <StepContainer title="Desserts" subtitle="Une petite touche sucrée ?">
+            <div className="space-y-8">
               <SideSelector label="Desserts" options={menu.find(c => c.id === 'desserts')!.options} config={currentConfig} setConfig={setCurrentConfig} type="desserts" />
               
               <button 
@@ -395,72 +418,105 @@ export default function SandwichBuilder() {
   };
 
   return (
-    <div className="max-w-md mx-auto min-h-screen flex flex-col p-6 bg-background text-foreground pb-40 relative overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden max-w-md mx-auto">
       <AnimatePresence>{showConfetti && <Confetti />}</AnimatePresence>
       
-      <header className="mb-8 pt-4 text-center">
-        <h1 className="text-3xl font-serif font-bold text-primary mb-2 italic">La Grillade O&apos;Charbon</h1>
-        <div className="premium-gradient h-[1px] w-24 mx-auto mb-2 opacity-50" />
-        <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-bold">L&apos;excellence de la grillade</p>
+      {/* Fixed Header */}
+      <header className="shrink-0 py-6 px-6 text-center border-b border-gray-900/50 bg-background/80 backdrop-blur-md z-40">
+        <h1 className="text-2xl font-serif font-bold text-primary italic">La Grillade O&apos;Charbon</h1>
+        <div className="premium-gradient h-[1px] w-16 mx-auto my-1.5 opacity-50" />
+        <p className="text-gray-500 text-[8px] uppercase tracking-[0.3em] font-bold">L&apos;excellence de la grillade</p>
       </header>
 
-      <AnimatePresence>
-        {showNotifyPrompt && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="mb-6 overflow-hidden"
-          >
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/20 p-2 rounded-lg text-primary">
-                  <Bell size={18} />
+      {/* Main Content - Scrollable Area */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-32">
+        <AnimatePresence>
+          {showNotifyPrompt && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="mb-6 overflow-hidden shrink-0"
+            >
+              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/20 p-2 rounded-lg text-primary">
+                    <Bell size={18} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white">Restez informé</p>
+                    <p className="text-[9px] text-gray-500">Ding ! Soyez prévenu dès que le truck ouvre.</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white">Restez informé</p>
-                  <p className="text-[9px] text-gray-500">Ding ! Soyez prévenu dès que le truck ouvre.</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={enableNotifications} className="bg-primary text-background px-3 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest hover:scale-105 transition-all">Activer</button>
+                  <button onClick={() => setShowNotifyPrompt(false)} className="text-gray-600 p-2"><X size={14} /></button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={enableNotifications} className="bg-primary text-background px-3 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest hover:scale-105 transition-all">Activer</button>
-                <button onClick={() => setShowNotifyPrompt(false)} className="text-gray-600 p-2"><X size={14} /></button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      <div className="flex-1 flex flex-col">
         <AnimatePresence mode="wait">
-          <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1">
+          <motion.div 
+            key={step} 
+            initial={{ opacity: 0, x: 10 }} 
+            animate={{ opacity: 1, x: 0 }} 
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+            className="min-h-full"
+          >
             {renderStep()}
           </motion.div>
         </AnimatePresence>
+      </main>
 
-        <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/95 backdrop-blur-2xl border-t border-gray-900 max-w-md mx-auto flex flex-col gap-4 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-          <div className="flex gap-4">
-            <button onClick={handleBack} className={cn("flex-1 py-4 rounded-2xl border border-gray-800 font-black text-[10px] uppercase tracking-widest text-gray-600 hover:text-white transition-all", step === 'ORDER_TYPE' ? "opacity-0 pointer-events-none" : "")}>Retour</button>
-            <button 
-              onClick={handleNext} 
-              disabled={
-                (step === 'BUILD_BREAD' && !currentConfig.bread) || 
-                (step === 'BUILD_MEAT' && !currentConfig.meat) || 
-                (step === 'PRESETS' && !currentConfig.preset_sandwich) ||
-                (step === 'KIDS_MENU' && !currentConfig.preset_sandwich) ||
-                (step === 'CHECKOUT')
-              }
-              className={cn("flex-[2.5] premium-gradient text-background font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all", step === 'CHECKOUT' ? "hidden" : "")}
-            >
-              {step === 'SIDES' ? "VOIR LE RÉSUMÉ" : "SUIVANT"}
-            </button>
-          </div>
-          <div className="flex justify-center items-center gap-8 pt-3 border-t border-gray-800/30">
-            <a href="tel:+33600000000" className="text-primary flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] hover:scale-110 transition-all active:opacity-50"><Phone size={12} fill="currentColor" /> Appeler</a>
-            <Link href="/legals" className="text-gray-700 flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] hover:text-white transition-all"><Shield size={12} /> Légal</Link>
-          </div>
+      {/* Fixed Footer */}
+      <footer className="shrink-0 p-6 bg-background/95 backdrop-blur-2xl border-t border-gray-900 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <div className="flex gap-3 mb-6">
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
+            onClick={handleBack} 
+            className={cn(
+              "flex-1 py-4 rounded-2xl border border-white bg-black font-black text-[9px] uppercase tracking-widest text-white transition-all", 
+              step === 'ORDER_TYPE' ? "hidden" : ""
+            )}
+          >
+            Retour
+          </motion.button>
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleNext()} 
+            disabled={
+              (step === 'PRESETS' && !currentConfig.preset_sandwich) ||
+              (step === 'KIDS_MENU' && !currentConfig.preset_sandwich)
+            }
+            className={cn(
+              "bg-white text-black font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2", 
+              step === 'CHECKOUT' || !showNextButton ? "hidden" : "flex-[2.5]"
+            )}
+          >
+            {step === 'DESSERTS' ? "VOIR LE RÉSUMÉ" : "SUIVANT"} <Plus size={14} />
+          </motion.button>
         </div>
-      </div>
+        <div className="flex justify-between items-center px-2">
+          <motion.a 
+            whileTap={{ scale: 0.9 }}
+            href="tel:+33600000000" 
+            className="text-primary flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] active:opacity-50"
+          >
+            <div className="bg-primary p-2 rounded-lg text-white">
+              <Phone size={14} fill="currentColor" />
+            </div>
+            Appeler
+          </motion.a>
+          <motion.div whileTap={{ scale: 0.9 }}>
+            <Link href="/legals" className="text-white flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] opacity-80 hover:opacity-100">
+              <Shield size={14} className="text-white" /> Légal
+            </Link>
+          </motion.div>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -479,7 +535,9 @@ function StepContainer({ title, subtitle, children }: { title: string; subtitle:
 
 function OptionCard({ option, isSelected, onClick, icon }: { option: Option; isSelected: boolean; onClick: () => void; icon?: React.ReactNode }) {
   return (
-    <div 
+    <motion.div 
+      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.02 }}
       onClick={onClick}
       className={cn(
         "premium-card p-5 transition-all duration-300 flex justify-between items-center group cursor-pointer border",
@@ -499,7 +557,7 @@ function OptionCard({ option, isSelected, onClick, icon }: { option: Option; isS
           <Check size={10} strokeWidth={4} />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -606,8 +664,6 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
             <div key={idx} className="pb-2 border-b border-gray-800/50 last:border-0 last:pb-0">
               {item.formula && <p className="text-xs text-white font-bold">● {item.formula.name}</p>}
               {item.preset_sandwich && <p className="text-xs text-gray-300 ml-3 italic">→ {item.preset_sandwich.name}</p>}
-              {item.bread && <p className="text-xs text-gray-300 ml-3 italic">→ Pain: {item.bread.name}</p>}
-              {item.meat && <p className="text-xs text-gray-300 ml-3 italic">→ Viande: {item.meat.name}</p>}
             </div>
           ))}
         </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { SANDWICH_CATEGORIES, FORMULAS, ORDER_TYPES, CREATION_MODES } from "@/lib/data";
+import { SANDWICH_CATEGORIES, FORMULAS, ORDER_TYPES } from "@/lib/data";
 import { SandwichConfig, Option, Order, Category } from "@/types";
 import { X, Plus, Check, MinusCircle } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
@@ -35,8 +35,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
   const modalCategories = [
     { id: "order_type", name: "Type de commande", options: ORDER_TYPES },
     { id: "formula", name: "Formule", options: FORMULAS },
-    { id: "creation_mode", name: "Mode de préparation", options: CREATION_MODES },
-    ...menuCategories
+    ...menuCategories.filter(c => !['bread', 'meat'].includes(c.id))
   ];
 
   const currentCategory = modalCategories[step];
@@ -44,7 +43,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
   const resetCurrentConfig = () => {
     setConfig({
       formula: undefined,
-      creation_mode: undefined,
+      creation_mode: 'signature',
       preset_sandwich: undefined,
       bread: undefined,
       meat: undefined,
@@ -64,13 +63,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       return;
     }
     
-    const isKids = config.formula.id === 'menu_kids';
-    if (!isKids && !config.preset_sandwich && (!config.bread || !config.meat)) {
-      alert("Veuillez configurer le sandwich (Signature ou Pain+Viande).");
-      return;
-    }
-    if (isKids && !config.preset_sandwich) {
-      alert("Veuillez choisir un menu enfant.");
+    if (!config.preset_sandwich) {
+      alert("Veuillez choisir un sandwich.");
       return;
     }
 
@@ -90,17 +84,9 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         const kidsStep = modalCategories.findIndex(c => c.id === 'kids_menu');
         if (kidsStep !== -1) setStep(kidsStep);
       } else {
-        setStep(step + 1);
-      }
-    } else if (catId === "creation_mode") {
-      const mode = option.id as 'signature' | 'custom';
-      setConfig({ ...config, creation_mode: mode });
-      if (mode === 'signature') {
-        const signatureStep = modalCategories.findIndex(c => c.id === 'presets');
-        if (signatureStep !== -1) setStep(signatureStep);
-      } else {
-        const breadStep = modalCategories.findIndex(c => c.id === 'bread');
-        if (breadStep !== -1) setStep(breadStep);
+        const presetsStep = modalCategories.findIndex(c => c.id === 'presets');
+        if (presetsStep !== -1) setStep(presetsStep);
+        else setStep(step + 1);
       }
     } else if (catId === "presets" || catId === "kids_menu") {
       setConfig({ 
@@ -112,26 +98,12 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         removed_ingredients: []
       });
       if (catId === "kids_menu") {
-        // Kids menus are complete, skip to validation or sides if needed
         addItemToBasket();
       } else {
         const saucesStep = modalCategories.findIndex(c => c.id === 'sauces');
         if (saucesStep !== -1) setStep(saucesStep);
+        else setStep(step + 1);
       }
-    } else if (catId === "bread") {
-      setConfig({ 
-        ...config, 
-        bread: option, 
-        creation_mode: 'custom',
-        preset_sandwich: undefined 
-      });
-    } else if (catId === "meat") {
-      setConfig({ 
-        ...config, 
-        meat: option, 
-        creation_mode: 'custom',
-        preset_sandwich: undefined 
-      });
     } else if (catId === "sauces") {
       const isSelected = config.sauces.find((s) => s.id === option.id);
       if (isSelected) {
@@ -172,11 +144,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     const catId = currentCategory.id;
     if (catId === "order_type") return orderType === optionId;
     if (catId === "formula") return config.formula?.id === optionId;
-    if (catId === "creation_mode") return config.creation_mode === optionId;
     if (catId === "presets") return config.preset_sandwich?.id === optionId;
     if (catId === "kids_menu") return config.preset_sandwich?.id === optionId;
-    if (catId === "bread") return config.bread?.id === optionId;
-    if (catId === "meat") return config.meat?.id === optionId;
     if (catId === "sauces") return config.sauces.some((s) => s.id === optionId);
     if (catId === "extras") return config.extras.some((e) => e.id === optionId);
     if (catId === "drinks") return (config.drinks || []).some((d) => d.option.id === optionId);
@@ -189,11 +158,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
     let total = item.formula?.price || 0;
     
-    if (item.creation_mode === 'signature' && item.preset_sandwich) {
+    if (item.preset_sandwich) {
       total = Math.max(total, item.preset_sandwich.price);
-    } else if (item.creation_mode === 'custom') {
-      if (item.bread) total += item.bread.price;
-      if (item.meat) total += item.meat.price;
     }
 
     const saucesCount = item.sauces.length;
@@ -214,7 +180,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
   const handleSubmit = () => {
     const finalItems = [...basket];
-    if (config.formula && (config.preset_sandwich || (config.bread && config.meat))) {
+    if (config.formula && config.preset_sandwich) {
       finalItems.push(config);
     }
 
@@ -339,7 +305,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                     <div key={idx} className="bg-black/40 p-3 rounded-lg border border-gray-800 relative group">
                       <button onClick={() => setBasket(basket.filter((_, i) => i !== idx))} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"><X size={10} /></button>
                       <p className="text-[10px] font-bold text-white">{item.formula?.name}</p>
-                      <p className="text-[9px] text-gray-400">{item.preset_sandwich?.name || `${item.bread?.name} + ${item.meat?.name}`}</p>
+                      <p className="text-[9px] text-gray-400">{item.preset_sandwich?.name}</p>
                       {item.removed_ingredients && item.removed_ingredients.length > 0 && (
                         <p className="text-[8px] text-red-500 mt-1 italic">SANS: {item.removed_ingredients.join(', ')}</p>
                       )}
@@ -351,22 +317,15 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                     <p className="text-[10px] text-primary font-bold uppercase tracking-widest mb-2">Article en cours</p>
                     <ul className="space-y-1 text-[10px]">
                       <li className="flex justify-between"><span className="text-gray-500">Formule:</span><span className={config.formula ? "text-white" : "text-red-500/50 italic"}>{config.formula?.name || "Non choisi"}</span></li>
-                      {config.preset_sandwich ? (
-                        <li className="flex justify-between items-start gap-2">
-                          <span className="text-gray-500">Recette:</span>
-                          <div className="text-right">
-                            <span className="text-white block">{config.preset_sandwich.name}</span>
-                            {config.removed_ingredients && config.removed_ingredients.length > 0 && (
-                              <span className="text-red-500 text-[8px] block italic">SANS: {config.removed_ingredients.join(', ')}</span>
-                            )}
-                          </div>
-                        </li>
-                      ) : (
-                        <>
-                          <li className="flex justify-between"><span className="text-gray-500">Pain:</span><span className={config.bread ? "text-white" : "text-red-500/50 italic"}>{config.bread?.name || "Non choisi"}</span></li>
-                          <li className="flex justify-between"><span className="text-gray-500">Viande:</span><span className={config.meat ? "text-white" : "text-red-500/50 italic"}>{config.meat?.name || "Non choisi"}</span></li>
-                        </>
-                      )}
+                      <li className="flex justify-between items-start gap-2">
+                        <span className="text-gray-500">Recette:</span>
+                        <div className="text-right">
+                          <span className={config.preset_sandwich ? "text-white" : "text-red-500/50 italic"}>{config.preset_sandwich?.name || "Non choisi"}</span>
+                          {config.removed_ingredients && config.removed_ingredients.length > 0 && (
+                            <span className="text-red-500 text-[8px] block italic">SANS: {config.removed_ingredients.join(', ')}</span>
+                          )}
+                        </div>
+                      </li>
                     </ul>
                     <button onClick={addItemToBasket} className="w-full mt-3 py-2 border border-primary/30 text-primary rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-primary/10 transition-all">+ Ajouter un autre article</button>
                   </div>
