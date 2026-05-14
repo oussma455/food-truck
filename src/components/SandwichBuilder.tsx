@@ -223,7 +223,7 @@ export default function SandwichBuilder() {
           <StepContainer title="Bienvenue" subtitle="Sur place ou à emporter ?">
             <div className="grid grid-cols-1 gap-4">
               {ORDER_TYPES.map(type => (
-                <OptionCard key={type.id} option={type} isSelected={orderInfo.type === type.id} onClick={() => { setOrderInfo({...orderInfo, type: type.id as any}); handleNext('ORDER_TYPE'); }} icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />} />
+                <OptionCard key={type.id} option={type} isSelected={orderInfo.type === type.id} onClick={() => { setOrderInfo({...orderInfo, type: type.id as any}); handleNext('ORDER_TYPE'); }} icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />} hidePrice={true} />
               ))}
               <div className="h-[1px] w-full bg-gray-900 my-4 flex items-center justify-center"><span className="bg-background px-4 text-gray-700 text-[8px] uppercase tracking-widest font-black">Ou réservation spéciale</span></div>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setIsCouscousMode(true); setStep('COUSCOUS'); }} className="w-full bg-white p-5 rounded-2xl flex items-center justify-between gap-4 border border-white group relative overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)]">
@@ -270,9 +270,13 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Nos Créations" subtitle="Recettes signatures">
             <div className="grid grid-cols-1 gap-3">
-              {getAvailableOptions('presets').map(p => (
-                <OptionCard key={p.id} option={p} isSelected={currentConfig.preset_sandwich?.id === p.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: p}); setTimeout(() => handleNext('PRESETS'), 300); }} />
-              ))}
+              {getAvailableOptions('presets').map(p => {
+                // If standard menu selected, show only surcharge vs base 10€
+                const surchargeVal = currentConfig.formula?.id !== 'sandwich_only' ? Math.max(0, p.price - 10) : p.price;
+                return (
+                  <OptionCard key={p.id} option={p} isSelected={currentConfig.preset_sandwich?.id === p.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: p}); setTimeout(() => handleNext('PRESETS'), 300); }} surchargeValue={surchargeVal} />
+                );
+              })}
             </div>
           </StepContainer>
         );
@@ -281,7 +285,7 @@ export default function SandwichBuilder() {
           <StepContainer title="Menu Enfant" subtitle="Son petit régal">
             <div className="grid grid-cols-1 gap-3">
               {getAvailableOptions('kids_menu').map(k => (
-                <OptionCard key={k.id} option={k} isSelected={currentConfig.preset_sandwich?.id === k.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: k}); setTimeout(() => handleNext('KIDS_MENU'), 300); }} />
+                <OptionCard key={k.id} option={k} isSelected={currentConfig.preset_sandwich?.id === k.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: k}); setTimeout(() => handleNext('KIDS_MENU'), 300); }} hidePrice={true} />
               ))}
             </div>
           </StepContainer>
@@ -295,13 +299,10 @@ export default function SandwichBuilder() {
         const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaIdDrinksStep);
         const isCouscousStep = ['s1', 's2', 's3'].includes(formulaIdDrinksStep);
         
-        let quotaT = "";
-        if (isStandardMenu) quotaT = "1 Boisson comprise !";
-        else if (isCouscousStep) {
-          if (formulaIdDrinksStep === 's1') quotaT = "2 Boissons offertes !";
-          else if (formulaIdDrinksStep === 's2') quotaT = "3 Boissons offertes !";
-          else if (formulaIdDrinksStep === 's3') quotaT = "4 Cannettes OU 1 Bouteille 1.5L offerte !";
-        }
+        let q = isStandardMenu ? 1 : 0;
+        if (isCouscousStep) q = formulaIdDrinksStep === 's1' ? 2 : formulaIdDrinksStep === 's2' ? 3 : 4;
+
+        let quotaT = isStandardMenu ? "1 Boisson comprise !" : isCouscousStep ? (formulaIdDrinksStep === 's3' ? "4 Cannettes OU 1 Bouteille 1.5L offerte !" : `${q} Boissons offertes !`) : "";
 
         const availableDrinks = getAvailableOptions('drinks');
         const cans = availableDrinks.filter(d => !d.name.includes('1.5L') && !d.name.includes('2L'));
@@ -315,11 +316,22 @@ export default function SandwichBuilder() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary">{quotaT}</p>
                 </div>
               )}
-              <SideSelector label="Cannettes & Petits formats" options={cans} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
-              {bottles.length > 0 && <SideSelector label="Grandes Bouteilles (1.5L / 2L)" options={bottles} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />}
+              <SideSelector label="Cannettes & Petits formats" options={cans} config={currentConfig} setConfig={setCurrentConfig} type="drinks" quota={q} />
+              {bottles.length > 0 && <SideSelector label="Grandes Bouteilles (1.5L / 2L)" options={bottles} config={currentConfig} setConfig={setCurrentConfig} type="drinks" quota={formulaIdDrinksStep === 's3' ? 1 : 0} />}
             </div>
           </StepContainer>
         );
+      case 'DESSERTS':
+        return (
+          <StepContainer title="Desserts" subtitle="Une touche sucrée ?">
+            <SideSelector label="Desserts" options={getAvailableOptions('desserts')} config={currentConfig} setConfig={setCurrentConfig} type="desserts" />
+          </StepContainer>
+        );
+      case 'CHECKOUT':
+        return <CheckoutScreen orderInfo={orderInfo} setOrderInfo={setOrderInfo} cart={cart} currentConfig={currentConfig} calculateTotal={calculateTotal} rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted} isSubmitting={isSubmitting} onSubmit={handleSubmitOrder} onAddAnother={() => setActiveTab('menu')} isCouscousMode={isCouscousMode} />;
+      default: return null;
+    }
+  };
       case 'DESSERTS':
         return (
           <StepContainer title="Desserts" subtitle="Une touche sucrée ?">
@@ -425,40 +437,135 @@ function StepContainer({ title, subtitle, children }: { title: string; subtitle:
   return (<div className="flex-1"><div className="mb-6"><span className="text-[10px] text-primary font-black tracking-[0.2em] uppercase">{title}</span><h2 className="text-2xl font-serif mt-1 italic">{subtitle}</h2></div>{children}</div>);
 }
 
-function OptionCard({ option, isSelected, onClick, icon }: { option: Option; isSelected: boolean; onClick: () => void; icon?: React.ReactNode }) {
-  return (<motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.02 }} onClick={onClick} className={cn("premium-card p-5 transition-all duration-300 flex justify-between items-center group cursor-pointer border", isSelected ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(212,175,55,0.1)]" : "hover:border-primary/40 border-gray-800")}><div className="flex items-center gap-4">{icon && <div className={cn("text-gray-500 group-hover:text-primary transition-colors", isSelected && "text-primary")}>{React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 20 }) : icon}</div>}<div><p className={cn("font-black text-[11px] uppercase tracking-[0.1em]", isSelected ? "text-primary" : "text-gray-300")}>{option.name}</p>{option.description && <p className="text-[9px] text-white mt-0.5 leading-tight font-medium opacity-90">{option.description}</p>}</div></div><div className="flex items-center gap-3">{option.price > 0 && <span className="text-[10px] text-gray-500 font-mono font-bold">+{option.price.toFixed(2)}€</span>}<div className={cn("w-5 h-5 rounded-full border border-primary flex items-center justify-center transition-all", isSelected ? "bg-primary text-background" : "bg-black/40 text-transparent")}><Check size={10} strokeWidth={4} /></div></div></motion.div>);
+function OptionCard({ option, isSelected, onClick, icon, hidePrice, surchargeValue }: { option: Option; isSelected: boolean; onClick: () => void; icon?: React.ReactNode; hidePrice?: boolean; surchargeValue?: number }) {
+  const displayPrice = surchargeValue !== undefined ? surchargeValue : option.price;
+  const shouldShowPrice = !hidePrice && (displayPrice !== 0);
+
+  return (
+    <motion.div 
+      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.02 }}
+      onClick={onClick}
+      className={cn(
+        "premium-card p-5 transition-all duration-300 flex justify-between items-center group cursor-pointer border",
+        isSelected ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(212,175,55,0.1)]" : "hover:border-primary/40 border-gray-800"
+      )}
+    >
+      <div className="flex items-center gap-4">
+        {icon && <div className={cn("text-gray-500 group-hover:text-primary transition-colors", isSelected && "text-primary")}>{React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 20 }) : icon}</div>}
+        <div>
+          <p className={cn("font-black text-[11px] uppercase tracking-[0.1em]", isSelected ? "text-primary" : "text-gray-300")}>{option.name}</p>
+          {option.description && <p className="text-[9px] text-white mt-0.5 leading-tight font-medium opacity-90">{option.description}</p>}
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {shouldShowPrice && (
+          <span className="text-[10px] text-gray-500 font-mono font-bold">
+            {displayPrice > 0 ? `+${displayPrice.toFixed(2)}€` : `${displayPrice.toFixed(2)}€`}
+          </span>
+        )}
+        <div className={cn("w-5 h-5 rounded-full border border-primary flex items-center justify-center transition-all", isSelected ? "bg-primary text-background" : "bg-black/40 text-transparent")}>
+          <Check size={10} strokeWidth={4} />
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
-function CategoryStep({ category, config, setConfig, onNext, type, limit }: { category: Category; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; onNext: () => void; type: 'single' | 'multiple'; limit?: number }) {
+function CategoryStep({ category, config, setConfig, onNext, type, limit, isSauceStep }: { category: Category; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; onNext: () => void; type: 'single' | 'multiple'; limit?: number; isSauceStep?: boolean }) {
   const handleToggle = (option: Option) => {
-    if (type === 'single') { setConfig({ ...config, [category.id]: option }); onNext(); }
-    else {
+    if (type === 'single') {
+      setConfig({ ...config, [category.id]: option });
+      onNext();
+    } else {
       const current = config[category.id as keyof SandwichConfig] as Option[] || [];
       const isSelected = current.find(s => s.id === option.id);
-      if (isSelected) setConfig({ ...config, [category.id]: current.filter(s => s.id !== option.id) });
-      else { if (limit && current.length >= limit) return; setConfig({ ...config, [category.id]: [...current, option] }); }
+      if (isSelected) {
+        setConfig({ ...config, [category.id]: current.filter(s => s.id !== option.id) });
+      } else {
+        if (limit && current.length >= limit) return;
+        setConfig({ ...config, [category.id]: [...current, option] });
+      }
     }
   };
+
   const isSelected = (id: string) => {
     const val = config[category.id as keyof SandwichConfig];
     if (Array.isArray(val)) return (val as (Option | { option: Option; quantity: number })[]).some(i => 'id' in i ? i.id === id : i.option.id === id);
     return (val as Option)?.id === id;
   };
-  return (<StepContainer title="Sélection" subtitle={category.name}><div className="grid grid-cols-1 gap-3">{category.options.map(option => (<OptionCard key={option.id} option={option} isSelected={isSelected(option.id)} onClick={() => handleToggle(option)} />))}</div></StepContainer>);
+
+  return (
+    <StepContainer title="Sélection" subtitle={category.name}>
+      <div className="grid grid-cols-1 gap-3">
+        {category.options.map(option => {
+          // Sauce logic: first 2 are free
+          const currentList = config[category.id as keyof SandwichConfig] as Option[] || [];
+          const isIncluded = isSauceStep && currentList.length < 2 && !isSelected(option.id);
+
+          return (
+            <OptionCard 
+              key={option.id} 
+              option={option} 
+              isSelected={isSelected(option.id)} 
+              onClick={() => handleToggle(option)}
+              hidePrice={isSauceStep && (isIncluded || isSelected(option.id) && currentList.indexOf(currentList.find(s => s.id === option.id)!) < 2)}
+              surchargeValue={isSauceStep ? 0.50 : undefined}
+            />
+          );
+        })}
+      </div>
+    </StepContainer>
+  );
 }
 
-function SideSelector({ label, options, config, setConfig, type }: { label: string; options: Option[]; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; type: 'drinks' | 'desserts' }) {
+function SideSelector({ label, options, config, setConfig, type, quota }: { label: string; options: Option[]; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; type: 'drinks' | 'desserts', quota?: number }) {
   const current = config[type] || [];
   const getQty = (id: string) => current.find(i => i.option.id === id)?.quantity || 0;
+
   const update = (option: Option, delta: number) => {
     const existing = current.find(i => i.option.id === option.id);
     if (existing) {
       const newQty = Math.max(0, existing.quantity + delta);
       if (newQty === 0) setConfig({ ...config, [type]: current.filter(i => i.option.id !== option.id) });
       else setConfig({ ...config, [type]: current.map(i => i.option.id === option.id ? { ...i, quantity: newQty } : i) });
-    } else if (delta > 0) { setConfig({ ...config, [type]: [...current, { option, quantity: 1 }] }); }
+    } else if (delta > 0) {
+      setConfig({ ...config, [type]: [...current, { option, quantity: 1 }] });
+    }
   };
-  return (<div className="space-y-4"><h3 className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">{label}</h3><div className="grid grid-cols-1 gap-3">{options.map(opt => (<div key={opt.id} className="premium-card p-4 flex justify-between items-center bg-secondary/5 border border-gray-800"><div><p className="font-black text-[10px] uppercase text-gray-300">{opt.name}</p><p className="text-[9px] text-gray-600 font-mono">{opt.price.toFixed(2)}€</p></div><div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800"><button onClick={() => update(opt, -1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button><span className="text-xs font-black w-4 text-center text-primary">{getQty(opt.id)}</span><button onClick={() => update(opt, 1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button></div></div>))}</div></div>);
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">{label}</h3>
+      <div className="grid grid-cols-1 gap-3">
+        {options.map(opt => {
+          const qty = getQty(opt.id);
+          const isCan = !opt.name.includes('1.5L') && !opt.name.includes('2L');
+          const isFreeUnitAvailable = type === 'drinks' && isCan && quota && quota > 0;
+
+          return (
+            <div key={opt.id} className="premium-card p-4 flex justify-between items-center bg-secondary/5 border border-gray-800">
+              <div>
+                <p className="font-black text-[10px] uppercase text-gray-300">{opt.name}</p>
+                <p className="text-[9px] text-gray-600 font-mono">
+                  {isFreeUnitAvailable ? "1ère OFFERTE" : `${opt.price.toFixed(2)}€`}
+                </p>
+              </div>
+              <div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800">
+                <button onClick={() => update(opt, -1)} className="p-2 hover:text-primary transition-colors text-gray-500">
+                  <Minus size={14} />
+                </button>
+                <span className="text-xs font-black w-4 text-center text-primary">{qty}</span>
+                <button onClick={() => update(opt, 1)} className="p-2 hover:text-primary transition-colors text-gray-500">
+                  <Plus size={14} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculateTotal, rgpdAccepted, setRgpdAccepted, isSubmitting, onSubmit, onAddAnother, isCouscousMode }: CheckoutScreenProps) {
