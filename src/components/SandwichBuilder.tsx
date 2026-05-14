@@ -302,25 +302,6 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Bienvenue" subtitle="Sur place ou à emporter ?">
             <div className="grid grid-cols-1 gap-4">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setIsCouscousMode(true);
-                  setStep('COUSCOUS');
-                }}
-                className="w-full premium-gradient p-6 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 border-primary shadow-[0_0_30px_rgba(255,0,0,0.3)] group relative overflow-hidden"
-              >
-                <div className="absolute top-0 left-0 w-full h-1 bg-white/20 animate-pulse" />
-                <Utensils size={32} className="text-background group-hover:rotate-12 transition-transform" />
-                <span className="text-background font-black uppercase tracking-widest text-lg">Pré-commander Couscous</span>
-                <span className="text-background/80 text-[10px] uppercase font-bold tracking-widest">Réservé 24h à l'avance • 2 à 4 pers.</span>
-              </motion.button>
-
-              <div className="h-[1px] w-full bg-gray-900 my-4 flex items-center justify-center">
-                <span className="bg-background px-4 text-gray-700 text-[8px] uppercase tracking-widest font-black">Ou commande instantanée</span>
-              </div>
-
               {ORDER_TYPES.map(type => (
                 <OptionCard 
                   key={type.id} 
@@ -334,6 +315,33 @@ export default function SandwichBuilder() {
                   icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />}
                 />
               ))}
+
+              <div className="h-[1px] w-full bg-gray-900 my-4 flex items-center justify-center">
+                <span className="bg-background px-4 text-gray-700 text-[8px] uppercase tracking-widest font-black">Ou réservation spéciale</span>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setIsCouscousMode(true);
+                  setStep('COUSCOUS');
+                }}
+                className="w-full bg-secondary/20 p-5 rounded-2xl flex items-center justify-between gap-4 border border-primary/30 group relative overflow-hidden"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="bg-primary/20 p-2.5 rounded-xl text-primary group-hover:rotate-12 transition-transform">
+                    <Utensils size={20} />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-white font-black uppercase tracking-widest text-[11px] block">Pré-commander Couscous</span>
+                    <span className="text-gray-500 text-[8px] uppercase font-bold tracking-widest">Réservé 24h à l'avance • 2 à 4 pers.</span>
+                  </div>
+                </div>
+                <div className="w-5 h-5 rounded-full border border-primary/30 flex items-center justify-center group-hover:bg-primary transition-all">
+                  <Plus size={10} className="text-primary group-hover:text-background" />
+                </div>
+              </motion.button>
             </div>
           </StepContainer>
         );
@@ -700,7 +708,7 @@ function OptionCard({ option, isSelected, onClick, icon }: { option: Option; isS
         {icon && <div className={cn("text-gray-500 group-hover:text-primary transition-colors", isSelected && "text-primary")}>{React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 20 }) : icon}</div>}
         <div>
           <p className={cn("font-black text-[11px] uppercase tracking-[0.1em]", isSelected ? "text-primary" : "text-gray-300")}>{option.name}</p>
-          {option.description && <p className="text-[9px] text-gray-600 mt-0.5 leading-tight">{option.description}</p>}
+          {option.description && <p className="text-[9px] text-white mt-0.5 leading-tight font-medium opacity-90">{option.description}</p>}
         </div>
       </div>
       <div className="flex items-center gap-3">
