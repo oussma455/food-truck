@@ -701,7 +701,7 @@ export default function SandwichBuilder() {
             whileTap={{ scale: 0.95 }}
             onClick={handleBack} 
             className={cn(
-              "flex-1 py-4 rounded-2xl border border-white bg-black font-black text-[9px] uppercase tracking-widest text-white transition-all", 
+              "flex-1 py-4 rounded-2xl border border-white/20 bg-black font-black text-[9px] uppercase tracking-widest text-white transition-all hover:bg-white/5", 
               step === 'ORDER_TYPE' ? "hidden" : ""
             )}
           >
