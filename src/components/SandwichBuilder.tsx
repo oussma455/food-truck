@@ -157,9 +157,9 @@ export default function SandwichBuilder() {
       if (config.formula?.id === 'menu_student') total += 3;
     }
 
-    const totalSaucePrice = config.sauces.reduce((acc, s) => acc + s.price, 0);
-    const sauceDiscount = Math.min(totalSaucePrice, 1.0); 
-    total += (totalSaucePrice - sauceDiscount);
+    const saucesCount = config.sauces.length;
+    const extraSauces = Math.max(0, saucesCount - 2);
+    total += extraSauces * 0.5;
     
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
     
@@ -293,7 +293,7 @@ export default function SandwichBuilder() {
       case 'BUILD_MEAT':
         return <CategoryStep category={menu.find(c => c.id === 'meat')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="single" />;
       case 'BUILD_SAUCES':
-        return <CategoryStep category={menu.find(c => c.id === 'sauces')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" limit={2} />;
+        return <CategoryStep category={menu.find(c => c.id === 'sauces')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" />;
       case 'EXTRAS':
         return <CategoryStep category={menu.find(c => c.id === 'extras')!} config={currentConfig} setConfig={setCurrentConfig} onNext={handleNext} type="multiple" />;
       case 'SIDES':
