@@ -291,18 +291,30 @@ export default function SandwichBuilder() {
         if (!extrasCat) return null;
         return <CategoryStep category={{...extrasCat, options: getAvailableOptions('extras')}} config={currentConfig} setConfig={setCurrentConfig} onNext={() => handleNext('EXTRAS')} type="multiple" />;
       case 'DRINKS':
-        const fId = currentConfig.formula?.id || '';
-        let quotaT = fId === 's3' ? "4 Cannettes OU 1 Bouteille 1.5L offerte !" : fId.startsWith('s') ? `${fId === 's1' ? '2' : '3'} Boissons offertes !` : "1 Boisson comprise !";
+        const formulaIdDrinksStep = currentConfig.formula?.id || '';
+        const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaIdDrinksStep);
+        const isCouscousStep = ['s1', 's2', 's3'].includes(formulaIdDrinksStep);
+        
+        let quotaT = "";
+        if (isStandardMenu) quotaT = "1 Boisson comprise !";
+        else if (isCouscousStep) {
+          if (formulaIdDrinksStep === 's1') quotaT = "2 Boissons offertes !";
+          else if (formulaIdDrinksStep === 's2') quotaT = "3 Boissons offertes !";
+          else if (formulaIdDrinksStep === 's3') quotaT = "4 Cannettes OU 1 Bouteille 1.5L offerte !";
+        }
+
         const availableDrinks = getAvailableOptions('drinks');
         const cans = availableDrinks.filter(d => !d.name.includes('1.5L') && !d.name.includes('2L'));
         const bottles = availableDrinks.filter(d => d.name.includes('1.5L') || d.name.includes('2L'));
         return (
           <StepContainer title="Boissons" subtitle="Choisissez votre rafraîchissement">
             <div className="space-y-8">
-              <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center gap-3 animate-bounce">
-                <CupSoda className="text-primary" size={18} />
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary">{quotaT}</p>
-              </div>
+              {quotaT && availableDrinks.length > 0 && (
+                <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center gap-3 animate-bounce">
+                  <CupSoda className="text-primary" size={18} />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">{quotaT}</p>
+                </div>
+              )}
               <SideSelector label="Cannettes & Petits formats" options={cans} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />
               {bottles.length > 0 && <SideSelector label="Grandes Bouteilles (1.5L / 2L)" options={bottles} config={currentConfig} setConfig={setCurrentConfig} type="drinks" />}
             </div>
