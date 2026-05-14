@@ -69,9 +69,7 @@ export default function SandwichBuilder() {
   useEffect(() => {
     if (step === 'DRINKS') {
       const isMenu = currentConfig.formula?.id === 'menu_standard' || currentConfig.formula?.id === 'menu_student' || currentConfig.formula?.id === 'menu_kids';
-      if (isMenu) {
-        alert("Boisson comprise dans votre menu !");
-      }
+      // Alert removed as requested, keeping banner in UI
     }
   }, [step, currentConfig.formula?.id]);
 
