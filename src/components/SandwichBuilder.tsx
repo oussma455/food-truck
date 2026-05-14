@@ -28,7 +28,7 @@ interface CheckoutScreenProps {
   isCouscousMode: boolean;
 }
 
-// Production Version 1.4 - Type Fix & Final Clean
+// Production Version 1.5 - Final Logic & UI Sync
 export default function SandwichBuilder() {
   const [isOpen] = useState(() => {
     if (typeof window !== "undefined") {
