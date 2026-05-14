@@ -271,18 +271,92 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Bienvenue" subtitle="Sur place ou à emporter ?">
             <div className="grid grid-cols-1 gap-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setIsCouscousMode(true);
+                  setStep('COUSCOUS');
+                }}
+                className="w-full premium-gradient p-6 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 border-primary shadow-[0_0_30px_rgba(255,0,0,0.3)] group relative overflow-hidden"
+              >
+                <div className="absolute top-0 left-0 w-full h-1 bg-white/20 animate-pulse" />
+                <Utensils size={32} className="text-background group-hover:rotate-12 transition-transform" />
+                <span className="text-background font-black uppercase tracking-widest text-lg">Pré-commander Couscous</span>
+                <span className="text-background/80 text-[10px] uppercase font-bold tracking-widest">Réservé 24h à l'avance • 2 à 4 pers.</span>
+              </motion.button>
+
+              <div className="h-[1px] w-full bg-gray-900 my-4 flex items-center justify-center">
+                <span className="bg-background px-4 text-gray-700 text-[8px] uppercase tracking-widest font-black">Ou commande instantanée</span>
+              </div>
+
               {ORDER_TYPES.map(type => (
                 <OptionCard 
                   key={type.id} 
                   option={type} 
                   isSelected={orderInfo.type === type.id} 
                   onClick={() => { 
+                    setIsCouscousMode(false);
                     setOrderInfo({...orderInfo, type: type.id as "on_site" | "takeaway"}); 
                     setTimeout(() => handleNext('ORDER_TYPE'), 300); 
                   }}
                   icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />}
                 />
               ))}
+            </div>
+          </StepContainer>
+        );
+      case 'COUSCOUS':
+        const availableCouscousTypes = getAvailableOptions('couscous_type');
+        const availableCouscousSizes = getAvailableOptions('couscous_size');
+        return (
+          <StepContainer title="Couscous Maison" subtitle="Choisissez votre régal (24h à l'avance)">
+            <div className="space-y-8">
+              <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center gap-4">
+                <Clock className="text-amber-500 shrink-0" size={24} />
+                <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest leading-relaxed">Attention : Le couscous est préparé à la demande. Votre commande sera prête demain à la même heure.</p>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">1. Taille de la tablée</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {availableCouscousSizes.map(size => (
+                    <OptionCard 
+                      key={size.id} 
+                      option={size} 
+                      isSelected={currentConfig.formula?.id === size.id} 
+                      onClick={() => setCurrentConfig({...currentConfig, formula: size})} 
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">2. Accompagnement viande</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {availableCouscousTypes.map(type => (
+                    <OptionCard 
+                      key={type.id} 
+                      option={type} 
+                      isSelected={currentConfig.preset_sandwich?.id === type.id} 
+                      onClick={() => setCurrentConfig({...currentConfig, preset_sandwich: type})} 
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  if (!currentConfig.formula || !currentConfig.preset_sandwich) {
+                    alert("Veuillez choisir la taille et le type de viande.");
+                    return;
+                  }
+                  setStep('CHECKOUT');
+                }}
+                className="w-full premium-gradient text-background font-black py-5 rounded-2xl shadow-xl shadow-primary/20 uppercase tracking-widest text-[11px]"
+              >
+                Confirmer le choix
+              </button>
             </div>
           </StepContainer>
         );
@@ -371,7 +445,7 @@ export default function SandwichBuilder() {
                     setTimeout(() => handleNext('KIDS_MENU'), 300); 
                   }}
                 />
-              ) : (
+              )) : (
                 <div className="text-center p-10 bg-secondary/10 rounded-3xl border border-dashed border-gray-800">
                   <p className="text-gray-500 text-xs uppercase tracking-widest font-black">Menu enfant indisponible.</p>
                 </div>

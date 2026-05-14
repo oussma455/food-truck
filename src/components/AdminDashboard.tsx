@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Order, Category } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, PhoneCall, Plus, ShoppingCart, MapPin, TrendingUp, DollarSign, Package } from "lucide-react";
+import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, PhoneCall, Plus, ShoppingCart, MapPin, TrendingUp, DollarSign, Package, Power } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import ManualOrderModal from "./ManualOrderModal";
@@ -260,10 +260,6 @@ export default function AdminDashboard() {
                         />
                         <span className="text-gray-400 text-[10px] font-bold">€</span>
                       </div>
-import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, PhoneCall, Plus, ShoppingCart, MapPin, TrendingUp, DollarSign, Package, Power } from "lucide-react";
-
-... (rest of methods)
-
                       <button 
                         onClick={() => toggleItemAvailability(catIdx, optIdx)}
                         className={cn(
