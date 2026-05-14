@@ -28,7 +28,7 @@ interface CheckoutScreenProps {
   isCouscousMode: boolean;
 }
 
-// Production Version 1.6 - ABSOLUTE LOGIC ISOLATION
+// Production Version 1.7 - Cache Buster & Final Verification
 export default function SandwichBuilder() {
   const [isOpen] = useState(() => {
     if (typeof window !== "undefined") {
@@ -298,10 +298,20 @@ export default function SandwichBuilder() {
           <StepContainer title="Nos Créations" subtitle="Recettes signatures">
             <div className="grid grid-cols-1 gap-3">
               {getAvailableOptions('presets').map(p => {
-                const isMenu = ['menu_standard', 'menu_student'].includes(currentConfig.formula?.id || '');
-                const surchargeVal = isMenu ? Math.max(0, p.price - 10) : p.price;
+                // The base 10€ is always covered by the formula price (Menu or Sandwich Seul)
+                const surchargeVal = Math.max(0, p.price - 10);
                 return (
-                  <OptionCard key={p.id} option={p} isSelected={currentConfig.preset_sandwich?.id === p.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: p}); setTimeout(() => handleNext('PRESETS'), 300); }} surchargeValue={surchargeVal} hidePrice={isMenu && surchargeVal === 0} />
+                  <OptionCard 
+                    key={p.id} 
+                    option={p} 
+                    isSelected={currentConfig.preset_sandwich?.id === p.id} 
+                    onClick={() => { 
+                      setCurrentConfig({...currentConfig, preset_sandwich: p}); 
+                      setTimeout(() => handleNext('PRESETS'), 300); 
+                    }} 
+                    surchargeValue={surchargeVal} 
+                    hidePrice={surchargeVal === 0} 
+                  />
                 );
               })}
             </div>
@@ -442,7 +452,8 @@ export default function SandwichBuilder() {
 
           <div className="flex items-center justify-center">
             {/* Real-time Total Display - Compact Version */}
-            <div className="flex items-baseline gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+            <div className="flex items-baseline gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5 relative">
+              <span className="absolute -top-3 -right-2 text-[6px] text-gray-600 font-mono">v1.8</span>
               <p className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Total :</p>
               <p className="text-sm font-black text-white tracking-tighter">{calculateTotal().toFixed(2)}€</p>
             </div>
