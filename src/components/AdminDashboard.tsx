@@ -257,7 +257,12 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      <ManualOrderModal isOpen={isOrderModalOpen} onClose={() => setIsOrderModalOpen(false)} onOrderCreated={handleOrderCreated} />
+      <ManualOrderModal 
+        isOpen={isOrderModalOpen} 
+        onClose={() => setIsOrderModalOpen(false)} 
+        onOrderCreated={handleOrderCreated} 
+        menuCategories={editableMenu}
+      />
     </div>
   );
 }
@@ -346,18 +351,35 @@ function OrderCard({ order, onNext, onCancel, isReady, isKitchenMode = false }: 
                <span className="text-white font-bold text-[10px]">{item.formula.name}</span>
              </div>
             )}
-            <div className="flex justify-between items-center">
-              <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Pain</span>
-              <span className={cn("text-gray-300 font-bold", isKitchenMode ? "text-xl" : "text-[10px]")}>{item.bread?.name}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Viande</span>
-              <span className={cn("text-white font-black", isKitchenMode ? "text-2xl" : "text-[10px]")}>{item.meat?.name}</span>
-            </div>
+            
+            {item.preset_sandwich ? (
+              <div className="flex justify-between items-center">
+                <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Signature</span>
+                <span className={cn("text-white font-black", isKitchenMode ? "text-xl" : "text-[10px]")}>{item.preset_sandwich.name}</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Pain</span>
+                  <span className={cn("text-gray-300 font-bold", isKitchenMode ? "text-xl" : "text-[10px]")}>{item.bread?.name || "Non choisi"}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Viande</span>
+                  <span className={cn("text-white font-black", isKitchenMode ? "text-2xl" : "text-[10px]")}>{item.meat?.name || "Non choisi"}</span>
+                </div>
+              </>
+            )}
+
             <div className="flex justify-between items-center">
               <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Sauces</span>
-              <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{item.sauces.map((s) => s.name).join(", ")}</span>
+              <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{item.sauces.length > 0 ? item.sauces.map((s) => s.name).join(", ") : "Aucune"}</span>
             </div>
+            {item.extras && item.extras.length > 0 && (
+              <div className="flex justify-between items-center">
+                <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Extras</span>
+                <span className={cn("text-gray-300 text-right font-bold", isKitchenMode ? "text-lg" : "text-[10px]")}>{item.extras.map((e) => e.name).join(", ")}</span>
+              </div>
+            )}
             {item.drinks && item.drinks.length > 0 && (
               <div className="flex justify-between items-center">
                 <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Boissons</span>
