@@ -39,6 +39,7 @@ export default function SandwichBuilder() {
   };
 
   const [cart, setCart] = useState<SandwichConfig[]>([]);
+  const [isCouscousMode, setIsCouscousMode] = useState(false);
   const [currentConfig, setCurrentConfig] = useState<SandwichConfig>({
     sauces: [],
     extras: [],

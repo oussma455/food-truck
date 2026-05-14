@@ -73,4 +73,23 @@ export const SANDWICH_CATEGORIES: Category[] = [
       { id: "dess3", name: "Brownie Noix", price: 3.5, isAvailable: true },
     ],
   },
+  {
+    id: "couscous_type",
+    name: "Type de Couscous",
+    options: [
+      { id: "c1", name: "Couscous Poulet", price: 0, isAvailable: true, description: "Poulet braisé et légumes frais" },
+      { id: "c2", name: "Couscous Agneau", price: 3, isAvailable: true, description: "Souris d'agneau fondante" },
+      { id: "c3", name: "Couscous Bœuf", price: 2, isAvailable: true, description: "Bœuf mijoté aux épices" },
+      { id: "c4", name: "Couscous Végétarien", price: -2, isAvailable: true, description: "Sept légumes du potager" },
+    ],
+  },
+  {
+    id: "couscous_size",
+    name: "Nombre de personnes",
+    options: [
+      { id: "s1", name: "Couscous 2 Personnes", price: 28, isAvailable: true },
+      { id: "s2", name: "Couscous 3 Personnes", price: 39, isAvailable: true },
+      { id: "s3", name: "Couscous 4 Personnes", price: 48, isAvailable: true },
+    ],
+  },
 ];
