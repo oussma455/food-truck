@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SANDWICH_CATEGORIES, FORMULAS, ORDER_TYPES } from "@/lib/data";
+import { FORMULAS, ORDER_TYPES } from "@/lib/data";
 import { SandwichConfig, Option, Order, Category } from "@/types";
-import { X, Plus, Check, MinusCircle, Phone, ShoppingCart, User, ArrowRight, ArrowLeft, Trash2, Minus } from "lucide-react";
+import { 
+  X, Plus, Check, MinusCircle, Phone, ShoppingCart, 
+  User, ArrowRight, ArrowLeft, Trash2, Minus, 
+  AlertCircle, Sparkles, ReceiptText
+} from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -20,6 +24,15 @@ interface ManualOrderModalProps {
 }
 
 export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menuCategories }: ManualOrderModalProps) {
+  // Logic Steps: 
+  // 0: Order Type (Takeaway/On-site)
+  // 1: Formula (Menu/Sandwich)
+  // 2: Meat/Preset selection
+  // 3: Ingredients Removal (SANS...) -> New Natural position!
+  // 4: Sauces
+  // 5: Extras
+  // 6: Drinks
+  // 7: Desserts
   const [step, setStep] = useState(0);
   const [orderType, setOrderType] = useState<'on_site' | 'takeaway'>('takeaway');
   const [basket, setBasket] = useState<SandwichConfig[]>([]);
@@ -36,6 +49,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     { id: "order_type", name: "Type", options: ORDER_TYPES },
     { id: "formula", name: "Formule", options: FORMULAS },
     { id: "presets", name: "Sandwich / Viande", options: menuCategories.find(c => c.id === 'presets')?.options || [] },
+    { id: "removals", name: "Retrait Ingrédients", options: [] }, // Custom step
     { id: "sauces", name: "Sauces", options: menuCategories.find(c => c.id === 'sauces')?.options || [] },
     { id: "extras", name: "Extras", options: menuCategories.find(c => c.id === 'extras')?.options || [] },
     { id: "drinks", name: "Boissons", options: menuCategories.find(c => c.id === 'drinks')?.options || [] },
@@ -57,7 +71,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       desserts: [],
       removed_ingredients: [],
     });
-    setStep(1); // Go back to Formula selection for the next item
+    setStep(1); 
   };
 
   const addItemToBasket = () => {
@@ -82,8 +96,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         creation_mode: 'signature',
         removed_ingredients: []
       });
-      // Move to Sauces after picking meat/sandwich
-      setStep(step + 1);
+      setStep(step + 1); // Goes to Removals
     } else if (catId === "sauces") {
       const isSelected = config.sauces.find((s) => s.id === option.id);
       if (isSelected) {
@@ -147,20 +160,54 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     return false;
   };
 
+  // EXPERT PRICING LOGIC
   const calculateItemPrice = (item: SandwichConfig) => {
-    let total = item.formula?.price || 0;
-    if (item.preset_sandwich) total = Math.max(total, item.preset_sandwich.price);
+    if (!item.formula) return 0;
+    
+    let total = item.formula.price;
+    const formulaId = item.formula.id;
+    const isMenu = formulaId.includes('menu');
+    
+    // Sandwich Premium Surcharge
+    if (item.preset_sandwich && formulaId !== 'menu_kids') {
+      const extra = Math.max(0, item.preset_sandwich.price - 10);
+      total += extra;
+    }
+
+    // Sauces (2 free, then 0.50€)
     const saucesCount = item.sauces.length;
     total += Math.max(0, saucesCount - 2) * 0.5;
+
+    // Extras (always paid)
     total += item.extras.reduce((acc, e) => acc + e.price, 0);
-    total += (item.drinks || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    
+    // Drinks Logic
+    const drinks = item.drinks || [];
+    const drinkQuota = isMenu ? 1 : 0;
+    
+    if (drinks.length > 0) {
+      const allDrinkItems = drinks.flatMap(d => Array(d.quantity).fill(d.option));
+      // Sort by price to give the most expensive ones for free if they are standard cans
+      const standardDrinks = allDrinkItems.filter(d => !d.name.includes('1.5L') && !d.name.includes('2L'));
+      const premiumDrinks = allDrinkItems.filter(d => d.name.includes('1.5L') || d.name.includes('2L'));
+      
+      // Included drinks (only standard cans)
+      const paidStandard = standardDrinks.slice(drinkQuota);
+      total += paidStandard.reduce((acc, d) => acc + d.price, 0);
+      
+      // Premium bottles are always paid in full
+      total += premiumDrinks.reduce((acc, d) => acc + d.price, 0);
+    }
+
+    // Desserts (always paid)
     total += (item.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+    
     return total;
   };
 
   const calculateTotal = () => {
     const basketTotal = basket.reduce((acc, item) => acc + calculateItemPrice(item), 0);
-    const currentTotal = (config.formula && config.preset_sandwich) ? calculateItemPrice(config) : 0;
+    const currentTotal = calculateItemPrice(config);
     return basketTotal + currentTotal;
   };
 
@@ -170,7 +217,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     if (finalItems.length === 0) return;
 
     onOrderCreated({
-      id: "MAN-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
+      id: "TEL-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
       client_name: clientInfo.name,
       client_phone: clientInfo.phone,
       items: finalItems,
@@ -189,249 +236,391 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     setStep(0);
   };
 
-  const currentIngredients = config.preset_sandwich?.description?.split(',').map(i => i.trim()) || [];
+  const currentIngredients = useMemo(() => {
+    return config.preset_sandwich?.description?.split(',').map(i => i.trim()) || [];
+  }, [config.preset_sandwich]);
 
   if (!isOpen) return null;
 
-  const showNextButton = ["sauces", "extras", "drinks", "desserts"].includes(currentCategory.id);
+  const showNextButton = ["removals", "sauces", "extras", "drinks", "desserts"].includes(currentCategory.id);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md overflow-hidden">
-      <div className="w-full h-full md:h-[95vh] md:max-w-6xl md:rounded-3xl border border-white/10 bg-[#050505] shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl overflow-hidden">
+      <div className="w-full h-full md:h-[95vh] md:max-w-7xl md:rounded-[40px] border border-white/10 bg-[#080808] shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden">
         
-        {/* Header Ultra-Visuel */}
-        <header className="p-6 border-b border-white/5 bg-white/2 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-2xl border border-primary/20">
-              <Phone className="text-primary" size={24} />
+        {/* Header Premium */}
+        <header className="px-8 py-6 border-b border-white/5 bg-gradient-to-r from-white/5 to-transparent flex justify-between items-center shrink-0">
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+              <div className="relative bg-primary text-black p-4 rounded-2xl shadow-lg">
+                <Phone size={28} strokeWidth={2.5} />
+              </div>
             </div>
             <div>
-              <h2 className="text-2xl font-serif font-black text-white italic">Prise de Commande</h2>
-              <div className="flex items-center gap-2 mt-1">
-              <span className={cn("px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", orderType === 'takeaway' ? "bg-amber-500/20 text-amber-500" : "bg-blue-500/20 text-blue-500")}>
-                {orderType === 'takeaway' ? 'À Emporter' : 'Sur Place'}
-              </span>
-              <span className="text-gray-300 text-[8px] font-black uppercase tracking-widest">• Total: {calculateTotal().toFixed(2)}€</span>
+              <h2 className="text-3xl font-serif font-black text-white italic tracking-tight">Expert Call Center</h2>
+              <div className="flex items-center gap-3 mt-1.5">
+                <span className={cn(
+                  "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border transition-all",
+                  orderType === 'takeaway' 
+                    ? "bg-amber-500/10 border-amber-500/20 text-amber-500" 
+                    : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                )}>
+                  {orderType === 'takeaway' ? 'À Emporter' : 'Sur Place'}
+                </span>
+                <div className="h-1 w-1 rounded-full bg-white/20" />
+                <span className="text-white font-black text-[10px] uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                  SESSION: {clientInfo.name}
+                </span>
               </div>
-              </div>
-              </div>
-              <button onClick={onClose} className="bg-white/5 hover:bg-red-500/20 hover:text-red-500 p-4 rounded-2xl transition-all border border-white/10">
-              <X size={24} />
-              </button>
-              </header>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden md:block">
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-0.5">Total en cours</p>
+              <p className="text-2xl font-black text-primary font-mono">{calculateTotal().toFixed(2)}€</p>
+            </div>
+            <button onClick={onClose} className="bg-white/5 hover:bg-red-500 text-white hover:text-white p-4 rounded-2xl transition-all border border-white/10 hover:border-red-600 group">
+              <X size={28} className="group-hover:rotate-90 transition-transform duration-300" />
+            </button>
+          </div>
+        </header>
 
-              <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-
-              {/* Main Area: Large Buttons */}
-              <div className="flex-1 flex flex-col overflow-hidden border-r border-white/5">
-
-              {/* Steps Indicator */}
-              <div className="px-8 pt-6 flex gap-2 shrink-0">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          
+          {/* Main Area: Logic Flow */}
+          <div className="flex-1 flex flex-col overflow-hidden border-r border-white/5 relative">
+            
+            {/* Steps Visual Guide */}
+            <div className="px-10 py-6 bg-white/[0.02] flex gap-3 shrink-0 items-center">
               {modalCategories.map((cat, i) => (
-              <div key={cat.id} className={cn("h-1.5 flex-1 rounded-full transition-all duration-500", i === step ? "bg-primary shadow-[0_0_10px_rgba(255,184,0,0.5)]" : i < step ? "bg-white/60" : "bg-white/10")} />
+                <React.Fragment key={cat.id}>
+                  <div className={cn(
+                    "h-2 flex-1 rounded-full transition-all duration-700 relative overflow-hidden",
+                    i === step ? "bg-primary shadow-[0_0_15px_rgba(255,184,0,0.4)]" : i < step ? "bg-white/40" : "bg-white/5"
+                  )}>
+                    {i === step && (
+                      <motion.div 
+                        initial={{ x: "-100%" }}
+                        animate={{ x: "100%" }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                      />
+                    )}
+                  </div>
+                </React.Fragment>
               ))}
-              </div>
+            </div>
 
-              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-              <div className="mb-8">
-              <p className="text-[10px] text-primary font-black tracking-[0.3em] uppercase mb-1">Étape {step + 1}</p>
-              <h3 className="text-3xl font-serif font-bold text-white italic">{currentCategory.name}</h3>
-              </div>
-
-              {/* GRIDS OPTIMISÉES PAR ÉTAPE */}
-              <div className={cn(
-              "grid gap-4",
-              currentCategory.id === 'presets' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-3"
-              )}>
-              {currentCategory.options.map((opt) => {
-                const isSelected = isOptionSelected(opt.id);
-                const isDrinkOrDessert = ["drinks", "desserts"].includes(currentCategory.id);
-                const qty = isDrinkOrDessert ? getQuantity(currentCategory.id as 'drinks' | 'desserts', opt.id) : 0;
-
-                return (
-                  <motion.button
-                    whileTap={{ scale: 0.96 }}
-                    key={opt.id}
-                    onClick={() => !isDrinkOrDessert && handleOptionToggle(opt)}
-                    className={cn(
-                      "relative p-6 rounded-2xl border-2 transition-all flex flex-col items-center justify-center text-center gap-3",
-                      currentCategory.id === 'presets' ? "min-h-[140px]" : "min-h-[100px]",
-                      (isSelected || qty > 0) 
-                        ? "border-primary bg-primary/10 shadow-[0_0_20px_rgba(255,184,0,0.1)]" 
-                        : "border-white/10 bg-white/5 hover:border-white/30"
-                    )}
-                  >
-                    <span className={cn(
-                      "font-black uppercase tracking-widest",
-                      currentCategory.id === 'presets' ? "text-xl" : "text-sm",
-                      (isSelected || qty > 0) ? "text-primary" : "text-white"
-                    )}>
-                      {opt.name}
-                    </span>
-                    {opt.price > 0 && <span className="text-[10px] font-mono text-gray-300">+{opt.price.toFixed(2)}€</span>}
-
-                    {isDrinkOrDessert && (
-                      <div className="flex items-center gap-4 mt-2 bg-black/60 p-2 rounded-xl border border-white/20" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => updateQuantity(currentCategory.id as 'drinks' | 'desserts', opt, -1)} className="p-2 hover:text-primary text-gray-300"><Minus size={18} /></button>
-                        <span className="text-lg font-black w-6 text-primary">{qty}</span>
-                        <button onClick={() => updateQuantity(currentCategory.id as 'drinks' | 'desserts', opt, 1)} className="p-2 hover:text-primary text-gray-300"><Plus size={18} /></button>
-                      </div>
-                    )}
-                    {(isSelected && !isDrinkOrDessert) && <div className="absolute top-3 right-3 bg-primary text-black p-1 rounded-full"><Check size={12} strokeWidth={4} /></div>}
-                  </motion.button>
-                );
-              })}
-              </div>
-
-              {/* INGRÉDIENTS À ENLEVER : GROS ET VISUEL */}
-              {currentCategory.id === 'sauces' && config.preset_sandwich && currentIngredients.length > 0 && (
-              <div className="mt-12 p-8 bg-red-500/5 border border-red-500/30 rounded-3xl">
-                <div className="flex items-center gap-3 mb-6">
-                  <MinusCircle className="text-red-500" size={24} />
-                  <h4 className="text-lg font-black text-white uppercase tracking-widest italic">Retirer des ingrédients ?</h4>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {currentIngredients.map((ing, i) => (
-                    <button
-                      key={i}
-                      onClick={() => toggleIngredientRemoval(ing)}
-                      className={cn(
-                        "py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all border-2",
-                        config.removed_ingredients?.includes(ing)
-                          ? "bg-red-500 border-red-600 text-white shadow-lg shadow-red-500/40"
-                          : "bg-black/40 border-white/20 text-white hover:border-red-500/60"
-                      )}
-                    >
-                      SANS {ing}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              )}
-              </div>
-
-              {/* Navigation Footer */}
-              <div className="p-6 border-t border-white/10 bg-white/5 flex gap-4 shrink-0">
-              <button 
-              onClick={() => setStep(Math.max(0, step - 1))} 
-              className={cn("flex-1 py-5 rounded-2xl border border-white/20 font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 text-white", step === 0 ? "opacity-20 pointer-events-none" : "hover:bg-white/10")}
+            <div className="flex-1 overflow-y-auto px-10 py-6 custom-scrollbar scroll-smooth">
+              <motion.div 
+                key={step}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-10"
               >
-              <ArrowLeft size={16} /> Précédent
-              </button>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="w-8 h-[2px] bg-primary" />
+                  <p className="text-[12px] text-primary font-black tracking-[0.4em] uppercase">Phase {step + 1}</p>
+                </div>
+                <h3 className="text-5xl font-serif font-bold text-white italic tracking-tight leading-none">{currentCategory.name}</h3>
+              </motion.div>
 
-              {showNextButton ? (
-              <button 
-                onClick={() => setStep(Math.min(modalCategories.length - 1, step + 1))} 
-                className="flex-[2] py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-gray-200 transition-all shadow-xl"
-              >
-                Suivant <ArrowRight size={16} />
-              </button>
-              ) : (
-               <div className="flex-[2] text-center text-gray-300 text-[8px] font-black uppercase tracking-[0.3em] flex items-center justify-center italic">
-                 Sélection automatique au clic
-               </div>
-              )}
-              </div>
-              </div>
-
-              {/* Right Panel: Basket & Client Info */}
-              <div className="w-full md:w-96 flex flex-col bg-black/60 overflow-hidden">
-
-              {/* Basket Section */}
-              <div className="flex-1 flex flex-col overflow-hidden p-6">
-              <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-              <ShoppingCart size={14} /> Votre Panier
-              </h4>
-
-              <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
-              <AnimatePresence>
-                {basket.map((item, idx) => (
-                  <motion.div 
-                    layout
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    key={idx} 
-                    className="bg-white/5 p-4 rounded-2xl border border-white/10 group relative"
-                  >
-                    <button 
-                      onClick={() => setBasket(basket.filter((_, i) => i !== idx))} 
-                      className="absolute top-2 right-2 p-2 bg-red-500/20 text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="text-xs font-black text-white uppercase">{item.formula?.name}</p>
-                      <p className="text-xs font-black text-primary">{calculateItemPrice(item).toFixed(2)}€</p>
+              {/* DYNAMIC GRIDS */}
+              {currentCategory.id === 'removals' ? (
+                /* STEP: REMOVALS (SANS...) - NOW PROMINENT */
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="bg-red-500/10 border-2 border-red-500/20 p-8 rounded-[32px] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                      <MinusCircle size={120} />
                     </div>
-                    <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">{item.preset_sandwich?.name}</p>
-                    {item.removed_ingredients && item.removed_ingredients.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {item.removed_ingredients.map(ing => (
-                          <span key={ing} className="text-[7px] bg-red-500 text-white px-1.5 py-0.5 rounded uppercase font-black">SANS {ing}</span>
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="bg-red-500 p-3 rounded-2xl text-white shadow-lg shadow-red-500/20">
+                        <AlertCircle size={24} />
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-black text-white uppercase tracking-widest italic">Personnalisation Rapide</h4>
+                        <p className="text-red-500/80 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Cliquez sur ce que le client NE veut PAS</p>
+                      </div>
+                    </div>
+                    
+                    {currentIngredients.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {currentIngredients.map((ing, i) => (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            key={i}
+                            onClick={() => toggleIngredientRemoval(ing)}
+                            className={cn(
+                              "group py-6 rounded-2xl text-sm font-black uppercase tracking-widest transition-all border-2 flex flex-col items-center gap-2",
+                              config.removed_ingredients?.includes(ing)
+                                ? "bg-red-600 border-red-500 text-white shadow-2xl shadow-red-600/40"
+                                : "bg-black/40 border-white/5 text-white/40 hover:border-red-500/40 hover:text-red-500"
+                            )}
+                          >
+                            <span className="text-[9px] opacity-60">SANS</span>
+                            {ing}
+                          </motion.button>
                         ))}
                       </div>
+                    ) : (
+                      <div className="py-10 text-center border-2 border-dashed border-white/10 rounded-2xl">
+                        <p className="text-gray-500 text-xs font-black uppercase tracking-widest">Aucun ingrédient standard à retirer</p>
+                      </div>
                     )}
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              {/* current pending item */}
-              {(config.formula || config.preset_sandwich) && (
-                <div className="bg-primary/5 p-4 rounded-2xl border border-primary/40 border-dashed">
-                  <p className="text-[9px] text-primary font-black uppercase tracking-widest mb-3">En cours...</p>
-                  <div className="space-y-1">
-                    {config.formula && <p className="text-[10px] font-bold text-white uppercase tracking-widest">● {config.formula.name}</p>}
-                    {config.preset_sandwich && <p className="text-[10px] font-bold text-white uppercase tracking-widest">● {config.preset_sandwich.name}</p>}
                   </div>
-                  {config.formula && config.preset_sandwich && (
+                  
+                  <div className="bg-primary/5 border border-primary/20 p-6 rounded-2xl flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="text-primary" size={20} />
+                      <p className="text-white text-[10px] font-black uppercase tracking-widest">Le client veut tout ? Passez à l&apos;étape Sauces</p>
+                    </div>
                     <button 
-                      onClick={addItemToBasket} 
-                      className="w-full mt-4 py-3 bg-primary text-black rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                      onClick={() => setStep(step + 1)}
+                      className="bg-primary text-black px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all"
                     >
-                      + Ajouter à la commande
+                      Tout laisser
                     </button>
-                  )}
+                  </div>
+                </div>
+              ) : (
+                /* OTHER STEPS: STANDARD GRIDS */
+                <div className={cn(
+                  "grid gap-4",
+                  currentCategory.id === 'presets' ? "grid-cols-1 md:grid-cols-2" : 
+                  currentCategory.id === 'formula' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-3"
+                )}>
+                  {currentCategory.options.map((opt) => {
+                    const isSelected = isOptionSelected(opt.id);
+                    const isDrinkOrDessert = ["drinks", "desserts"].includes(currentCategory.id);
+                    const qty = isDrinkOrDessert ? getQuantity(currentCategory.id as 'drinks' | 'desserts', opt.id) : 0;
+                    
+                    // Pricing help
+                    const isCan = opt.name.includes('(33cl)');
+                    const isFormulaMenu = config.formula?.id.includes('menu');
+                    const isFreeInMenu = isDrinkOrDessert && isCan && isFormulaMenu && qty === 0;
+
+                    return (
+                      <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        key={opt.id}
+                        onClick={() => !isDrinkOrDessert && handleOptionToggle(opt)}
+                        className={cn(
+                          "relative p-8 rounded-[24px] border-2 transition-all flex flex-col items-center justify-center text-center gap-4 group",
+                          currentCategory.id === 'presets' ? "min-h-[160px]" : "min-h-[120px]",
+                          (isSelected || qty > 0) 
+                            ? "border-primary bg-primary/10 shadow-[0_0_40px_rgba(255,184,0,0.1)]" 
+                            : "border-white/5 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]"
+                        )}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={cn(
+                            "font-black uppercase tracking-[0.1em] transition-all",
+                            currentCategory.id === 'presets' ? "text-2xl" : "text-[11px]",
+                            (isSelected || qty > 0) ? "text-primary" : "text-white"
+                          )}>
+                            {opt.name}
+                          </span>
+                          {opt.description && (
+                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                              {opt.description}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {isFreeInMenu && (
+                            <span className="text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
+                              Inclus
+                            </span>
+                          )}
+                          {opt.price > 0 && (
+                            <span className="text-[11px] font-mono font-black text-gray-400">
+                              {currentCategory.id === 'presets' && opt.price > 10 ? `+${(opt.price - 10).toFixed(2)}€` : `+${opt.price.toFixed(2)}€`}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {isDrinkOrDessert && (
+                          <div className="flex items-center gap-5 mt-4 bg-black/80 p-3 rounded-2xl border border-white/10 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                            <button onClick={() => updateQuantity(currentCategory.id as 'drinks' | 'desserts', opt, -1)} className="p-2 hover:text-red-500 text-white transition-colors"><Minus size={20} /></button>
+                            <span className="text-2xl font-black w-8 text-primary font-mono">{qty}</span>
+                            <button onClick={() => updateQuantity(currentCategory.id as 'drinks' | 'desserts', opt, 1)} className="p-2 hover:text-green-500 text-white transition-colors"><Plus size={20} /></button>
+                          </div>
+                        )}
+                        {(isSelected && !isDrinkOrDessert) && (
+                          <motion.div 
+                            initial={{ scale: 0 }} 
+                            animate={{ scale: 1 }} 
+                            className="absolute -top-3 -right-3 bg-primary text-black p-2 rounded-xl shadow-lg border-4 border-[#080808]"
+                          >
+                            <Check size={16} strokeWidth={4} />
+                          </motion.div>
+                        )}
+                      </motion.button>
+                    );
+                  })}
                 </div>
               )}
+            </div>
+
+            {/* Navigation Navigation Footer */}
+            <div className="p-8 border-t border-white/5 bg-white/[0.02] flex gap-6 shrink-0 backdrop-blur-md">
+              <button 
+                onClick={() => setStep(Math.max(0, step - 1))} 
+                className={cn(
+                  "flex-1 py-5 rounded-2xl border border-white/10 font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all", 
+                  step === 0 ? "opacity-20 pointer-events-none" : "hover:bg-white/5 text-white"
+                )}
+              >
+                <ArrowLeft size={18} /> Précédent
+              </button>
+              
+              {showNextButton ? (
+                <button 
+                  onClick={() => setStep(Math.min(modalCategories.length - 1, step + 1))} 
+                  className="flex-[2] py-5 bg-white text-black rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 hover:bg-primary hover:shadow-[0_0_30px_rgba(255,184,0,0.3)] transition-all"
+                >
+                  Suivant <ArrowRight size={18} />
+                </button>
+              ) : (
+                 <div className="flex-[2] text-center text-gray-600 text-[10px] font-black uppercase tracking-[0.4em] flex items-center justify-center italic opacity-40">
+                   SÉLECTION AUTO AU CLIC
+                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Panel: Basket & Client Info */}
+          <div className="w-full md:w-[420px] flex flex-col bg-black/40 overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
+            
+            {/* Basket Section */}
+            <div className="flex-1 flex flex-col overflow-hidden p-8 relative z-10">
+              <div className="flex justify-between items-center mb-6">
+                <h4 className="text-[11px] font-black text-primary uppercase tracking-[0.4em] flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  Récapitulatif
+                </h4>
+                <ReceiptText size={16} className="text-white/20" />
               </div>
+              
+              <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-3">
+                <AnimatePresence mode="popLayout">
+                  {basket.map((item, idx) => (
+                    <motion.div 
+                      layout
+                      initial={{ opacity: 0, x: 30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -30 }}
+                      key={idx} 
+                      className="bg-white/[0.04] p-5 rounded-[24px] border border-white/5 group relative hover:border-white/20 transition-all"
+                    >
+                      <button 
+                        onClick={() => setBasket(basket.filter((_, i) => i !== idx))} 
+                        className="absolute -top-2 -right-2 p-2.5 bg-red-500 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:scale-110 active:scale-90"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="text-xs font-black text-white uppercase tracking-wider">{item.formula?.name}</p>
+                        <p className="text-xs font-black text-primary font-mono">{calculateItemPrice(item).toFixed(2)}€</p>
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-gray-600" />
+                        {item.preset_sandwich?.name}
+                      </p>
+                      
+                      {/* Detailed View */}
+                      <div className="mt-3 space-y-1 border-t border-white/5 pt-3">
+                        {item.removed_ingredients && item.removed_ingredients.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {item.removed_ingredients.map(ing => (
+                              <span key={ing} className="text-[8px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full uppercase font-black border border-red-500/10">SANS {ing}</span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-1.5 text-[8px] font-black uppercase tracking-widest text-gray-500">
+                          {item.sauces.map(s => <span key={s.id} className="bg-white/5 px-2 py-0.5 rounded-full">{s.name}</span>)}
+                          {item.extras.map(e => <span key={e.id} className="bg-primary/10 text-primary/80 px-2 py-0.5 rounded-full border border-primary/10">+{e.name}</span>)}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* current pending item logic visual */}
+                {(config.formula || config.preset_sandwich) && (
+                  <div className="bg-primary/[0.02] p-6 rounded-[24px] border-2 border-primary/20 border-dashed relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-primary/[0.02] animate-pulse pointer-events-none" />
+                    <p className="text-[10px] text-primary font-black uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                      <Sparkles size={14} /> En cours...
+                    </p>
+                    <div className="space-y-2">
+                      {config.formula && <p className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2"><ArrowRight size={10} className="text-primary" /> {config.formula.name}</p>}
+                      {config.preset_sandwich && <p className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-2"><ArrowRight size={10} className="text-primary" /> {config.preset_sandwich.name}</p>}
+                    </div>
+                    {config.formula && config.preset_sandwich && (
+                      <motion.button 
+                        whileTap={{ scale: 0.95 }}
+                        onClick={addItemToBasket} 
+                        className="w-full mt-6 py-4 bg-primary text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-[1.03] transition-all relative z-10"
+                      >
+                        + Valider cet article
+                      </motion.button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Form Section */}
+            <div className="p-8 border-t border-white/5 bg-black/80 space-y-6 relative z-10">
+              <div className="space-y-4">
+                <div className="relative group">
+                  <User size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder="NOM DU CLIENT" 
+                    className="w-full bg-white/[0.05] border border-white/10 p-5 pl-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] outline-none focus:border-primary focus:bg-white/[0.08] transition-all text-white placeholder:text-gray-600 shadow-inner" 
+                    value={clientInfo.name} 
+                    onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })} 
+                  />
+                </div>
+                <div className="relative group">
+                  <Phone size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" />
+                  <input 
+                    type="tel" 
+                    placeholder="TÉLÉPHONE" 
+                    className="w-full bg-white/[0.05] border border-white/10 p-5 pl-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] outline-none focus:border-primary focus:bg-white/[0.08] transition-all text-white placeholder:text-gray-600 shadow-inner" 
+                    value={clientInfo.phone} 
+                    onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })} 
+                  />
+                </div>
               </div>
 
-              {/* Form Section */}
-              <div className="p-6 border-t border-white/10 bg-black/80 space-y-4">
-              <div className="space-y-3">
-              <div className="relative">
-                <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                <input 
-                  type="text" 
-                  placeholder="NOM DU CLIENT" 
-                  className="w-full bg-white/10 border border-white/20 p-4 pl-12 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:border-primary focus:bg-white/20 transition-all text-white placeholder:text-gray-500" 
-                  value={clientInfo.name} 
-                  onChange={(e) => setClientInfo({ ...clientInfo, name: e.target.value })} 
-                />
-              </div>
-              <div className="relative">
-                <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
-                <input 
-                  type="tel" 
-                  placeholder="TÉLÉPHONE" 
-                  className="w-full bg-white/10 border border-white/20 p-4 pl-12 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:border-primary focus:bg-white/20 transition-all text-white placeholder:text-gray-500" 
-                  value={clientInfo.phone} 
-                  onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })} 
-                />
-              </div>
+              <div className="pt-2 border-t border-white/5 flex justify-between items-end mb-2">
+                <div>
+                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Total Global</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                    <span className="text-3xl font-black text-white font-mono">{calculateTotal().toFixed(2)}€</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest italic opacity-60">Paiement Cash / CB sur place</p>
+                </div>
               </div>
 
-              <div className="pt-2 flex justify-between items-end mb-2 px-1">
-              <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Total Global</span>
-              <span className="text-2xl font-black text-primary">{calculateTotal().toFixed(2)}€</span>
-              </div>
               <button 
                 onClick={handleSubmit} 
                 disabled={basket.length === 0 && (!config.formula || !config.preset_sandwich)}
-                className="w-full premium-gradient text-background font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-20 disabled:pointer-events-none"
+                className="w-full py-6 bg-gradient-to-r from-primary to-yellow-600 text-black font-black rounded-2xl flex items-center justify-center gap-4 uppercase text-[12px] tracking-[0.3em] shadow-[0_10px_40px_rgba(255,184,0,0.2)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-10 disabled:grayscale disabled:pointer-events-none relative overflow-hidden"
               >
-                Valider l&apos;Appel <ArrowRight size={20} />
+                <div className="absolute inset-0 bg-white/20 translate-y-[100%] hover:translate-y-0 transition-transform duration-500" />
+                <span className="relative z-10">Confirmer la Commande</span>
+                <ArrowRight size={22} className="relative z-10" />
               </button>
             </div>
           </div>
