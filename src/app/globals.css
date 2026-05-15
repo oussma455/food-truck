@@ -54,14 +54,8 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* Hide scrollbars for a clean mobile app feel */
-@layer base {
-  * {
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;     /* Firefox */
-  }
-  
-  *::-webkit-scrollbar {
-    display: none;             /* Safari and Chrome */
-  }
+html, body {
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100% !important;
 }

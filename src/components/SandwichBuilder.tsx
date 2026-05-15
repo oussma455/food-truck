@@ -242,22 +242,22 @@ export default function SandwichBuilder() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-background text-foreground max-w-md mx-auto font-sans text-white border-x border-white/5">
+    <div className="relative min-h-screen bg-background text-foreground max-w-md mx-auto font-sans text-white border-x border-white/5 pb-48">
       <AnimatePresence>{b.showConfetti && <Confetti />}</AnimatePresence>
       <AnimatePresence>{b.isProcessing && (
         <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-12 text-center">
-          <motion.div animate={{ rotate: 360, borderColor: ["#FFB800", "#ffffff"] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full mb-8 shadow-[0_0_30px_rgba(255,184,0,0.2)]" />
-          <h3 className="text-3xl font-serif italic text-white mb-4 italic text-gold-gradient">SumUp Gateway</h3>
+          <motion.div animate={{ rotate: 360, borderColor: ["#EF4444", "#ffffff"] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full mb-8 shadow-[0_0_30px_rgba(239,68,68,0.2)]" />
+          <h3 className="text-3xl font-serif italic text-white mb-4 italic text-fire-gradient">SumUp Gateway</h3>
           <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-black leading-relaxed">Validation de l&apos;acompte sécurisé.<br/>Merci de patienter...</p>
         </div>
       )}</AnimatePresence>
 
-      <header className="shrink-0 py-4 px-6 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
+      <header className="sticky top-0 py-4 px-6 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
         <h1 className="text-2xl font-serif font-black text-primary italic tracking-tight text-fire-gradient leading-none">GRILLADE O&apos;CHARBON</h1>
         <p className="text-gray-600 text-[8px] uppercase tracking-[0.3em] font-black mt-1">L&apos;art de la flamme</p>
       </header>
 
-      <main className="flex-1 overflow-y-auto custom-scrollbar px-6 pt-6 pb-32 relative bg-background">
+      <main className="px-6 pt-6 relative bg-background">
         <AnimatePresence mode="wait">
           <motion.div 
             key={`${b.activeTab}-${b.step}`} 
@@ -265,7 +265,6 @@ export default function SandwichBuilder() {
             animate={{ opacity: 1, y: 0 }} 
             exit={{ opacity: 0, y: -15 }} 
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            className="min-h-full"
           >
             {b.activeTab === 'menu' ? (
               <div className="space-y-6">
