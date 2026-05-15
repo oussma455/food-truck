@@ -317,7 +317,6 @@ export default function SandwichBuilder() {
 
           <div className="flex items-center justify-center">
             <div className="flex items-center gap-4 bg-white/[0.03] px-6 py-2.5 rounded-full border border-white/5 relative group">
-              <span className="absolute -top-3 -right-2 text-[7px] text-primary font-mono font-black opacity-40 group-hover:opacity-100 transition-opacity uppercase">V1.9.3 FINAL</span>
               <p className="text-[8px] text-gray-500 font-black uppercase tracking-[0.3em]">Total estimé</p>
               <p className="text-xl font-black text-white font-mono tracking-tighter">{b.calculateTotal().toFixed(2)}€</p>
             </div>
@@ -325,11 +324,12 @@ export default function SandwichBuilder() {
         </div>
       </footer>
 
-      {/* Search Digital Signature */}
-      <div className="fixed bottom-2 left-0 right-0 text-center z-[60]">
+      {/* Search Digital Signature & Version */}
+      <div className="fixed bottom-2 left-0 right-0 px-6 flex justify-between items-center z-[60]">
         <a href="https://www.search-digital.fr/" target="_blank" rel="noopener noreferrer" className="text-[7px] text-gray-500 uppercase font-black tracking-[0.4em] hover:text-primary transition-colors opacity-40">
           PRODUIT PAR <span className="underline decoration-primary/30">SEARCH-DIGITAL</span>
         </a>
+        <span className="text-[7px] text-gray-500 font-mono font-black opacity-30 uppercase tracking-widest">V1.9</span>
       </div>
     </div>
   );
