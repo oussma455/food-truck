@@ -155,6 +155,18 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     }
   };
 
+  const updateQuantity = (catId: 'drinks' | 'desserts', option: Option, delta: number) => {
+    const currentList = config[catId] || [];
+    const existing = currentList.find(i => i.option.id === option.id);
+    if (existing) {
+      const newQty = Math.max(0, existing.quantity + delta);
+      if (newQty === 0) setConfig({ ...config, [catId]: currentList.filter(i => i.option.id !== option.id) });
+      else setConfig({ ...config, [catId]: currentList.map(i => i.option.id === option.id ? { ...i, quantity: newQty } : i) });
+    } else if (delta > 0) {
+      setConfig({ ...config, [catId]: [...currentList, { option, quantity: 1 }] });
+    }
+  };
+
   const calculateItemPrice = (item: SandwichConfig) => {
     if (!item.formula) return 0;
     
