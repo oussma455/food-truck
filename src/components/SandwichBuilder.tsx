@@ -98,6 +98,11 @@ export default function SandwichBuilder() {
 
     // Extras
     total += config.extras.reduce((acc, e) => acc + e.price, 0);
+
+    // Steaks surcharge for Burgers
+    if (config.preset_sandwich?.id === 'p5' && config.steaks_qty) {
+      total += config.steaks_qty.price;
+    }
     
     // Drinks: 1 free for menus, 0 for Sandwich Seul
     const drinks = config.drinks || [];
@@ -186,7 +191,17 @@ export default function SandwichBuilder() {
       case 'COUSCOUS': setStep('COUSCOUS_MEAT'); break;
       case 'COUSCOUS_MEAT': setStep('DRINKS'); break;
       case 'KIDS_MENU': setStep('SAUCES'); break;
-      case 'PRESETS': setStep('SAUCES'); break;
+      case 'PRESETS':
+        if (currentConfig.preset_sandwich?.id === 'p4') {
+          setStep('MEATS');
+        } else if (currentConfig.preset_sandwich?.id === 'p5') {
+          setStep('STEAKS');
+        } else {
+          setStep('SAUCES');
+        }
+        break;
+      case 'MEATS': setStep('SAUCES'); break;
+      case 'STEAKS': setStep('SAUCES'); break;
       case 'SAUCES': setStep('EXTRAS'); break;
       case 'EXTRAS': setStep('DRINKS'); break;
       case 'DRINKS':
@@ -363,6 +378,65 @@ export default function SandwichBuilder() {
             <div className="grid grid-cols-1 gap-3">
               {getAvailableOptions('kids_menu').map(k => (
                 <OptionCard key={k.id} option={k} isSelected={currentConfig.preset_sandwich?.id === k.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: k}); setTimeout(() => handleNext('KIDS_MENU'), 300); }} hidePrice={true} />
+              ))}
+            </div>
+          </StepContainer>
+        );
+      case 'MEATS':
+        const meatsCat = menu.find(c => c.id === 'meats');
+        if (!meatsCat) return null;
+        return (
+          <StepContainer title="Mix Grill" subtitle="Choisissez 2 ou 3 viandes">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3">
+                {getAvailableOptions('meats').map(opt => {
+                  const currentMeats = currentConfig.meats || [];
+                  const isSel = currentMeats.some(m => m.id === opt.id);
+                  return (
+                    <OptionCard 
+                      key={opt.id} 
+                      option={opt} 
+                      isSelected={isSel} 
+                      onClick={() => {
+                        if (isSel) {
+                          setCurrentConfig({...currentConfig, meats: currentMeats.filter(m => m.id !== opt.id)});
+                        } else {
+                          if (currentMeats.length >= 3) return;
+                          setCurrentConfig({...currentConfig, meats: [...currentMeats, opt]});
+                        }
+                      }}
+                      hidePrice={true}
+                    />
+                  );
+                })}
+              </div>
+              <motion.button 
+                whileTap={{ scale: 0.95 }}
+                disabled={(currentConfig.meats || []).length < 2}
+                onClick={() => handleNext('MEATS')}
+                className="w-full py-4 bg-primary text-background font-black rounded-2xl uppercase text-[11px] tracking-widest shadow-xl disabled:opacity-30 transition-all mt-4"
+              >
+                Valider le mélange ({(currentConfig.meats || []).length}/3)
+              </motion.button>
+            </div>
+          </StepContainer>
+        );
+      case 'STEAKS':
+        const steaksCat = menu.find(c => c.id === 'steaks_qty');
+        if (!steaksCat) return null;
+        return (
+          <StepContainer title="Hamburger" subtitle="Nombre de steaks">
+            <div className="grid grid-cols-1 gap-3">
+              {getAvailableOptions('steaks_qty').map(s => (
+                <OptionCard 
+                  key={s.id} 
+                  option={s} 
+                  isSelected={currentConfig.steaks_qty?.id === s.id} 
+                  onClick={() => { 
+                    setCurrentConfig({...currentConfig, steaks_qty: s}); 
+                    setTimeout(() => handleNext('STEAKS'), 300); 
+                  }} 
+                />
               ))}
             </div>
           </StepContainer>

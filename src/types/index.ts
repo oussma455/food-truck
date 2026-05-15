@@ -17,6 +17,8 @@ export type StepId =
   | 'ORDER_TYPE'
   | 'FORMULA'
   | 'PRESETS'
+  | 'MEATS'
+  | 'STEAKS'
   | 'KIDS_MENU'
   | 'SAUCES'
   | 'EXTRAS'
@@ -25,12 +27,15 @@ export type StepId =
   | 'COUSCOUS'
   | 'COUSCOUS_MEAT'
   | 'CHECKOUT';
-export interface SandwichConfig {
+
+  export interface SandwichConfig {
   formula?: Option;
   creation_mode?: 'signature' | 'custom';
   preset_sandwich?: Option;
   bread?: Option;
   meat?: Option;
+  meats?: Option[];
+  steaks_qty?: Option;
   sauces: Option[];
   extras: Option[];
   removed_ingredients?: string[];

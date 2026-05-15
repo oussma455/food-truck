@@ -477,6 +477,46 @@ interface OrderCardProps {
 }
 
 function OrderCard({ order, onNext, onCancel, isReady, onBan, isKitchenMode = false }: OrderCardProps) {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [isOverdue, setIsOverdue] = useState(false);
+
+  useEffect(() => {
+    // Si la commande est déjà prête ou complétée, on n'affiche pas de compte à rebours
+    if (order.status === 'ready' || order.status === 'completed') {
+      setTimeLeft(order.pickup_time);
+      return;
+    }
+
+    const calculateTime = () => {
+      const createdDate = new Date(order.created_at).getTime();
+      
+      // Extraction des minutes (ex: "15 min" -> 15)
+      const minutesMatch = order.pickup_time.match(/(\d+)/);
+      const durationMinutes = minutesMatch ? parseInt(minutesMatch[1]) : 15; // 15 min par défaut
+      
+      const targetDate = createdDate + (durationMinutes * 60 * 1000);
+      const now = new Date().getTime();
+      const difference = targetDate - now;
+
+      if (difference <= 0) {
+        setIsOverdue(true);
+        const absDiff = Math.abs(difference);
+        const mins = Math.floor(absDiff / (1000 * 60));
+        const secs = Math.floor((absDiff % (1000 * 60)) / 1000);
+        setTimeLeft(`RETARD ${mins}:${secs < 10 ? '0' : ''}${secs}`);
+      } else {
+        setIsOverdue(false);
+        const mins = Math.floor(difference / (1000 * 60));
+        const secs = Math.floor((difference % (1000 * 60)) / 1000);
+        setTimeLeft(`${mins}:${secs < 10 ? '0' : ''}${secs}`);
+      }
+    };
+
+    calculateTime();
+    const timer = setInterval(calculateTime, 1000);
+    return () => clearInterval(timer);
+  }, [order.created_at, order.pickup_time, order.status]);
+
   return (
     <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className={cn("premium-card border-l-4 border-l-primary bg-secondary/10 transition-all", isKitchenMode ? "p-8" : "p-5")}>
       <div className="flex justify-between items-start mb-4">
@@ -489,9 +529,12 @@ function OrderCard({ order, onNext, onCancel, isReady, onBan, isKitchenMode = fa
           <p className="text-[10px] text-gray-500 font-mono mt-0.5">{order.client_phone}</p>
         </div>
         <div className="text-right">
-          <div className="flex items-center justify-end gap-1 text-amber-500 mb-2">
+          <div className={cn(
+            "flex items-center justify-end gap-1 mb-2 px-2 py-0.5 rounded-full border",
+            isOverdue ? "text-red-500 border-red-500/30 bg-red-500/10 animate-pulse" : "text-amber-500 border-amber-500/20 bg-amber-500/5"
+          )}>
             <Clock size={10} />
-            <span className="text-[9px] font-black uppercase tracking-tighter">{order.pickup_time}</span>
+            <span className="text-[10px] font-black font-mono tracking-tighter">{timeLeft}</span>
           </div>
           <div className="flex gap-2 justify-end">
             <button 
@@ -499,17 +542,24 @@ function OrderCard({ order, onNext, onCancel, isReady, onBan, isKitchenMode = fa
                 const printWindow = window.open('', '_blank', 'width=300,height=600');
                 if (!printWindow) return;
 
-                const itemsHtml = order.items.map(item => `
-                  <div style="border-bottom: 1px dashed #ccc; padding: 5px 0;">
-                    <strong>${item.formula?.name || 'SANDWICH'}</strong><br/>
-                    ${item.preset_sandwich ? `<i>${item.preset_sandwich.name}</i><br/>` : ''}
-                    <small>
-                      Sauces: ${item.sauces.map(s => s.name).join(', ')}<br/>
-                      ${item.extras && item.extras.length > 0 ? `Extras: ${item.extras.map(e => e.name).join(', ')}<br/>` : ''}
-                      ${item.drinks && item.drinks.length > 0 ? `Boissons: ${item.drinks.map(d => `${d.option.name} x${d.quantity}`).join(', ')}<br/>` : ''}
-                    </small>
-                  </div>
-                `).join('');
+                const itemsHtml = order.items.map(item => {
+                  const meatDisplay = (item.preset_sandwich?.id === 'p4' && item.meats) 
+                    ? `MIX: ${item.meats.map(m => m.name).join(' + ')}`
+                    : item.preset_sandwich?.name;
+                    
+                  return `
+                    <div style="border-bottom: 1px dashed #ccc; padding: 5px 0;">
+                      <strong>${item.formula?.name || 'SANDWICH'}</strong><br/>
+                      ${meatDisplay ? `<i>${meatDisplay}</i><br/>` : ''}
+                      <small>
+                        Sauces: ${item.sauces.map(s => s.name).join(', ')}<br/>
+                        ${item.removed_ingredients && item.removed_ingredients.length > 0 ? `SANS: ${item.removed_ingredients.join(', ')}<br/>` : ''}
+                        ${item.extras && item.extras.length > 0 ? `Extras: ${item.extras.map(e => e.name).join(', ')}<br/>` : ''}
+                        ${item.drinks && item.drinks.length > 0 ? `Boissons: ${item.drinks.map(d => `${d.option.name} x${d.quantity}`).join(', ')}<br/>` : ''}
+                      </small>
+                    </div>
+                  `;
+                }).join('');
 
                 const html = `
                   <html>
@@ -590,9 +640,18 @@ function OrderCard({ order, onNext, onCancel, isReady, onBan, isKitchenMode = fa
             )}
             
             {item.preset_sandwich ? (
-              <div className="flex justify-between items-center">
-                <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Signature</span>
-                <span className={cn("text-white font-black", isKitchenMode ? "text-xl" : "text-[10px]")}>{item.preset_sandwich.name}</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[8px]")}>Signature</span>
+                  <span className={cn("text-white font-black", isKitchenMode ? "text-xl" : "text-[10px]")}>{item.preset_sandwich.name}</span>
+                </div>
+                {item.preset_sandwich.id === 'p4' && item.meats && (
+                  <div className="flex justify-end">
+                    <span className={cn("text-primary/70 font-black italic", isKitchenMode ? "text-lg" : "text-[9px]")}>
+                      ({item.meats.map(m => m.name).join(' + ')})
+                    </span>
+                  </div>
+                )}
               </div>
             ) : (
               <>

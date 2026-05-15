@@ -49,6 +49,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     { id: "order_type", name: "Type", options: ORDER_TYPES },
     { id: "formula", name: "Formule", options: FORMULAS },
     { id: "presets", name: "Sandwich / Viande", options: menuCategories.find(c => c.id === 'presets')?.options || [] },
+    { id: "meats", name: "Choix Viandes (Mix)", options: menuCategories.find(c => c.id === 'meats')?.options || [] },
+    { id: "steaks", name: "Nombre Steaks", options: menuCategories.find(c => c.id === 'steaks_qty')?.options || [] },
     { id: "removals", name: "Retrait Ingrédients", options: [] }, // Custom step
     { id: "sauces", name: "Sauces", options: menuCategories.find(c => c.id === 'sauces')?.options || [] },
     { id: "extras", name: "Extras", options: menuCategories.find(c => c.id === 'extras')?.options || [] },
@@ -65,6 +67,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       preset_sandwich: undefined,
       bread: undefined,
       meat: undefined,
+      meats: [],
+      steaks_qty: undefined,
       sauces: [],
       extras: [],
       drinks: [],
@@ -76,6 +80,10 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
   const addItemToBasket = () => {
     if (!config.formula || !config.preset_sandwich) return;
+    if (config.preset_sandwich.id === 'p4' && (config.meats || []).length < 2) {
+      alert("Veuillez choisir au moins 2 viandes pour le Mix Grill");
+      return;
+    }
     setBasket([...basket, config]);
     resetCurrentConfig();
   };
@@ -96,7 +104,25 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         creation_mode: 'signature',
         removed_ingredients: []
       });
-      setStep(step + 1); // Goes to Removals
+      if (option.id === 'p4') {
+        setStep(3); // Goes to MEATS
+      } else if (option.id === 'p5') {
+        setStep(4); // Goes to STEAKS
+      } else {
+        setStep(5); // Skip MEATS & STEAKS, go to Removals
+      }
+    } else if (catId === "meats") {
+      const currentMeats = config.meats || [];
+      const isSelected = currentMeats.find((m) => m.id === option.id);
+      if (isSelected) {
+        setConfig({ ...config, meats: currentMeats.filter((m) => m.id !== option.id) });
+      } else {
+        if (currentMeats.length >= 3) return;
+        setConfig({ ...config, meats: [...currentMeats, option] });
+      }
+    } else if (catId === "steaks") {
+      setConfig({ ...config, steaks_qty: option });
+      setStep(step + 1);
     } else if (catId === "sauces") {
       const isSelected = config.sauces.find((s) => s.id === option.id);
       if (isSelected) {
@@ -371,6 +397,42 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                       </div>
                     )}
                   </div>
+                </div>
+              ) : currentCategory.id === 'meats' ? (
+                /* STEP: MEATS (MIX GRILL) */
+                <div className="space-y-6">
+                  <div className="bg-primary/5 border border-primary/20 p-6 rounded-3xl text-center">
+                    <p className="text-[10px] text-primary font-black uppercase tracking-[0.3em]">Mode Mix Grill</p>
+                    <p className="text-white text-sm font-medium mt-1">Sélectionnez 2 ou 3 viandes pour le mélange</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {currentCategory.options.map((opt) => {
+                      const isSelected = (config.meats || []).some(m => m.id === opt.id);
+                      return (
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          key={opt.id}
+                          onClick={() => handleOptionToggle(opt)}
+                          className={cn(
+                            "relative p-8 rounded-[24px] border-2 transition-all flex flex-col items-center justify-center text-center gap-2 group min-h-[120px]",
+                            isSelected 
+                              ? "border-primary bg-primary/10 shadow-[0_0_40px_rgba(255,184,0,0.1)]" 
+                              : "border-white/5 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]"
+                          )}
+                        >
+                          <span className={cn("font-black uppercase tracking-[0.1em] text-sm", isSelected ? "text-primary" : "text-white")}>{opt.name}</span>
+                          {isSelected && <div className="absolute top-3 right-3 bg-primary text-black p-1.5 rounded-lg shadow-lg"><Check size={12} strokeWidth={4} /></div>}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                  <button 
+                    onClick={() => setStep(step + 1)}
+                    disabled={(config.meats || []).length < 2}
+                    className="w-full py-5 bg-white text-black rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 hover:bg-primary transition-all disabled:opacity-20"
+                  >
+                    Valider le Mix Grill ({(config.meats || []).length}/3) <ArrowRight size={18} />
+                  </button>
                 </div>
               ) : (
                 /* OTHER STEPS: STANDARD GRIDS */

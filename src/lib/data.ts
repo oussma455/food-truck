@@ -8,7 +8,7 @@ export const ORDER_TYPES: Option[] = [
 export const FORMULAS: Option[] = [
   { id: "menu_standard", name: "Menu Complet", price: 15.0, description: "Sandwich + Boisson au choix" },
   { id: "menu_student", name: "Menu Étudiant", price: 13.0, description: "Sandwich + Boisson + Frites (sur présentation de carte)" },
-  { id: "sandwich_only", name: "Sandwich Seul", price: 10.0, description: "Le sandwich sans boisson" },
+  { id: "sandwich_only", name: "Sandwich Seul", price: 12.0, description: "Le sandwich sans boisson" },
   { id: "menu_kids", name: "Menu Enfant", price: 8.5, description: "Petit Sandwich + Boisson + Surprise" },
 ];
 
@@ -18,20 +18,29 @@ export const SANDWICH_CATEGORIES: Category[] = [
     name: "Les Viandes",
     options: [
       { id: "m1", name: "Merguez Veritables", price: 0, isAvailable: true },
-      { id: "m2", name: "Viande Hachée Fraîche", price: 0, isAvailable: true },
-      { id: "m3", name: "Kefta Maison", price: 0, isAvailable: true },
-      { id: "m4", name: "Poulet Mariné Paprika", price: 0, isAvailable: true },
-      { id: "m5", name: "Poulet Tandoori", price: 0, isAvailable: true },
+      { id: "m2", name: "Kefta Maison", price: 0, isAvailable: true },
+      { id: "m3", name: "Poulet Mariné", price: 0, isAvailable: true },
+      { id: "steak", name: "Steak Boucher", price: 0, isAvailable: true },
     ],
   },
   {
     id: "presets",
-    name: "Nos Grillades Signature",
+    name: "Nos Grillades",
     options: [
-      { id: "p1", name: "L'Oriental", price: 10, description: "Merguez, Oignons, Sauce Algérienne", isAvailable: true },
-      { id: "p2", name: "Le Classic", price: 10, description: "Viande Hachée, Cheddar, Ketchup/Mayo", isAvailable: true },
-      { id: "p3", name: "Le Kefta Royal", price: 11, description: "Kefta, Œuf, Oignons Caramélisés", isAvailable: true },
-      { id: "p4", name: "Le Spicy Chicken", price: 10, description: "Poulet Tandoori, Jalapeños, Sauce Blanche", isAvailable: true },
+      { id: "p1", name: "Sandwich Merguez", price: 12, description: "Merguez véritables, frites, salade, tomates, oignons", isAvailable: true },
+      { id: "p2", name: "Sandwich Kefta", price: 12, description: "Kefta maison, frites, salade, tomates, oignons", isAvailable: true },
+      { id: "p3", name: "Sandwich Poulet", price: 12, description: "Poulet mariné, frites, salade, tomates, oignons", isAvailable: true },
+      { id: "p4", name: "Le Mix Grill", price: 15, description: "Mélange de 2 ou 3 viandes au choix, frites, crudités", isAvailable: true },
+      { id: "p5", name: "Hamburger", price: 12, description: "Steak boucher, cheddar, frites, crudités", isAvailable: true },
+    ],
+  },
+  {
+    id: "steaks_qty",
+    name: "Nombre de steaks",
+    options: [
+      { id: "s1", name: "1 Steak", price: 0, isAvailable: true },
+      { id: "s2", name: "2 Steaks", price: 2, isAvailable: true },
+      { id: "s3", name: "3 Steaks", price: 4, isAvailable: true },
     ],
   },
   {
