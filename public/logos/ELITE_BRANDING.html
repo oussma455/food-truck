@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expérience Visuelle Elite - Grillade O'Charbon</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@200;800;900&display=swap');
+
+        :root {
+            --red: #EF4444;
+            --dark: #050505;
+            --charcoal: #111111;
+        }
+
+        body {
+            background-color: var(--dark);
+            color: #fff;
+            margin: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Effet de grain/bruit typique du design premium */
+        .noise {
+            fixed: inset 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* L'ambiance "Vivante" : Braise & Fumée */
+        .ambient-glow {
+            position: absolute;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, transparent 70%);
+            filter: blur(80px);
+            z-index: 0;
+            animation: pulse 8s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        /* LOGO CONCEPT : L'AME DU FEU */
+        .logo-container {
+            position: relative;
+            z-index: 10;
+            margin-bottom: 40px;
+        }
+
+        .charcoal-block {
+            width: 280px;
+            height: 280px;
+            background: #000;
+            border-radius: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 0 40px rgba(239, 68, 68, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .charcoal-block::before {
+            content: "";
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            background: conic-gradient(from 0deg, transparent, rgba(239,68,68,0.2), transparent);
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .logo-inner {
+            background: var(--dark);
+            width: 270px;
+            height: 270px;
+            border-radius: 55px;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .fire-icon {
+            font-size: 80px;
+            filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.5));
+            margin-bottom: 10px;
+        }
+
+        .brand-name {
+            font-family: 'Instrument Serif', serif;
+            font-style: italic;
+            font-size: 2.8rem;
+            line-height: 0.9;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .brand-sub {
+            font-size: 0.6rem;
+            letter-spacing: 6px;
+            color: var(--red);
+            font-weight: 900;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        /* TEXTE DE PRÉSENTATION */
+        .headline {
+            z-index: 10;
+            max-width: 800px;
+        }
+
+        .headline h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            letter-spacing: -3px;
+            margin: 0;
+            text-transform: uppercase;
+            color: #fff;
+        }
+
+        .headline h1 span {
+            color: var(--red);
+            display: block;
+            font-size: 2rem;
+            letter-spacing: 15px;
+            margin-top: -10px;
+            font-family: sans-serif;
+            font-weight: 200;
+        }
+
+        .btn-elite {
+            margin-top: 50px;
+            padding: 20px 40px;
+            background: #fff;
+            color: #000;
+            border-radius: 100px;
+            text-decoration: none;
+            font-weight: 900;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 40px rgba(255,255,255,0.1);
+        }
+
+        .btn-elite:hover {
+            transform: scale(1.05);
+            background: var(--red);
+            color: #fff;
+        }
+
+        /* MOCKUP SECTION */
+        .mockup {
+            padding: 100px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--charcoal);
+            border-radius: 40px;
+            padding: 60px;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card h3 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 3rem;
+            font-style: italic;
+            margin: 0 0 20px 0;
+        }
+
+        .card p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .ember-detail {
+            position: absolute;
+            bottom: -20px;
+            right: -20px;
+            font-size: 150px;
+            opacity: 0.05;
+            color: var(--red);
+        }
+    </style>
+</head>
+<body>
+    <div class="noise"></div>
+    
+    <div class="hero">
+        <div class="ambient-glow"></div>
+        
+        <div class="logo-container">
+            <div class="charcoal-block">
+                <div class="logo-inner">
+                    <div class="fire-icon">🔥</div>
+                    <h2 class="brand-name">O'Charbon</h2>
+                    <div class="brand-sub">Grillade Maître</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="headline">
+            <h1>L'Expérience <span>Vivante</span></h1>
+            <p style="color: #666; font-weight: 500; letter-spacing: 1px; margin-top: 20px;">
+                Une identité visuelle conçue pour marquer les esprits, fusionnant la <br>
+                chaleur des braises et l'élégance du design moderne.
+            </p>
+        </div>
+
+        <a href="#" class="btn-elite">Découvrir le Concept</a>
+    </div>
+
+    <div class="mockup">
+        <div class="card">
+            <h3>Le Logo</h3>
+            <p>Un bloc de charbon pur renfermant une énergie infinie. Ce n'est pas qu'un dessin, c'est une source de chaleur visible sur le camion.</p>
+            <div class="ember-detail">🔥</div>
+        </div>
+        <div class="card">
+            <h3>Le Flyer</h3>
+            <p>Une mise en page asymétrique, utilisant des typographies de haute couture pour élever le sandwich au rang d'œuvre d'art.</p>
+            <div class="ember-detail">✨</div>
+        </div>
+    </div>
+
+    <footer style="padding: 100px; text-align: center; color: #222; font-weight: 900; letter-spacing: 10px; text-transform: uppercase;">
+        Elite Branding Agency • 2026
+    </footer>
+</body>
+</html>

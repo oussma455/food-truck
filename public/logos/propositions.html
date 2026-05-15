@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logos LA FORCE DU FEU - Grillade O'Charbon</title>
+    <style>
+        body { background-color: #050505; color: #f0f0f0; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 60px 20px; margin: 0; }
+        .header { text-align: center; margin-bottom: 80px; max-width: 800px; }
+        .header h1 { font-size: 3rem; font-weight: 950; font-style: italic; color: #EF4444; letter-spacing: -2px; margin: 0; text-transform: uppercase; }
+        .header p { color: #888; text-transform: uppercase; letter-spacing: 8px; font-size: 0.8rem; margin-top: 10px; font-weight: 900; }
+        
+        .container { display: flex; flex-direction: column; gap: 120px; max-width: 900px; width: 100%; }
+        
+        .logo-section { display: grid; grid-template-columns: 1.5fr 1fr; gap: 60px; align-items: center; background: #0a0a0a; padding: 80px; border-radius: 50px; border: 1px solid #111; box-shadow: 0 50px 100px rgba(0,0,0,0.8); transition: transform 0.4s ease; }
+        .logo-section:hover { transform: translateY(-10px); border-color: rgba(239, 68, 68, 0.2); }
+        
+        .logo-display { display: flex; justify-content: center; align-items: center; background: #000; padding: 50px; border-radius: 40px; border: 2px solid #1a1a1a; position: relative; }
+        .logo-display::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(239, 68, 68, 0.05) 0%, transparent 70%); pointer-events: none; }
+        
+        .logo-info h2 { font-size: 2rem; font-weight: 900; margin-top: 0; color: #fff; text-transform: uppercase; font-style: italic; }
+        .tag-fire { display: inline-block; padding: 6px 16px; background: #EF4444; color: #000; font-size: 0.7rem; font-weight: 950; border-radius: 4px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
+        .logo-info p { color: #aaa; line-height: 1.8; font-size: 1.1rem; }
+        
+        svg { width: 100%; max-width: 400px; height: auto; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6)); }
+        
+        /* Mobile adjustment */
+        @media (max-width: 768px) {
+            .logo-section { grid-template-columns: 1fr; padding: 40px; text-align: center; }
+            .logo-display { order: -1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FORCE DU FEU</h1>
+        <p>IDENTITÉ VISUELLE • ÉDITION BRAISE 2026</p>
+    </div>
+    
+    <div class="container">
+        
+        <!-- CONCEPT 1 : LA FOURNAISE O'CHARBON -->
+        <div class="logo-section">
+            <div class="logo-display">
+                <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="fire" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+                            <stop offset="40%" style="stop-color:#EF4444;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#7F1D1D;stop-opacity:1" />
+                        </linearGradient>
+                        <radialGradient id="ember" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" style="stop-color:#FCA5A5;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#EF4444;stop-opacity:1" />
+                        </radialGradient>
+                    </defs>
+                    
+                    <!-- Charbon de base -->
+                    <path d="M80 320 L150 280 L220 310 L280 290 L340 330 L300 360 L200 380 L100 350 Z" fill="#111" stroke="#222" stroke-width="2" />
+                    <circle cx="150" cy="310" r="15" fill="url(#ember)" opacity="0.6" filter="blur(5px)" />
+                    <circle cx="250" cy="300" r="10" fill="url(#ember)" opacity="0.4" filter="blur(3px)" />
+                    
+                    <!-- Flammes massives -->
+                    <path d="M120 300 Q80 200 150 140 Q180 180 200 100 Q230 180 280 160 Q320 250 280 300 Z" fill="url(#fire)" />
+                    <path d="M160 280 Q140 220 180 180 Q200 210 220 160 Q240 210 260 200 Q280 260 240 280 Z" fill="#FBBF24" opacity="0.8" />
+                    
+                    <!-- Texte -->
+                    <text x="200" y="340" text-anchor="middle" fill="white" font-weight="950" font-family="Impact, sans-serif" font-size="55" style="text-transform: uppercase; letter-spacing: -2px; stroke: black; stroke-width: 2px;">O'CHARBON</text>
+                </svg>
+            </div>
+            <div class="logo-info">
+                <div class="tag-fire">L'Impact Visuel</div>
+                <h2>La Fournaise</h2>
+                <p>C'est le logo le plus "parlant". On y voit les blocs de charbon qui brûlent à la base et des flammes massives qui montent. Il exprime la puissance de la grillade et l'odeur du feu de bois.</p>
+            </div>
+        </div>
+
+        <!-- CONCEPT 2 : L'ÉCUSSON BRAISE -->
+        <div class="logo-section">
+            <div class="logo-display">
+                <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="200" cy="200" r="180" fill="#080808" stroke="#EF4444" stroke-width="8" />
+                    
+                    <!-- Bloc de charbon central fissuré -->
+                    <path d="M140 160 L180 140 L260 160 L240 240 L160 260 Z" fill="#111" />
+                    <path d="M180 140 L200 200 L160 260 M200 200 L260 160" stroke="#EF4444" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.8" />
+                    
+                    <!-- Flammes qui sortent du charbon -->
+                    <path d="M180 140 Q200 60 220 140" fill="#EF4444" />
+                    <path d="M150 170 Q120 120 170 160" fill="#EF4444" opacity="0.6" />
+                    <path d="M250 170 Q280 120 230 160" fill="#EF4444" opacity="0.6" />
+                    
+                    <text x="200" y="320" text-anchor="middle" fill="white" font-weight="950" font-family="Arial Black" font-size="32" style="text-transform: uppercase; letter-spacing: 2px;">O'CHARBON</text>
+                    <text x="200" y="350" text-anchor="middle" fill="#EF4444" font-weight="900" font-family="Arial" font-size="14" style="text-transform: uppercase; letter-spacing: 8px;">GRILLADES</text>
+                </svg>
+            </div>
+            <div class="logo-info">
+                <div class="tag-fire">L'Emblème Pro</div>
+                <h2>Le Sceau du Feu</h2>
+                <p>Un badge circulaire qui met en scène un bloc de charbon fissuré par la chaleur. Les flammes jaillissent directement du cœur du charbon. Idéal pour des stickers sur le camion.</p>
+            </div>
+        </div>
+
+        <!-- CONCEPT 3 : LA GRILLE INFERNO -->
+        <div class="logo-section">
+            <div class="logo-display">
+                <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Flammes de fond -->
+                    <path d="M50 250 Q100 50 150 200 Q200 30 250 200 Q300 50 350 250 Z" fill="#EF4444" opacity="0.3" />
+                    <path d="M80 250 Q130 100 180 200 Q220 80 270 200 Q320 100 370 250 Z" fill="#EF4444" opacity="0.5" />
+                    
+                    <!-- Grille de cuisson -->
+                    <rect x="50" y="180" width="300" height="10" fill="#333" rx="5" />
+                    <rect x="50" y="200" width="300" height="10" fill="#333" rx="5" />
+                    <rect x="50" y="220" width="300" height="10" fill="#333" rx="5" />
+                    
+                    <!-- Texte au dessus de la chaleur -->
+                    <text x="200" y="150" text-anchor="middle" fill="white" font-weight="950" font-family="Impact" font-size="80" style="text-transform: uppercase; filter: drop-shadow(0 0 10px #EF4444);">O'CHARBON</text>
+                    
+                    <!-- Effet de braise sous la grille -->
+                    <rect x="100" y="240" width="200" height="20" fill="#EF4444" filter="blur(15px)" opacity="0.4" />
+                </svg>
+            </div>
+            <div class="logo-info">
+                <div class="tag-fire">Le Style Industriel</div>
+                <h2>Grille Inferno</h2>
+                <p>Ce concept utilise la grille de cuisson comme élément de design. Les flammes passent à travers la grille et entourent le nom "O'CHARBON". Un look brut, viril et très efficace visuellement.</p>
+            </div>
+        </div>
+        
+    </div>
+    
+    <footer style="margin-top: 80px; color: #444; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 5px; font-weight: 800;">
+        Propulsé par l'intelligence créative Search-Digital
+    </footer>
+</body>
+</html>

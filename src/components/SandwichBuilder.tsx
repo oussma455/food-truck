@@ -42,7 +42,7 @@ export default function SandwichBuilder() {
     switch (b.step) {
       case 'ORDER_TYPE':
         return (
-          <StepContainer title="Bienvenue" subtitle="Sur place ou à emporter ?">
+          <StepContainer title="Bienvenue" subtitle="Bienvenue ! Choisissez :">
             <div className="grid grid-cols-1 gap-4">
               {ORDER_TYPES.map(type => (
                 <OptionCard 
