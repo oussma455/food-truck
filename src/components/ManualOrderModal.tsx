@@ -122,6 +122,10 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     }
   };
 
+  const getQuantity = (catId: 'drinks' | 'desserts', optionId: string) => {
+    return (config[catId] || []).find(i => i.option.id === optionId)?.quantity || 0;
+  };
+
   const toggleIngredientRemoval = (ingredient: string) => {
     const current = config.removed_ingredients || [];
     if (current.includes(ingredient)) {
