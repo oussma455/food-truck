@@ -54,25 +54,29 @@ export default function SandwichBuilder() {
                   hidePrice={true} 
                 />
               ))}
-              <div className="relative py-8 flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-                <span className="relative bg-background px-6 text-gray-700 text-[9px] uppercase tracking-[0.4em] font-black">Spécialité</span>
-              </div>
-              <motion.button 
-                whileHover={{ scale: 1.01, borderColor: "rgba(239, 68, 68, 0.4)" }} 
-                whileTap={{ scale: 0.98 }} 
-                onClick={() => { b.setIsCouscousMode(true); b.setStep('COUSCOUS'); }} 
-                className="w-full bg-white p-6 rounded-3xl flex items-center justify-between gap-4 border border-white group relative overflow-hidden shadow-2xl shadow-white/5"
-              >
-                <div className="flex items-center gap-5">
-                  <div className="bg-primary p-3 rounded-2xl text-black group-hover:rotate-12 transition-transform duration-500 shadow-lg"><Utensils size={24} /></div>
-                  <div className="text-left">
-                    <span className="text-primary font-black uppercase tracking-widest text-xs block">Réserver un Couscous</span>
-                    <span className="text-gray-900/60 text-[9px] uppercase font-bold tracking-widest">Traditionnel • 24h à l&apos;avance</span>
+              {b.cart.length === 0 && (
+                <>
+                  <div className="relative py-8 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                    <span className="relative bg-background px-6 text-gray-700 text-[9px] uppercase tracking-[0.4em] font-black">Spécialité</span>
                   </div>
-                </div>
-                <Plus size={18} className="text-primary" />
-              </motion.button>
+                  <motion.button 
+                    whileHover={{ scale: 1.01, borderColor: "rgba(239, 68, 68, 0.4)" }} 
+                    whileTap={{ scale: 0.98 }} 
+                    onClick={() => { b.setIsCouscousMode(true); b.setStep('COUSCOUS'); }} 
+                    className="w-full bg-white p-6 rounded-3xl flex items-center justify-between gap-4 border border-white group relative overflow-hidden shadow-2xl shadow-white/5"
+                  >
+                    <div className="flex items-center gap-5">
+                      <div className="bg-primary p-3 rounded-2xl text-black group-hover:rotate-12 transition-transform duration-500 shadow-lg"><Utensils size={24} /></div>
+                      <div className="text-left">
+                        <span className="text-primary font-black uppercase tracking-widest text-xs block">Réserver un Couscous</span>
+                        <span className="text-gray-900/60 text-[9px] uppercase font-bold tracking-widest">Traditionnel • 24h à l&apos;avance</span>
+                      </div>
+                    </div>
+                    <Plus size={18} className="text-primary" />
+                  </motion.button>
+                </>
+              )}
             </div>
           </StepContainer>
         );
@@ -118,7 +122,7 @@ export default function SandwichBuilder() {
                       key={p.id} 
                       option={p} 
                       isSelected={b.currentConfig.preset_sandwich?.id === p.id} 
-                      onClick={() => { b.setCurrentConfig({...b.currentConfig, preset_sandwich: p}); setTimeout(() => b.handleNext('PRESETS'), 300); }} 
+                      onClick={() => { b.setCurrentConfig({...b.currentConfig, preset_sandwich: p}); setTimeout(() => b.handleNext('PRESETS', p.id), 300); }} 
                       surchargeValue={surchargeVal} 
                       hidePrice={surchargeVal === 0} 
                     />

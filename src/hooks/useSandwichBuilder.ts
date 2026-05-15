@@ -131,12 +131,12 @@ export function useSandwichBuilder() {
     return cartTotal + currentTotal;
   };
 
-  const handleNext = (overrideStep?: StepId, formulaId?: string) => {
+  const handleNext = (overrideStep?: StepId, selValue?: string) => {
     const currentStep = overrideStep || step;
     switch (currentStep) {
       case 'ORDER_TYPE': setIsCouscousMode(false); setStep('FORMULA'); break;
       case 'FORMULA':
-        const selId = formulaId || currentConfig.formula?.id;
+        const selId = selValue || currentConfig.formula?.id;
         if (selId === 'menu_kids') { setIsCouscousMode(false); setStep('KIDS_MENU'); }
         else if (selId?.startsWith('COUSCOUS_')) { setIsCouscousMode(true); setStep('COUSCOUS_MEAT'); }
         else { setIsCouscousMode(false); setStep('PRESETS'); }
@@ -145,8 +145,9 @@ export function useSandwichBuilder() {
       case 'COUSCOUS_MEAT': setStep('DRINKS'); break;
       case 'KIDS_MENU': setStep('SAUCES'); break;
       case 'PRESETS':
-        if (currentConfig.preset_sandwich?.id === 'p4') setStep('MEATS');
-        else if (currentConfig.preset_sandwich?.id === 'p5') setStep('STEAKS');
+        const pId = selValue || currentConfig.preset_sandwich?.id;
+        if (pId === 'p4') setStep('MEATS');
+        else if (pId === 'p5') setStep('STEAKS');
         else setStep('SAUCES');
         break;
       case 'MEATS': setStep('SAUCES'); break;
