@@ -5,8 +5,8 @@ import { Order, Category } from "@/types";
 import { SANDWICH_CATEGORIES } from "@/lib/data";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Clock, ChefHat, LogOut, Plus, Utensils, 
-  Settings, LayoutDashboard, Database, AlertTriangle
+  Clock, ChefHat, LogOut, Plus, 
+  LayoutDashboard, Database, AlertTriangle, X
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ManualOrderModal from "./ManualOrderModal";
@@ -19,13 +19,14 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+type AdminTab = 'pending' | 'preparing' | 'ready' | 'archive' | 'stock';
+
 export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isOpen, setIsOpen] = useState(true);
-  const [waitTime, setWaitTime] = useState("15 min");
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [editableMenu, setEditableMenu] = useState<Category[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'preparing' | 'ready' | 'archive' | 'stock'>('pending');
+  const [activeTab, setActiveTab] = useState<AdminTab>('pending');
   const [isKitchenMode, setIsKitchenMode] = useState(false);
   const [notificationSound, setNotificationSound] = useState<HTMLAudioElement | null>(null);
 
@@ -132,6 +133,51 @@ export default function AdminDashboard() {
             return opt;
           })
         };
+      }
+      return cat;
+    });
+    setEditableMenu(newMenu);
+    await supabase.from('settings').update({ menu: newMenu }).eq('id', 'truck_settings');
+  };
+
+  const updateCategoryName = async (catId: string, newName: string) => {
+    const newMenu = editableMenu.map(cat => cat.id === catId ? { ...cat, name: newName } : cat);
+    setEditableMenu(newMenu);
+    await supabase.from('settings').update({ menu: newMenu }).eq('id', 'truck_settings');
+  };
+
+  const updateOptionDetails = async (catId: string, optId: string, updates: Partial<Option>) => {
+    const newMenu = editableMenu.map(cat => {
+      if (cat.id === catId) {
+        return {
+          ...cat,
+          options: cat.options.map(opt => opt.id === optId ? { ...opt, ...updates } : opt)
+        };
+      }
+      return cat;
+    });
+    setEditableMenu(newMenu);
+    await supabase.from('settings').update({ menu: newMenu }).eq('id', 'truck_settings');
+  };
+
+  const addOptionToCategory = async (catId: string) => {
+    const newId = "new-" + Math.random().toString(36).substr(2, 4);
+    const newOpt: Option = { id: newId, name: "Nouveau produit", price: 0, isAvailable: true };
+    const newMenu = editableMenu.map(cat => {
+      if (cat.id === catId) {
+        return { ...cat, options: [...cat.options, newOpt] };
+      }
+      return cat;
+    });
+    setEditableMenu(newMenu);
+    await supabase.from('settings').update({ menu: newMenu }).eq('id', 'truck_settings');
+  };
+
+  const removeOptionFromCategory = async (catId: string, optId: string) => {
+    if (!window.confirm("Supprimer définitivement cet article ?")) return;
+    const newMenu = editableMenu.map(cat => {
+      if (cat.id === catId) {
+        return { ...cat, options: cat.options.filter(o => o.id !== optId) };
       }
       return cat;
     });
@@ -284,38 +330,78 @@ export default function AdminDashboard() {
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {(editableMenu.length > 0 ? editableMenu : SANDWICH_CATEGORIES).map(category => (
             <section key={category.id} className="bg-secondary/20 rounded-[2.5rem] border border-white/5 p-10 backdrop-blur-md">
-              <div className="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
-                 <div className="bg-primary/10 p-3 rounded-2xl text-primary"><Database size={24} /></div>
-                 <h3 className="text-2xl font-serif font-black italic text-white uppercase tracking-widest">{category.name}</h3>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-white/5 pb-8">
+                 <div className="flex items-center gap-6">
+                    <div className="bg-primary/10 p-4 rounded-2xl text-primary shadow-lg shadow-primary/5"><Database size={28} /></div>
+                    <input 
+                      type="text" 
+                      value={category.name} 
+                      onChange={(e) => updateCategoryName(category.id, e.target.value)}
+                      className="text-3xl font-serif font-black italic text-white uppercase tracking-widest bg-transparent border-none outline-none focus:text-primary transition-colors w-full md:w-auto"
+                    />
+                 </div>
+                 <button 
+                  onClick={() => addOptionToCategory(category.id)}
+                  className="flex items-center gap-3 px-8 py-3 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all shadow-xl"
+                 >
+                   <Plus size={16} strokeWidth={3} /> Ajouter un article
+                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {category.options.map(option => (
-                  <button
+                  <div
                     key={option.id}
-                    onClick={() => toggleProductAvailability(category.id, option.id)}
                     className={cn(
-                      "group relative p-6 rounded-3xl border transition-all text-left overflow-hidden",
+                      "group relative p-6 rounded-[2rem] border transition-all overflow-hidden flex flex-col justify-between min-h-[180px]",
                       option.isAvailable !== false 
-                        ? "bg-white/5 border-white/10 hover:border-primary/50" 
-                        : "bg-red-500/5 border-red-500/20 grayscale opacity-60"
+                        ? "bg-white/[0.03] border-white/5 hover:border-primary/30" 
+                        : "bg-red-500/5 border-red-500/20"
                     )}
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <span className={cn(
-                        "text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full",
-                        option.isAvailable !== false ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"
-                      )}>
-                        {option.isAvailable !== false ? "Disponible" : "Épuisé"}
-                      </span>
-                      <span className="text-xs font-mono text-gray-500">{option.price.toFixed(2)}€</span>
+                    <div className="flex justify-between items-start mb-6">
+                      <button 
+                        onClick={() => toggleProductAvailability(category.id, option.id)}
+                        className={cn(
+                          "text-[8px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full transition-all",
+                          option.isAvailable !== false ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
+                        )}
+                      >
+                        {option.isAvailable !== false ? "En Stock" : "Rupture"}
+                      </button>
+                      <button 
+                        onClick={() => removeOptionFromCategory(category.id, option.id)}
+                        className="p-2 text-gray-700 hover:text-red-500 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
                     </div>
-                    <p className="text-sm font-black uppercase tracking-wider text-white group-hover:text-primary transition-colors">{option.name}</p>
+
+                    <div className="space-y-4">
+                      <input 
+                        type="text" 
+                        value={option.name}
+                        onChange={(e) => updateOptionDetails(category.id, option.id, { name: e.target.value })}
+                        className="w-full bg-transparent border-none outline-none text-sm font-black uppercase tracking-wider text-white focus:text-primary transition-colors"
+                      />
+                      <div className="flex items-center gap-2 bg-black/20 p-2 rounded-xl border border-white/5 w-fit">
+                        <input 
+                          type="number" 
+                          step="0.5"
+                          value={option.price}
+                          onChange={(e) => updateOptionDetails(category.id, option.id, { price: parseFloat(e.target.value) || 0 })}
+                          className="w-16 bg-transparent border-none outline-none text-xs font-mono text-primary font-black text-center"
+                        />
+                        <span className="text-[10px] font-black text-gray-600 mr-1">€</span>
+                      </div>
+                    </div>
+
                     {option.isAvailable === false && (
-                      <div className="absolute inset-0 bg-red-500/10 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
-                         <AlertTriangle size={32} className="text-red-500/40 rotate-12" />
+                      <div className="absolute inset-0 bg-red-500/5 backdrop-blur-[1px] flex items-center justify-center pointer-events-none opacity-20">
+                         <AlertTriangle size={64} className="text-red-500 rotate-12" />
                       </div>
                     )}
-                  </button>
+                  </div>
                 ))}
               </div>
             </section>

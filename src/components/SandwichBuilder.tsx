@@ -264,8 +264,8 @@ export default function SandwichBuilder() {
 
       <header className="sticky top-0 py-4 px-6 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
         <div className="flex flex-col items-center">
-          <h1 className="text-sm font-serif font-black text-white italic tracking-widest uppercase leading-none mb-1">La Grillade</h1>
-          <h2 className="text-3xl font-serif font-black text-primary italic tracking-tighter text-fire-gradient leading-none">O&apos;CHARBON</h2>
+          <h1 className="text-2xl font-serif font-black text-primary italic tracking-tight leading-none">LA GRILLADE</h1>
+          <h2 className="text-2xl font-serif font-black text-primary italic tracking-tight leading-none">O&apos;CHARBON</h2>
         </div>
       </header>
 

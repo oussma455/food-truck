@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FORMULAS, ORDER_TYPES } from "@/lib/data";
 import { SandwichConfig, Option, Order, Category } from "@/types";
@@ -25,18 +25,6 @@ interface ManualOrderModalProps {
 }
 
 export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menuCategories }: ManualOrderModalProps) {
-  // Steps:
-  // 0: Order Type
-  // 1: Formula Selection (Sandwich vs Couscous)
-  // 2: Couscous Size
-  // 3: Meat/Preset selection (OR Couscous Type)
-  // 4: Mix Meats
-  // 5: Steaks Qty
-  // 6: Ingredients Removal
-  // 7: Sauces
-  // 8: Extras
-  // 9: Drinks
-  // 10: Desserts
   const [step, setStep] = useState(0);
   const [orderType, setOrderType] = useState<'on_site' | 'takeaway'>('takeaway');
   const [isCouscousMode, setIsCouscousMode] = useState(false);
@@ -48,20 +36,20 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     desserts: [],
     removed_ingredients: [],
   });
-  const [clientInfo, setClientInfo] = useState({ name: "Client Téléphone", phone: "" });
+  const [clientInfo, setClientInfo] = useState({ name: "Client Téléphone", phone: "", notes: "" });
 
   const modalCategories = [
-    { id: "order_type", name: "Type", options: ORDER_TYPES },
-    { id: "formula", name: "Formule", options: FORMULAS },
-    { id: "couscous_size", name: "Taille Couscous", options: menuCategories.find(c => c.id === 'couscous_size')?.options || [] },
-    { id: "presets", name: isCouscousMode ? "Type Couscous" : "Sandwich / Burger", options: isCouscousMode ? (menuCategories.find(c => c.id === 'couscous_type')?.options || []) : (menuCategories.find(c => c.id === 'presets')?.options || []) },
-    { id: "meats", name: "Choix Viandes (Mix)", options: menuCategories.find(c => c.id === 'meats')?.options || [] },
-    { id: "steaks", name: "Nombre Steaks", options: menuCategories.find(c => c.id === 'steaks_qty')?.options || [] },
-    { id: "removals", name: "Retrait Ingrédients", options: [] }, 
-    { id: "sauces", name: "Sauces", options: menuCategories.find(c => c.id === 'sauces')?.options || [] },
-    { id: "extras", name: "Extras", options: menuCategories.find(c => c.id === 'extras')?.options || [] },
-    { id: "drinks", name: "Boissons", options: menuCategories.find(c => c.id === 'drinks')?.options || [] },
-    { id: "desserts", name: "Desserts", options: menuCategories.find(c => c.id === 'desserts')?.options || [] },
+    { id: "order_type", name: "Type de commande", options: ORDER_TYPES },
+    { id: "formula", name: "Choix Formule", options: FORMULAS },
+    { id: "couscous_size", name: "Taille du Couscous", options: menuCategories.find(c => c.id === 'couscous_size')?.options || [] },
+    { id: "presets", name: isCouscousMode ? "Type de Couscous" : "La Grillade", options: isCouscousMode ? (menuCategories.find(c => c.id === 'couscous_type')?.options || []) : (menuCategories.find(c => c.id === 'presets')?.options || []) },
+    { id: "meats", name: "Mélange Mix Grill", options: menuCategories.find(c => c.id === 'meats')?.options || [] },
+    { id: "steaks", name: "Nombre de Steaks", options: menuCategories.find(c => c.id === 'steaks_qty')?.options || [] },
+    { id: "removals", name: "Ingrédients à retirer", options: [] }, 
+    { id: "sauces", name: "Les Sauces", options: menuCategories.find(c => c.id === 'sauces')?.options || [] },
+    { id: "extras", name: "Les Suppléments", options: menuCategories.find(c => c.id === 'extras')?.options || [] },
+    { id: "drinks", name: "Les Boissons", options: menuCategories.find(c => c.id === 'drinks')?.options || [] },
+    { id: "desserts", name: "Les Desserts", options: menuCategories.find(c => c.id === 'desserts')?.options || [] },
   ];
 
   const currentCategory = modalCategories[step];
@@ -82,17 +70,36 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       removed_ingredients: [],
     });
     setIsCouscousMode(false);
-    setStep(1); 
   };
 
   const addItemToBasket = () => {
-    if (!config.formula || !config.preset_sandwich) return;
-    if (config.preset_sandwich.id === 'p4' && (config.meats || []).length < 2) {
-      alert("Veuillez choisir au moins 2 viandes pour le Mix Grill");
+    if (!config.formula) {
+      alert("Erreur : Veuillez sélectionner une Formule ou une Taille.");
+      setStep(isCouscousMode ? 2 : 1);
       return;
     }
-    setBasket([...basket, config]);
+    if (!config.preset_sandwich) {
+      alert("Erreur : Veuillez sélectionner une Grillade ou un Type de Couscous.");
+      setStep(3);
+      return;
+    }
+    if (config.preset_sandwich.id === 'p4' && (config.meats || []).length < 2) {
+      alert("Le Mix Grill nécessite au moins 2 viandes.");
+      setStep(4);
+      return;
+    }
+    
+    setBasket(prev => [...prev, { ...config }]);
     resetCurrentConfig();
+    setStep(0);
+  };
+
+  const isNextDisabled = () => {
+    if (step === 1 && !config.formula) return true;
+    if (step === 2 && !config.formula) return true;
+    if (step === 3 && !config.preset_sandwich) return true;
+    if (step === 4 && (config.meats || []).length < 2) return true;
+    return false;
   };
 
   const handleOptionToggle = (option: Option) => {
@@ -104,54 +111,43 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     } else if (catId === "formula") {
       setConfig({ ...config, formula: option });
       setIsCouscousMode(false);
-      setStep(3); // Go to presets
+      setStep(3);
     } else if (catId === "couscous_size") {
       setConfig({ ...config, formula: option });
-      setStep(3); // Go to couscous types (presets step shared)
+      setStep(3);
     } else if (catId === "presets") {
       setConfig({ ...config, preset_sandwich: option, removed_ingredients: [] });
-      if (isCouscousMode) {
-        setStep(9); // Go to drinks
-      } else {
-        if (option.id === 'p4') setStep(4); // MEATS
-        else if (option.id === 'p5') setStep(5); // STEAKS
-        else setStep(6); // Removals
+      if (isCouscousMode) setStep(9);
+      else {
+        if (option.id === 'p4') setStep(4);
+        else if (option.id === 'p5') setStep(5);
+        else setStep(6);
       }
     } else if (catId === "meats") {
       const currentMeats = config.meats || [];
-      const isSelected = currentMeats.find((m) => m.id === option.id);
-      if (isSelected) {
-        setConfig({ ...config, meats: currentMeats.filter((m) => m.id !== option.id) });
-      } else {
+      const isSelected = currentMeats.some(m => m.id === option.id);
+      if (isSelected) setConfig({ ...config, meats: currentMeats.filter(m => m.id !== option.id) });
+      else {
         if (currentMeats.length >= 5) return;
         setConfig({ ...config, meats: [...currentMeats, option] });
       }
     } else if (catId === "steaks") {
       setConfig({ ...config, steaks_qty: option });
-      setStep(6); // Removals
+      setStep(6);
     } else if (catId === "sauces") {
-      const isSelected = config.sauces.find((s) => s.id === option.id);
-      if (isSelected) {
-        setConfig({ ...config, sauces: config.sauces.filter((s) => s.id !== option.id) });
-      } else {
-        setConfig({ ...config, sauces: [...config.sauces, option] });
-      }
+      const isSelected = config.sauces.some(s => s.id === option.id);
+      if (isSelected) setConfig({ ...config, sauces: config.sauces.filter(s => s.id !== option.id) });
+      else setConfig({ ...config, sauces: [...config.sauces, option] });
     } else if (catId === "extras") {
-      const isSelected = config.extras.find((e) => e.id === option.id);
-      if (isSelected) {
-        setConfig({ ...config, extras: config.extras.filter((e) => e.id !== option.id) });
-      } else {
-        setConfig({ ...config, extras: [...config.extras, option] });
-      }
+      const isSelected = config.extras.some(e => e.id === option.id);
+      if (isSelected) setConfig({ ...config, extras: config.extras.filter(e => e.id !== option.id) });
+      else setConfig({ ...config, extras: [...config.extras, option] });
     } else if (catId === "drinks" || catId === "desserts") {
       const key = catId as 'drinks' | 'desserts';
       const currentList = config[key] || [];
       const existing = currentList.find(i => i.option.id === option.id);
-      if (existing) {
-        setConfig({ ...config, [key]: currentList.filter(i => i.option.id !== option.id) });
-      } else {
-        setConfig({ ...config, [key]: [...currentList, { option, quantity: 1 }] });
-      }
+      if (existing) setConfig({ ...config, [key]: currentList.filter(i => i.option.id !== option.id) });
+      else setConfig({ ...config, [key]: [...currentList, { option, quantity: 1 }] });
     }
   };
 
@@ -169,7 +165,6 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
   const calculateItemPrice = (item: SandwichConfig) => {
     if (!item.formula) return 0;
-    
     let total = item.formula.price;
     const formulaId = item.formula.id;
     const isMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaId);
@@ -177,7 +172,6 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
     if (isCouscous) {
       if (item.preset_sandwich) total += item.preset_sandwich.price;
-      
       const drinks = item.drinks || [];
       if (formulaId === 'COUSCOUS_S3') {
         const hasBottle = drinks.some(d => d.option.name.includes('1.5L') && d.quantity > 0);
@@ -191,29 +185,22 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
             return acc + (d.option.price * d.quantity);
           }, 0);
         } else {
-          const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
-            .flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
+          const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
           total += cansPrices.slice(4).reduce((acc, p) => acc + p, 0);
           total += drinks.filter(d => d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
         }
       } else {
         const quota = formulaId === 'COUSCOUS_S1' ? 2 : 3;
-        const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
-          .flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
+        const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
         total += cansPrices.slice(quota).reduce((acc, p) => acc + p, 0);
         total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
       }
     } else {
-      if (item.preset_sandwich && formulaId !== 'menu_kids') {
-        total += Math.max(0, item.preset_sandwich.price - 12);
-      }
-      if (item.preset_sandwich?.id === 'p4' && item.meats && item.meats.length > 2) {
-        total += (item.meats.length - 2) * 2;
-      }
+      if (item.preset_sandwich && formulaId !== 'menu_kids') total += Math.max(0, item.preset_sandwich.price - 12);
+      if (item.preset_sandwich?.id === 'p4' && item.meats && item.meats.length > 2) total += (item.meats.length - 2) * 2;
       total += Math.max(0, item.sauces.length - 2) * 0.5;
       total += item.extras.reduce((acc, e) => acc + e.price, 0);
       if (item.preset_sandwich?.id === 'p5' && item.steaks_qty) total += item.steaks_qty.price;
-      
       const drinks = item.drinks || [];
       const q = isMenu ? 1 : 0;
       const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
@@ -233,8 +220,8 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
   const handleSubmit = async () => {
     const finalItems = [...basket];
     if (config.formula && config.preset_sandwich) finalItems.push(config);
-    if (finalItems.length === 0) return;
-
+    if (finalItems.length === 0) { alert("Le panier est vide"); return; }
+    
     const total = calculateTotal();
     const newOrder: Order = {
       id: "TEL-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
@@ -247,7 +234,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       payment_method: "cash",
       order_type: orderType,
       pickup_time: "Téléphone",
-      notes: (clientInfo as any).notes || "",
+      notes: clientInfo.notes,
       created_at: new Date().toISOString(),
     };
 
@@ -258,7 +245,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     onClose();
     resetCurrentConfig();
     setBasket([]);
-    setClientInfo({ name: "Client Téléphone", phone: "" });
+    setClientInfo({ name: "Client Téléphone", phone: "", notes: "" });
     setStep(0);
   };
 
@@ -270,7 +257,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md text-white font-sans">
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-secondary/90 w-full max-w-5xl rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex h-[85vh]">
         
         {/* Left Side: Basket Summary */}
@@ -322,7 +309,6 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
             <AnimatePresence mode="wait">
               <motion.div key={step} initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-6">
                 
-                {/* Specific logic for Ingredients Removal Step */}
                 {currentCategory.id === "removals" ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {["Salade", "Tomate", "Oignon", "Frites", "Viande"].map(ing => {
@@ -346,16 +332,18 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                           </div>
                         </button>
                       ))}
-                      <button onClick={() => { setIsCouscousMode(true); setStep(2); }} className="p-6 rounded-3xl border border-primary/20 bg-primary/5 hover:border-primary/50 transition-all text-left flex items-center gap-5">
-                          <div className="bg-primary p-3 rounded-2xl text-black"><Utensils size={18} /></div>
-                          <div>
-                            <p className="text-[11px] font-black uppercase tracking-widest text-primary">Réserver un Couscous</p>
-                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">Dès 28.00€</p>
-                          </div>
-                      </button>
                    </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {currentCategory.id === "order_type" && (
+                      <button onClick={() => { setIsCouscousMode(true); setStep(2); }} className="p-5 rounded-3xl border border-primary/20 bg-primary/5 hover:border-primary/50 transition-all text-left flex flex-col justify-between h-40">
+                          <div className="bg-primary p-3 rounded-2xl text-black w-fit"><Utensils size={18} /></div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Réserver un Couscous</p>
+                            <p className="text-[10px] text-gray-500 font-mono">Tunnel Spécifique</p>
+                          </div>
+                      </button>
+                    )}
                     {currentCategory.options.map(opt => {
                       const isSel = (currentCategory.id === "drinks" || currentCategory.id === "desserts") 
                         ? (config[currentCategory.id as 'drinks' | 'desserts'] || []).some(i => i.option.id === opt.id)
@@ -371,11 +359,20 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                         ? (config[currentCategory.id as 'drinks' | 'desserts'] || []).find(i => i.option.id === opt.id)?.quantity || 0
                         : 0;
 
+                      const isSauceStep = currentCategory.id === "sauces";
+                      const currentSaucesCount = (config.sauces || []).length;
+                      const sauceSurcharge = (isSauceStep && currentSaucesCount >= 2 && !isSel) ? 0.5 : 0;
+
                       return (
                         <div key={opt.id} className={cn("p-5 rounded-3xl border transition-all text-left flex flex-col justify-between h-40", isSel ? "border-primary bg-primary/5 shadow-inner" : "border-white/5 bg-white/[0.02] hover:border-white/20")}>
                           <div onClick={() => handleOptionToggle(opt)} className="cursor-pointer flex-1">
                             <p className={cn("text-[10px] font-black uppercase tracking-widest mb-1", isSel ? "text-primary" : "text-gray-400")}>{opt.name}</p>
-                            <p className="text-[10px] font-mono text-gray-600">{opt.price > 0 ? `+${opt.price.toFixed(2)}€` : opt.price < 0 ? `${opt.price.toFixed(2)}€` : "INCLUS"}</p>
+                            <p className="text-[10px] font-mono text-gray-600">
+                              {isSauceStep 
+                                ? (sauceSurcharge > 0 ? `+${sauceSurcharge.toFixed(2)}€` : "INCLUS")
+                                : (opt.price > 0 ? `+${opt.price.toFixed(2)}€` : opt.price < 0 ? `${opt.price.toFixed(2)}€` : "INCLUS")
+                              }
+                            </p>
                           </div>
                           
                           {(currentCategory.id === "drinks" || currentCategory.id === "desserts") ? (
@@ -394,7 +391,6 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
             </AnimatePresence>
           </div>
 
-          {/* Footer controls for Modal */}
           <footer className="p-8 border-t border-white/5 bg-black/20 flex justify-between items-center gap-6">
             <div className="flex gap-4">
               <input type="text" placeholder="Nom du client" value={clientInfo.name} onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})} className="px-6 py-4 rounded-2xl bg-white/5 border border-white/5 text-[11px] font-bold text-white focus:border-primary/50 outline-none w-48" />
@@ -406,13 +402,12 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 <ArrowLeft size={20} />
               </button>
               
-              {/* Validation Action */}
               {(step === 10 || (isCouscousMode && step === 9)) ? (
-                <button onClick={addItemToBasket} className="px-10 py-4 bg-green-500 text-white font-black rounded-2xl uppercase text-[11px] tracking-widest flex items-center gap-4 hover:scale-[1.02] active:scale-95 transition-all">
+                <button onClick={addItemToBasket} className="px-10 py-4 bg-green-500 text-white font-black rounded-2xl uppercase text-[11px] tracking-widest flex items-center gap-4 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
                    Ajouter au panier <ArrowRight size={18} />
                 </button>
               ) : (
-                <button onClick={() => setStep(step + 1)} className="px-10 py-4 bg-white text-black font-black rounded-2xl uppercase text-[11px] tracking-widest flex items-center gap-4 hover:bg-primary transition-all">
+                <button disabled={isNextDisabled()} onClick={() => setStep(step + 1)} className="px-10 py-4 bg-white text-black font-black rounded-2xl uppercase text-[11px] tracking-widest flex items-center gap-4 hover:bg-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed">
                   Suivant <ArrowRight size={18} />
                 </button>
               )}
