@@ -109,6 +109,29 @@ export default function CheckoutScreen({
           </div>
         </div>
 
+        {/* Pickup Time */}
+        {!isCouscousMode && (
+          <div className="space-y-4">
+            <p className="text-[9px] text-gray-500 uppercase font-black tracking-[0.3em] text-center italic flex items-center justify-center gap-2">
+              <Clock size={12} /> Temps de retrait estimé
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {["15 min", "30 min", "45 min"].map(time => (
+                <button 
+                  key={time} 
+                  onClick={() => setOrderInfo({...orderInfo, pickupTime: time})}
+                  className={cn(
+                    "py-3 rounded-xl border text-[10px] font-black transition-all",
+                    orderInfo.pickupTime === time ? "bg-white text-black border-white" : "border-white/5 text-gray-500 hover:border-white/10"
+                  )}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Client Info */}
         <div className="space-y-2">
           <input 

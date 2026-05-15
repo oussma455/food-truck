@@ -147,20 +147,15 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex items-center gap-6">
-               <div className="bg-black/40 p-2 rounded-2xl border border-white/5 flex gap-2">
-                  {["15 min", "30 min", "45 min", "60 min"].map(t => (
-                    <button 
-                      key={t} 
-                      onClick={() => handleWaitTimeChange(t)}
-                      className={cn(
-                        "px-4 py-2 rounded-xl text-[10px] font-black transition-all",
-                        waitTime === t ? "bg-primary text-black" : "text-gray-500 hover:text-white"
-                      )}
-                    >
-                      {t}
-                    </button>
-                  ))}
-               </div>
+              <button 
+                onClick={() => setIsManualModalOpen(true)}
+                className="flex items-center gap-4 px-10 py-5 rounded-3xl bg-white text-black text-[13px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-white/5 hover:scale-[1.02] active:scale-95 transition-all border-b-4 border-gray-200"
+              >
+                <Plus size={22} strokeWidth={4} className="text-red-500" /> Commande Téléphone
+              </button>
+              
+              <div className="w-[1px] h-12 bg-white/10 mx-2" />
+
                <button 
                 onClick={toggleTruckStatus}
                 className={cn(
@@ -170,7 +165,7 @@ export default function AdminDashboard() {
               >
                 {isOpen ? "Fermer le Truck" : "Ouvrir le Truck"}
               </button>
-              <div className="w-[1px] h-10 bg-white/10 mx-2" />
+              
               <button 
                 onClick={() => { localStorage.removeItem("admin_auth"); window.location.reload(); }}
                 className="p-4 rounded-2xl bg-white/5 border border-white/10 text-gray-500 hover:text-red-500 transition-all"
@@ -210,12 +205,6 @@ export default function AdminDashboard() {
                 className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-secondary border border-white/10 text-[11px] font-black uppercase tracking-widest hover:border-primary/50 transition-all group"
               >
                 <ChefHat size={18} className="group-hover:rotate-12 transition-transform" /> Mode Cuisine
-              </button>
-              <button 
-                onClick={() => setIsManualModalOpen(true)}
-                className="flex items-center gap-3 px-8 py-3 rounded-2xl bg-white text-black text-[11px] font-black uppercase tracking-widest shadow-xl shadow-white/5 hover:scale-[1.02] active:scale-95 transition-all"
-              >
-                <Plus size={18} strokeWidth={3} /> Commande Téléphone
               </button>
             </div>
           </div>
