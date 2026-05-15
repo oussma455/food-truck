@@ -2,8 +2,8 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Shield, CreditCard, UtensilsCrossed, Wallet, Trash2, ShieldCheck, CupSoda, Clock } from "lucide-react";
-import { SandwichConfig, PaymentMethod, Option } from "@/types";
+import { CreditCard, UtensilsCrossed, Wallet, Trash2, ShieldCheck, Clock, Plus } from "lucide-react";
+import { SandwichConfig, PaymentMethod } from "@/types";
 import StepContainer from "./StepContainer";
 import Link from "next/link";
 import { clsx, type ClassValue } from "clsx";
@@ -45,7 +45,6 @@ export default function CheckoutScreen({
   const requiresDeposit = total >= 20;
   const depositRate = isCouscousMode ? 0.50 : 0.30;
   const depositAmount = requiresDeposit ? total * depositRate : 0;
-  const balanceAmount = total - depositAmount;
 
   return (
     <StepContainer title="Résumé" subtitle="Finalisez votre commande">

@@ -6,7 +6,7 @@ import { ORDER_TYPES, FORMULAS } from "@/lib/data";
 import { StepId } from "@/types";
 import { 
   ShoppingCart, MapPin, Utensils, CupSoda, 
-  ChevronRight, Clock, Plus, Star 
+  ChevronRight, Clock, Plus 
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";

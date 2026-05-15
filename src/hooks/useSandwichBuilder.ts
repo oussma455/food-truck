@@ -94,7 +94,7 @@ export function useSandwichBuilder() {
         }
       } else {
         // Logique 2 et 3 Personnes : Uniquement canettes
-        let drinkQuota = formulaId === 'COUSCOUS_S1' ? 2 : 3;
+        const drinkQuota = formulaId === 'COUSCOUS_S1' ? 2 : 3;
         const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
           .flatMap(d => Array(d.quantity).fill(d.option.price))
           .sort((a, b) => b - a);
