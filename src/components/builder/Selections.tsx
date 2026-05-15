@@ -103,11 +103,11 @@ export function SideSelector({ label, options, config, setConfig, type, quota }:
           const isCan = !opt.name.includes('1.5L') && !opt.name.includes('2L');
           const isFreeUnitAvailable = type === 'drinks' && isCan && quota && quota > 0;
           return (
-            <div key={opt.id} className="premium-card p-5 flex justify-between items-center bg-white/[0.02] border border-white/5">
+            <div key={opt.id} className="premium-card p-4 flex justify-between items-center bg-white/[0.02] border border-white/5">
               <div>
-                <p className="font-black text-xs uppercase tracking-widest text-gray-200">{opt.name}</p>
-                <p className="text-[10px] text-primary font-mono mt-0.5">
-                  {isFreeUnitAvailable ? "INCLUS DANS VOTRE FORMULE" : `${opt.price.toFixed(2)}€`}
+                <p className="font-black text-[11px] uppercase tracking-widest text-gray-200">{opt.name}</p>
+                <p className="text-[10px] text-green-500 font-mono mt-0.5">
+                  {isFreeUnitAvailable ? "INCLUS" : `${opt.price.toFixed(2)}€`}
                 </p>
               </div>
               <div className="flex items-center gap-5 bg-black/40 p-2 rounded-2xl border border-white/5">

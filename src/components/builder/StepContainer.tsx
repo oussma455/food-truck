@@ -18,10 +18,7 @@ export default function StepContainer({ title, subtitle, children }: StepContain
       className="flex-1"
     >
       <div className="mb-4">
-        <span className="text-[9px] text-primary font-black tracking-[0.2em] uppercase block mb-0.5 opacity-60">
-          {title}
-        </span>
-        <h2 className="text-3xl font-serif italic text-white leading-tight">
+        <h2 className="text-2xl font-serif italic text-white leading-none tracking-tight">
           {subtitle}
         </h2>
       </div>

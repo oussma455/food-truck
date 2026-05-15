@@ -62,7 +62,7 @@ export default function OptionCard({ option, isSelected, onClick, icon, hidePric
 
       <div className="flex items-center gap-3 relative z-10">
         {shouldShowPrice && (
-          <span className="text-[10px] font-mono font-black text-gray-500 group-hover:text-gray-300 transition-colors">
+          <span className="text-[10px] font-mono font-black text-green-500 group-hover:text-green-400 transition-colors">
             {displayPrice > 0 ? `+${displayPrice.toFixed(2)}€` : `${displayPrice.toFixed(2)}€`}
           </span>
         )}
