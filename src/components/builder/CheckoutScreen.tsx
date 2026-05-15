@@ -69,7 +69,9 @@ export default function CheckoutScreen({
           <div className="flex justify-between items-center pb-1.5 border-b border-white/5">
             <h4 className="text-[9px] text-primary font-black uppercase tracking-widest">Votre Panier ({allItems.length})</h4>
             {!isCouscousMode && (
-              <button onClick={onAddAnother} className="text-[8px] text-white/40 hover:text-primary font-black uppercase tracking-widest transition-colors">+ Ajouter</button>
+              <button onClick={onAddAnother} className="text-[9px] text-green-500 hover:text-green-400 font-black uppercase tracking-widest transition-colors flex items-center gap-1">
+                <Plus size={10} strokeWidth={4} /> Ajouter un autre sandwich
+              </button>
             )}
           </div>
           <div className="space-y-3">

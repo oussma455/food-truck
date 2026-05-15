@@ -50,6 +50,14 @@ export function CategoryStep({
 
   return (
     <StepContainer title="Sélection" subtitle={category.name}>
+      {isSauceStep && (
+        <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-6 flex items-center gap-4">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-primary leading-relaxed">
+            2 Sauces incluses <span className="opacity-60 font-medium">(+0.50€ par sauce supp.)</span>
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3">
         {category.options.map(option => {
           const currentList = config[category.id as keyof SandwichConfig] as Option[] || [];

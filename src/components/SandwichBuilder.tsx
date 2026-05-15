@@ -197,7 +197,7 @@ export default function SandwichBuilder() {
       case 'SAUCES':
         const saucesCat = b.menu.find(c => c.id === 'sauces');
         if (!saucesCat) return null;
-        return <CategoryStep category={{...saucesCat, options: b.getAvailableOptions('sauces')}} config={b.currentConfig} setConfig={b.setCurrentConfig} onNext={() => b.handleNext('SAUCES')} type="multiple" limit={3} isSauceStep={true} />;
+        return <CategoryStep category={{...saucesCat, options: b.getAvailableOptions('sauces')}} config={b.currentConfig} setConfig={b.setCurrentConfig} onNext={() => b.handleNext('SAUCES')} type="multiple" isSauceStep={true} />;
       case 'EXTRAS':
         const extrasCat = b.menu.find(c => c.id === 'extras');
         if (!extrasCat) return null;
