@@ -466,6 +466,13 @@ export default function SandwichBuilder() {
           </div>
         </div>
       </footer>
+
+      {/* Agency Credit */}
+      <div className="fixed bottom-1 left-0 right-0 text-center z-[60] pointer-events-none">
+        <span className="text-[6px] text-gray-700 uppercase font-black tracking-[0.3em]">
+          Powered by <span className="text-gray-500">Search-Digital</span>
+        </span>
+      </div>
     </div>
   );
 }
