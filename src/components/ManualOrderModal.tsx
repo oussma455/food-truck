@@ -370,19 +370,6 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                       </div>
                     )}
                   </div>
-                  
-                  <div className="bg-primary/5 border border-primary/20 p-6 rounded-2xl flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="text-primary" size={20} />
-                      <p className="text-white text-[10px] font-black uppercase tracking-widest">Passez à l&apos;étape suivante si rien à retirer</p>
-                    </div>
-                    <button 
-                      onClick={() => setStep(step + 1)}
-                      className="bg-primary text-black px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all"
-                    >
-                      Suivant
-                    </button>
-                  </div>
                 </div>
               ) : (
                 /* OTHER STEPS: STANDARD GRIDS */
