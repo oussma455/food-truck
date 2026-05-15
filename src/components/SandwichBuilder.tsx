@@ -110,10 +110,6 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Sandwich / Burger" subtitle="Choisissez votre grillade">
             <div className="space-y-6">
-              <div className="bg-primary/5 border border-primary/20 p-5 rounded-[2rem] flex items-center gap-4">
-                <div className="bg-primary/10 p-2 rounded-xl text-primary"><Star size={18} fill="currentColor" /></div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-white leading-relaxed">Frites & Crudités incluses <span className="opacity-40 font-medium">(Sauf Sandwich Seul)</span></p>
-              </div>
               <div className="grid grid-cols-1 gap-3">
                 {b.getAvailableOptions('presets').map(p => {
                   const surchargeVal = Math.max(0, p.price - 12);

@@ -6,7 +6,7 @@ export const ORDER_TYPES: Option[] = [
 ];
 
 export const FORMULAS: Option[] = [
-  { id: "menu_standard", name: "Menu Complet", price: 15.0, description: "Sandwich + Frites + Boisson au choix" },
+  { id: "menu_standard", name: "Menu Complet", price: 13.0, description: "Sandwich + Frites + Boisson au choix" },
   { id: "menu_student", name: "Menu Étudiant", price: 13.0, description: "Sandwich + Frites + Boisson (sur présentation de carte)" },
   { id: "sandwich_only", name: "Sandwich Seul", price: 12.0, description: "Le sandwich sans boisson et sans frites" },
   { id: "menu_kids", name: "Menu Enfant", price: 8.5, description: "Petit Sandwich + Frites + Boisson" },
@@ -30,7 +30,7 @@ export const SANDWICH_CATEGORIES: Category[] = [
       { id: "p1", name: "Sandwich Merguez", price: 12, description: "Merguez véritables, frites, salade, tomates, oignons", isAvailable: true },
       { id: "p2", name: "Sandwich Kefta", price: 12, description: "Kefta maison, frites, salade, tomates, oignons", isAvailable: true },
       { id: "p3", name: "Sandwich Poulet", price: 12, description: "Poulet mariné, frites, salade, tomates, oignons", isAvailable: true },
-      { id: "p4", name: "Le Mix Grill", price: 15, description: "Mélange de 2 ou 3 viandes au choix, frites, crudités", isAvailable: true },
+      { id: "p4", name: "Le Mix Grill", price: 15, description: "Mélange de 2 viandes au choix (+2€/viande supp.), frites, crudités", isAvailable: true },
       { id: "p5", name: "Hamburger", price: 12, description: "Steak boucher, cheddar, frites, crudités", isAvailable: true },
     ],
   },

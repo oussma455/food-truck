@@ -104,6 +104,10 @@ export function useSandwichBuilder() {
       if (config.preset_sandwich && formulaId !== 'menu_kids') {
         total += Math.max(0, config.preset_sandwich.price - 12);
       }
+      // Mix Grill: +2€ for each meat above 2
+      if (config.preset_sandwich?.id === 'p4' && config.meats && config.meats.length > 2) {
+        total += (config.meats.length - 2) * 2;
+      }
       total += config.sauces.length > 2 ? (config.sauces.length - 2) * 0.5 : 0;
       total += config.extras.reduce((acc, e) => acc + e.price, 0);
       if (config.preset_sandwich?.id === 'p5' && config.steaks_qty) total += config.steaks_qty.price;
