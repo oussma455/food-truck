@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SANDWICH_CATEGORIES, ORDER_TYPES, FORMULAS } from "@/lib/data";
 import { SandwichConfig, Option, Category, StepId, PaymentMethod, Order } from "@/types";
-import OneSignal from 'react-onesignal';
 import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star, CreditCard, Wallet, UtensilsCrossed, Bell, X, Utensils, Sandwich as BurgerIcon, CupSoda, ShieldCheck, ChevronRight } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -577,7 +576,7 @@ export default function SandwichBuilder() {
           <div className="flex items-center justify-center">
             {/* Real-time Total Display - Compact Version */}
             <div className="flex items-baseline gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5 relative">
-              <span className="absolute -top-3 -right-2 text-[6px] text-gray-600 font-mono">v1.8</span>
+              <span className="absolute -top-3 -right-2 text-[6px] text-gray-600 font-mono">v1.9.3</span>
               <p className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Total :</p>
               <p className="text-sm font-black text-white tracking-tighter">{calculateTotal().toFixed(2)}€</p>
             </div>

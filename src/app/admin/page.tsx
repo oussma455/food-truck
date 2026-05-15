@@ -1,21 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import AdminDashboard from "@/components/AdminDashboard";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
 
+const AdminDashboard = dynamic(() => import("@/components/AdminDashboard"), {
+  ssr: false,
+  loading: () => <div className="min-h-screen bg-black flex items-center justify-center text-primary uppercase font-black tracking-widest text-xs animate-pulse">Chargement Dashboard...</div>
+});
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsAuthenticated(localStorage.getItem("admin_auth") === "true");
+    setMounted(true);
+    if (localStorage.getItem("admin_auth") === "true") {
+      setIsAuthenticated(true);
     }
-    setIsChecking(false);
   }, []);
 
   // Pour la démo/V1, on utilise un mot de passe simple
@@ -33,7 +38,7 @@ export default function AdminPage() {
     }
   };
 
-  if (isChecking) {
+  if (!mounted) {
     return <div className="min-h-screen bg-black" />;
   }
 
@@ -43,16 +48,12 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-6">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="premium-card p-8 w-full max-w-md border-t-4 border-t-primary"
-      >
+      <div className="premium-card p-8 w-full max-w-md border-t-4 border-t-primary shadow-2xl">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
             <Lock className="text-primary" size={30} />
           </div>
-          <h1 className="text-2xl font-serif font-bold text-white">Accès Admin</h1>
+          <h1 className="text-2xl font-serif font-bold text-white italic">Accès Admin</h1>
           <p className="text-gray-400 text-sm mt-2">Identifiez-vous pour gérer les commandes</p>
         </div>
 
@@ -78,9 +79,9 @@ export default function AdminPage() {
         </form>
 
         <p className="text-center text-gray-600 text-[10px] mt-8 uppercase tracking-widest">
-          Gourmet Truck v1.0 • Sécurisé
+          Grillade O'Charbon v1.9.3 • Sécurisé
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 }
