@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Order, Category } from "@/types";
+import { Order, Category, Option } from "@/types";
 import { SANDWICH_CATEGORIES } from "@/lib/data";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -24,6 +24,7 @@ type AdminTab = 'pending' | 'preparing' | 'ready' | 'archive' | 'stock';
 export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isOpen, setIsOpen] = useState(true);
+  const [waitTime, setWaitTime] = useState("15 min");
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [editableMenu, setEditableMenu] = useState<Category[]>([]);
   const [activeTab, setActiveTab] = useState<AdminTab>('pending');
