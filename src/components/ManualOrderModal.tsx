@@ -465,7 +465,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
               )}
             </div>
 
-            {/* Navigation Navigation Footer */}
+            {/* Navigation Footer */}
             <div className="p-8 border-t border-white/5 bg-white/[0.02] flex gap-6 shrink-0 backdrop-blur-md">
               <button 
                 onClick={() => setStep(Math.max(0, step - 1))} 
@@ -477,7 +477,22 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 <ArrowLeft size={18} /> Précédent
               </button>
               
-              {showNextButton ? (
+              {currentCategory.id === 'desserts' ? (
+                <div className="flex-[2] flex gap-3">
+                  <button 
+                    onClick={addItemToBasket}
+                    className="flex-1 py-5 bg-primary/20 text-primary border border-primary/30 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 hover:bg-primary/30 transition-all"
+                  >
+                    + Autre Article
+                  </button>
+                  <button 
+                    onClick={handleSubmit}
+                    className="flex-1 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 hover:bg-gray-200 transition-all shadow-xl"
+                  >
+                    Finaliser <Check size={18} />
+                  </button>
+                </div>
+              ) : showNextButton ? (
                 <button 
                   onClick={() => setStep(Math.min(modalCategories.length - 1, step + 1))} 
                   className="flex-[2] py-5 bg-white text-black rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 hover:bg-primary hover:shadow-[0_0_30px_rgba(255,184,0,0.3)] transition-all"
