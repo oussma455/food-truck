@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FORMULAS, ORDER_TYPES } from "@/lib/data";
 import { SandwichConfig, Option, Order, Category } from "@/types";
+import { supabase } from "@/lib/supabase";
 import { 
   X, Plus, Check, MinusCircle, Phone, ShoppingCart, 
   User, ArrowRight, ArrowLeft, Trash2, Minus, 
@@ -243,12 +244,12 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     return basketTotal + currentTotal;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const finalItems = [...basket];
     if (config.formula && config.preset_sandwich) finalItems.push(config);
     if (finalItems.length === 0) return;
 
-    onOrderCreated({
+    const newOrder: Order = {
       id: "TEL-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
       client_name: clientInfo.name,
       client_phone: clientInfo.phone,
@@ -261,7 +262,16 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       pickup_time: "Téléphone",
       notes: (clientInfo as any).notes || "",
       created_at: new Date().toISOString(),
-    });
+    };
+
+    const { error } = await supabase.from('orders').insert([newOrder]);
+    
+    if (error) {
+      alert("Erreur lors de la sauvegarde de la commande: " + error.message);
+      return;
+    }
+
+    onOrderCreated(newOrder);
     onClose();
     resetCurrentConfig();
     setBasket([]);

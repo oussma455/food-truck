@@ -49,7 +49,11 @@ export default function AdminDashboard() {
     const ordersSub = supabase.channel('admin_orders')
       .on('postgres_changes', { event: '*', table: 'orders', schema: 'public' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setOrders(prev => [payload.new as Order, ...prev]);
+          const newOrder = payload.new as Order;
+          setOrders(prev => {
+            if (prev.some(o => o.id === newOrder.id)) return prev;
+            return [newOrder, ...prev];
+          });
           notificationSound?.play().catch(e => console.log("Audio play blocked", e));
         } else if (payload.eventType === 'UPDATE') {
           setOrders(prev => prev.map(o => o.id === payload.new.id ? payload.new as Order : o));
