@@ -95,19 +95,11 @@ export default function LegalsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl text-primary font-black uppercase tracking-widest text-[12px]">5. Cookies</h2>
-            <div className="bg-secondary/10 p-6 rounded-2xl border border-gray-800/50 space-y-4 text-sm text-gray-300 leading-relaxed">
-              <p>
-                Notre application utilise le stockage local de votre navigateur (LocalStorage) de manière strictement fonctionnelle, sans aucun traçage publicitaire. 
-                Nous stockons uniquement :
-              </p>
-              <ul className="list-disc pl-5 space-y-1 text-gray-400">
-                <li>Vos points de fidélité associés à votre numéro de téléphone.</li>
-                <li>Les préférences d'affichage (ex: notifications).</li>
-              </ul>
-              <p>
-                En utilisant ce site pour commander, vous acceptez l'utilisation de ce stockage fonctionnel indispensable au bon fonctionnement du service.
-              </p>
+            <h2 className="text-xl text-primary font-black uppercase tracking-widest text-[12px]">6. Crédits et Conception</h2>
+            <div className="bg-secondary/10 p-6 rounded-2xl border border-gray-800/50 space-y-2 text-sm text-gray-300">
+              <p>Cette application a été conçue et développée par l'agence <strong className="text-white">Search-Digital</strong>.</p>
+              <p>Expert en solutions digitales pour la restauration et les commerces de proximité.</p>
+              <p>Site web : <a href="https://www.search-digital.fr/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">www.search-digital.fr</a></p>
             </div>
           </section>
           
