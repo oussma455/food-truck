@@ -42,8 +42,9 @@ export default function CheckoutScreen({
 }: CheckoutScreenProps) {
   const allItems = [...cart, currentConfig].filter(i => i.formula);
   const total = calculateTotal();
+  const requiresDeposit = total >= 20;
   const depositRate = isCouscousMode ? 0.50 : 0.30;
-  const depositAmount = total * depositRate;
+  const depositAmount = requiresDeposit ? total * depositRate : 0;
   const balanceAmount = total - depositAmount;
 
   return (
@@ -51,10 +52,15 @@ export default function CheckoutScreen({
       <div className="space-y-4 mb-6 mt-2 overflow-y-auto max-h-[55vh] pr-1 custom-scrollbar">
         
         {/* Security Banner */}
-        <div className="bg-primary/[0.03] border border-primary/20 p-3 rounded-2xl flex items-center gap-3">
-          <ShieldCheck className="text-primary shrink-0" size={16} />
+        <div className={cn(
+          "border p-3 rounded-2xl flex items-center gap-3",
+          requiresDeposit ? "bg-green-500/[0.03] border-green-500/20" : "bg-white/[0.03] border-white/10"
+        )}>
+          <ShieldCheck className={cn("shrink-0", requiresDeposit ? "text-green-500" : "text-gray-400")} size={16} />
           <p className="text-[9px] text-gray-400 leading-tight font-medium">
-            Acompte de <span className="text-primary font-black">{isCouscousMode ? "50%" : "30%"}</span> via SumUp. Solde au camion.
+            {requiresDeposit 
+              ? <>Acompte de <span className="text-green-500 font-black">{isCouscousMode ? "50%" : "30%"}</span> via SumUp (Panier {">"} 20€). Solde au camion.</>
+              : "Aucun acompte requis pour cette commande. Paiement total au camion."}
           </p>
         </div>
 
@@ -109,11 +115,11 @@ export default function CheckoutScreen({
 
         {/* Payment Methods */}
         <div className="space-y-2">
-          <p className="text-[8px] text-gray-500 uppercase font-black tracking-[0.2em] text-center opacity-60">Règlement préféré</p>
+          <p className="text-[8px] text-gray-500 uppercase font-black tracking-[0.2em] text-center opacity-60">Règlement préféré au camion</p>
           <div className="grid grid-cols-3 gap-2">
             {[
               { id: 'card', name: 'CB', icon: <CreditCard size={14} /> },
-              { id: 'resto_card', name: 'TR', icon: <UtensilsCrossed size={14} /> },
+              { id: 'resto_card', name: 'Titre Resto', icon: <UtensilsCrossed size={14} /> },
               { id: 'cash', name: 'ESP', icon: <Wallet size={14} /> }
             ].map(method => (
               <button 
@@ -127,7 +133,7 @@ export default function CheckoutScreen({
                 )}
               >
                 {method.icon}
-                <span className="text-[9px] font-black uppercase">{method.name}</span>
+                <span className="text-[8px] font-black uppercase leading-none">{method.name}</span>
               </button>
             ))}
           </div>
@@ -201,26 +207,26 @@ export default function CheckoutScreen({
       <div className="bg-secondary/50 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl space-y-3">
         <div className="flex justify-between items-center text-white text-[10px] font-black uppercase tracking-widest bg-white/[0.03] p-3 rounded-xl border border-white/5">
           <span className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
             Acompte SumUp
           </span>
-          <span className="text-primary text-xl font-mono tracking-tighter">{depositAmount.toFixed(2)}€</span>
+          <span className="text-green-500 text-xl font-mono tracking-tighter">{depositAmount.toFixed(2)}€</span>
         </div>
 
         <motion.button 
           whileTap={{ scale: 0.98 }}
           onClick={onSubmit} 
           disabled={isSubmitting || !rgpdAccepted || !orderInfo.name || !orderInfo.phone} 
-          className="w-full premium-gradient text-black font-black py-4 rounded-xl shadow-2xl shadow-primary/20 flex flex-col items-center justify-center gap-0.5 disabled:opacity-30 transition-all"
+          className="w-full bg-green-500 text-black font-black py-4 rounded-xl shadow-2xl shadow-green-500/20 flex flex-col items-center justify-center gap-0.5 disabled:opacity-30 transition-all"
         >
           {isSubmitting ? (
             <div className="w-5 h-5 border-3 border-black border-t-transparent rounded-full animate-spin" />
           ) : (
             <>
               <div className="flex items-center gap-2 text-[11px] uppercase tracking-widest">
-                <CreditCard size={14} strokeWidth={3} /> Payer l&apos;acompte
+                <CreditCard size={14} strokeWidth={3} /> {requiresDeposit ? "PAYER L'ACOMPTE" : "CONFIRMER MA COMMANDE"}
               </div>
-              <span className="text-[7px] opacity-60 font-bold uppercase tracking-[0.1em]">Sécurisation SumUp</span>
+              <span className="text-[7px] opacity-60 font-bold uppercase tracking-[0.1em]">{requiresDeposit ? "Sécurisation SumUp" : "Paiement au camion"}</span>
             </>
           )}
         </motion.button>

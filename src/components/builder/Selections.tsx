@@ -96,7 +96,7 @@ export function SideSelector({ label, options, config, setConfig, type, quota }:
 
   return (
     <div className="space-y-4">
-      <h3 className="text-[10px] text-primary font-black uppercase tracking-[0.3em] pl-1 opacity-60 italic">{label}</h3>
+      <h3 className="text-[10px] text-primary font-black uppercase tracking-[0.3em] text-center italic opacity-60">{label}</h3>
       <div className="grid grid-cols-1 gap-3">
         {options.map(opt => {
           const qty = getQty(opt.id);
