@@ -327,7 +327,7 @@ export default function SandwichBuilder() {
       {/* Search Digital Signature & Version */}
       <div className="fixed bottom-2 left-0 right-0 px-6 flex justify-between items-center z-[60]">
         <a href="https://www.search-digital.fr/" target="_blank" rel="noopener noreferrer" className="text-[7px] text-gray-500 uppercase font-black tracking-[0.4em] hover:text-primary transition-colors opacity-40">
-          PRODUIT PAR <span className="underline decoration-primary/30">SEARCH-DIGITAL</span>
+          PROPULSÉ PAR <span className="underline decoration-primary/30">SEARCH-DIGITAL</span>
         </a>
         <span className="text-[7px] text-gray-500 font-mono font-black opacity-30 uppercase tracking-widest">V1.9</span>
       </div>

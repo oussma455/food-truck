@@ -134,9 +134,19 @@ export function useSandwichBuilder() {
   const handleBack = () => {
     switch (step) {
       case 'FORMULA': setStep('ORDER_TYPE'); break;
+      case 'COUSCOUS': setStep('ORDER_TYPE'); break;
+      case 'COUSCOUS_MEAT': setStep('COUSCOUS'); break;
       case 'PRESETS': setStep('FORMULA'); break;
       case 'KIDS_MENU': setStep('FORMULA'); break;
-      case 'EXTRAS': setStep(currentConfig.formula?.id === 'menu_kids' ? 'KIDS_MENU' : 'PRESETS'); break;
+      case 'MEATS': setStep('PRESETS'); break;
+      case 'STEAKS': setStep('PRESETS'); break;
+      case 'SAUCES': 
+        if (currentConfig.formula?.id === 'menu_kids') setStep('KIDS_MENU');
+        else if (currentConfig.preset_sandwich?.id === 'p4') setStep('MEATS');
+        else if (currentConfig.preset_sandwich?.id === 'p5') setStep('STEAKS');
+        else setStep('PRESETS');
+        break;
+      case 'EXTRAS': setStep('SAUCES'); break;
       case 'DRINKS': setStep(isCouscousMode ? 'COUSCOUS_MEAT' : 'EXTRAS'); break;
       case 'DESSERTS': setStep('DRINKS'); break;
       case 'CHECKOUT': setStep('DESSERTS'); setActiveTab('menu'); break;
