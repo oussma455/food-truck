@@ -26,11 +26,102 @@ export default function AdminDashboard() {
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [editableMenu, setEditableMenu] = useState<Category[]>([]);
   const [activeTab, setActiveTab] = useState<'pending' | 'preparing' | 'ready' | 'archive' | 'stock'>('pending');
+  const [isKitchenMode, setIsKitchenMode] = useState(false);
+  const [notificationSound, setNotificationSound] = useState<HTMLAudioElement | null>(null);
 
-  // ... (previous useEffect and methods)
+  useEffect(() => {
+    setNotificationSound(new Audio('/order-alert.mp3'));
+    
+    const fetchData = async () => {
+      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      if (ordersData) setOrders(ordersData);
+
+      const { data: settingsData } = await supabase.from('settings').select('*').eq('id', 'truck_settings').single();
+      if (settingsData) {
+        setIsOpen(settingsData.is_open);
+        setWaitTime(settingsData.wait_time);
+        if (settingsData.menu) setEditableMenu(settingsData.menu);
+      }
+    };
+    fetchData();
+
+    // Real-time Orders
+    const ordersSub = supabase.channel('admin_orders')
+      .on('postgres_changes', { event: '*', table: 'orders', schema: 'public' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newOrder = payload.new as Order;
+          setOrders(prev => {
+            if (prev.some(o => o.id === newOrder.id)) return prev;
+            return [newOrder, ...prev];
+          });
+          notificationSound?.play().catch(e => console.log("Audio play blocked", e));
+        } else if (payload.eventType === 'UPDATE') {
+          setOrders(prev => prev.map(o => o.id === payload.new.id ? payload.new as Order : o));
+        } else if (payload.eventType === 'DELETE') {
+          setOrders(prev => prev.filter(o => o.id !== payload.old.id));
+        }
+      }).subscribe();
+
+    return () => { supabase.removeChannel(ordersSub); };
+  }, [notificationSound]);
+
+  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+    if (error) console.error("Error updating status:", error);
+    
+    if (newStatus === 'ready') {
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        try {
+          await fetch('/api/notifications', {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'ORDER_READY',
+              clientName: order.client_name,
+              orderId: order.id
+            })
+          });
+        } catch (e) { console.error("Notif failed", e); }
+      }
+    }
+  };
+
+  const handleNextStatus = (order: Order) => {
+    if (order.status === 'pending') updateOrderStatus(order.id, 'preparing');
+    else if (order.status === 'preparing') updateOrderStatus(order.id, 'ready');
+    else if (order.status === 'ready') updateOrderStatus(order.id, 'completed');
+  };
+
+  const cancelOrder = async (id: string) => {
+    if (window.confirm("Annuler cette commande ?")) {
+      await supabase.from('orders').delete().eq('id', id);
+    }
+  };
+
+  const toggleTruckStatus = async () => {
+    const newStatus = !isOpen;
+    setIsOpen(newStatus);
+    await supabase.from('settings').update({ is_open: newStatus }).eq('id', 'truck_settings');
+    
+    if (newStatus) {
+      try {
+        await fetch('/api/notifications', { method: 'POST', body: JSON.stringify({ type: 'TRUCK_OPEN' }) });
+      } catch (e) { console.error("Notif open failed", e); }
+    }
+  };
+
+  const handleWaitTimeChange = async (time: string) => {
+    setWaitTime(time);
+    await supabase.from('settings').update({ wait_time: time }).eq('id', 'truck_settings');
+  };
+
+  const handleBan = async (phone: string) => {
+    await supabase.from('blacklist').insert([{ phone }]);
+    alert(`${phone} a été banni.`);
+  };
 
   const toggleProductAvailability = async (catId: string, optId: string) => {
-    const newMenu = editableMenu.map(cat => {
+    const newMenu = (editableMenu.length > 0 ? editableMenu : SANDWICH_CATEGORIES).map(cat => {
       if (cat.id === catId) {
         return {
           ...cat,
