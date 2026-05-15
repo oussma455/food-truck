@@ -202,7 +202,7 @@ export default function AdminDashboard() {
           <button onClick={() => setIsKitchenMode(!isKitchenMode)} className={cn("hidden md:flex p-3 rounded-xl border transition-all", isKitchenMode ? "bg-white text-black border-white" : "border-gray-800 text-gray-500 hover:text-white")}>
             <ChefHat size={20} />
           </button>
-          <button onClick={() => setIsOrderModalOpen(true)} className="flex-1 md:flex-none premium-gradient text-background px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+          <button onClick={() => setIsOrderModalOpen(true)} className="flex-1 md:flex-none bg-primary text-black hover:bg-primary/90 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-all">
             <PhoneCall size={16} /> Prendre Commande
           </button>
           <button onClick={handleLogout} className="text-gray-600 hover:text-red-500 transition-all p-3"><LogOut size={20} /></button>
@@ -458,7 +458,13 @@ function OrderCard({ order, onNext, onCancel, isReady, isKitchenMode = false }: 
           {!isReady && (
             <button onClick={onCancel} className="p-2.5 rounded-lg border border-gray-800 text-gray-600 hover:text-red-500 hover:border-red-500/30 transition-all"><XCircle size={16} /></button>
           )}
-          <button onClick={onNext} className={cn("rounded-lg font-black uppercase tracking-[0.2em] transition-all flex-1", isKitchenMode ? "py-5 text-xl" : "px-5 py-2.5 text-[9px]", isReady ? "bg-white text-black hover:bg-gray-200" : "premium-gradient text-background hover:scale-[1.02] shadow-lg shadow-primary/10")}>
+          <button onClick={onNext} className={cn(
+            "rounded-lg font-black uppercase tracking-[0.2em] transition-all flex-1 hover:scale-[1.02] shadow-lg", 
+            isKitchenMode ? "py-5 text-xl" : "px-5 py-2.5 text-[9px]",
+            order.status === 'pending' ? "bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500" : 
+            order.status === 'preparing' ? "bg-green-600 text-white shadow-green-500/20 hover:bg-green-500" : 
+            "bg-gray-800 text-gray-300 shadow-none hover:bg-gray-700 border border-gray-700"
+          )}>
             {order.status === 'pending' ? 'Lancer' : order.status === 'preparing' ? 'Prêt' : 'Archiver'}
           </button>
         </div>
