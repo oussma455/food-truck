@@ -91,23 +91,21 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       } else {
         setConfig({ ...config, sauces: [...config.sauces, option] });
       }
-    } else if (catId === "drinks" || catId === "desserts" || catId === "extras") {
-      const key = catId as 'drinks' | 'desserts' | 'extras';
-      if (catId === "extras") {
-        const isSelected = config.extras.find((e) => e.id === option.id);
-        if (isSelected) {
-          setConfig({ ...config, extras: config.extras.filter((e) => e.id !== option.id) });
-        } else {
-          setConfig({ ...config, extras: [...config.extras, option] });
-        }
+    } else if (catId === "extras") {
+      const isSelected = config.extras.find((e) => e.id === option.id);
+      if (isSelected) {
+        setConfig({ ...config, extras: config.extras.filter((e) => e.id !== option.id) });
       } else {
-        const currentList = config[key] || [];
-        const existing = currentList.find(i => i.option.id === option.id);
-        if (existing) {
-          setConfig({ ...config, [key]: currentList.filter(i => i.option.id !== option.id) });
-        } else {
-          setConfig({ ...config, [key]: [...currentList, { option, quantity: 1 }] });
-        }
+        setConfig({ ...config, extras: [...config.extras, option] });
+      }
+    } else if (catId === "drinks" || catId === "desserts") {
+      const key = catId as 'drinks' | 'desserts';
+      const currentList = config[key] || [];
+      const existing = currentList.find(i => i.option.id === option.id);
+      if (existing) {
+        setConfig({ ...config, [key]: currentList.filter(i => i.option.id !== option.id) });
+      } else {
+        setConfig({ ...config, [key]: [...currentList, { option, quantity: 1 }] });
       }
     }
   };
