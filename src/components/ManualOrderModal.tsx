@@ -196,8 +196,14 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     
     // Sandwich Premium Surcharge
     if (item.preset_sandwich && formulaId !== 'menu_kids') {
-      const extra = Math.max(0, item.preset_sandwich.price - 10);
+      // Base sandwich price is now 12€. Only p4 (Mix) is 15€.
+      const extra = Math.max(0, item.preset_sandwich.price - 12);
       total += extra;
+    }
+
+    // Steaks surcharge for Burgers
+    if (item.preset_sandwich?.id === 'p5' && item.steaks_qty) {
+      total += item.steaks_qty.price;
     }
 
     // Sauces (2 free, then 0.50€)
@@ -487,7 +493,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                           )}
                           {opt.price > 0 && (
                             <span className="text-[11px] font-mono font-black text-gray-400">
-                              {currentCategory.id === 'presets' && opt.price > 10 ? `+${(opt.price - 10).toFixed(2)}€` : `+${opt.price.toFixed(2)}€`}
+                              {currentCategory.id === 'presets' && opt.price > 12 ? `+${(opt.price - 12).toFixed(2)}€` : `+${opt.price.toFixed(2)}€`}
                             </span>
                           )}
                         </div>

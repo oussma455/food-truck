@@ -2,317 +2,76 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SANDWICH_CATEGORIES, ORDER_TYPES, FORMULAS } from "@/lib/data";
-import { SandwichConfig, Option, Category, StepId, PaymentMethod, Order } from "@/types";
-import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, GraduationCap, Baby, Star, CreditCard, Wallet, UtensilsCrossed, Bell, X, Utensils, Sandwich as BurgerIcon, CupSoda, ShieldCheck, ChevronRight } from "lucide-react";
+import { ORDER_TYPES, FORMULAS } from "@/lib/data";
+import { StepId } from "@/types";
+import { 
+  ShoppingCart, MapPin, Utensils, CupSoda, 
+  ChevronRight, Clock, Plus, Star 
+} from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+
+import { useSandwichBuilder } from "@/hooks/useSandwichBuilder";
+import StepContainer from "./builder/StepContainer";
+import OptionCard from "./builder/OptionCard";
+import CheckoutScreen from "./builder/CheckoutScreen";
+import { CategoryStep, SideSelector } from "./builder/Selections";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-interface CheckoutScreenProps {
-  orderInfo: { name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway"; paymentMethod: PaymentMethod };
-  setOrderInfo: React.Dispatch<React.SetStateAction<{ name: string; phone: string; pickupTime: string; type: "on_site" | "takeaway"; paymentMethod: PaymentMethod }>>;
-  cart: SandwichConfig[];
-  currentConfig: SandwichConfig;
-  calculateTotal: () => number;
-  rgpdAccepted: boolean;
-  setRgpdAccepted: (val: boolean) => void;
-  isSubmitting: boolean;
-  onSubmit: () => void;
-  onAddAnother: () => void;
-  isCouscousMode: boolean;
-}
-
-// Production Version 1.9.3 - Supabase Integrated
 export default function SandwichBuilder() {
-  const [isOpen, setIsOpen] = useState(true);
-  const [waitTime, setWaitTime] = useState("15 min");
-  const [menu, setMenu] = useState<Category[]>(SANDWICH_CATEGORIES);
-  const [step, setStep] = useState<StepId>('ORDER_TYPE');
-  const [cart, setCart] = useState<SandwichConfig[]>([]);
-  const [currentConfig, setCurrentConfig] = useState<SandwichConfig>({ sauces: [], extras: [], drinks: [], desserts: [] });
-  const [orderInfo, setOrderInfo] = useState({ 
-    name: '', 
-    phone: '', 
-    pickupTime: '15 min', 
-    type: 'takeaway' as 'on_site' | 'takeaway', 
-    paymentMethod: 'card' as PaymentMethod 
-  });
-  const [activeTab, setActiveTab] = useState<'menu' | 'cart'>('menu');
-  const [isCouscousMode, setIsCouscousMode] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const b = useSandwichBuilder();
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      const { data } = await supabase.from('settings').select('*').eq('id', 'truck_settings').single();
-      if (data) {
-        setIsOpen(data.is_open);
-        setWaitTime(data.wait_time);
-        if (data.menu) setMenu(data.menu);
-      }
-    };
-    fetchSettings();
-
-    // Subscribe to settings changes
-    const sub = supabase.channel('client_settings')
-      .on('postgres_changes', { event: 'UPDATE', table: 'settings', schema: 'public' }, (payload) => {
-        setIsOpen(payload.new.is_open);
-        setWaitTime(payload.new.wait_time);
-        if (payload.new.menu) setMenu(payload.new.menu);
-      }).subscribe();
-
-    return () => { supabase.removeChannel(sub); };
-  }, []);
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loyaltyPoints] = useState(0);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [rgpdAccepted, setRgpdAccepted] = useState(false);
-
-  const getAvailableOptions = (categoryId: string) => {
-    const category = menu.find(c => c.id === categoryId);
-    if (!category) return [];
-    return category.options.filter(o => o.isAvailable !== false);
-  };
-
-  const calculateGrilladeTotal = (config: SandwichConfig) => {
-    let total = config.formula?.price || 0;
-    const formulaId = config.formula?.id || '';
-    const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaId);
-
-    // Sandwich Surcharge (Only add if > 10€ and not Kids Menu)
-    if (config.preset_sandwich && formulaId !== 'menu_kids') {
-      const extra = Math.max(0, config.preset_sandwich.price - 10);
-      total += extra;
-    }
-
-    // Sauces: 2 free, then 0.50€
-    const saucesCount = config.sauces.length;
-    total += Math.max(0, saucesCount - 2) * 0.5;
-
-    // Extras
-    total += config.extras.reduce((acc, e) => acc + e.price, 0);
-
-    // Steaks surcharge for Burgers
-    if (config.preset_sandwich?.id === 'p5' && config.steaks_qty) {
-      total += config.steaks_qty.price;
-    }
-    
-    // Drinks: 1 free for menus, 0 for Sandwich Seul
-    const drinks = config.drinks || [];
-    const drinkQuota = isStandardMenu ? 1 : 0;
-
-    if (drinkQuota > 0) {
-      const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
-                               .flatMap(d => Array(d.quantity).fill(d.option.price))
-                               .sort((a, b) => b - a);
-      const paidCans = cansPrices.slice(drinkQuota);
-      total += paidCans.reduce((acc, p) => acc + p, 0);
-      total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L'))
-                     .reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    } else {
-      total += drinks.reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    }
-
-    total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    return total;
-  };
-
-  const calculateCouscousTotal = (config: SandwichConfig) => {
-    let total = config.formula?.price || 0;
-    const formulaId = config.formula?.id || '';
-
-    if (config.preset_sandwich) {
-      total += config.preset_sandwich.price;
-    }
-
-    const drinks = config.drinks || [];
-    let drinkQuota = 0;
-    if (formulaId === 'COUSCOUS_S1') drinkQuota = 2;
-    else if (formulaId === 'COUSCOUS_S2') drinkQuota = 3;
-    else if (formulaId === 'COUSCOUS_S3') drinkQuota = 4;
-
-    if (formulaId === 'COUSCOUS_S3') {
-      const totalBottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + d.quantity, 0);
-      if (totalBottles >= 1) {
-        const bottles = drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).sort((a, b) => b.option.price - a.option.price);
-        total += (totalBottles - 1) * bottles[0].option.price;
-        total += drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-        return total + (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-      }
-    }
-
-    const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
-    const paidCans = cansPrices.slice(drinkQuota);
-    total += paidCans.reduce((acc, p) => acc + p, 0);
-    total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    total += (config.desserts || []).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
-    return total;
-  };
-
-  const calculateItemTotal = (config: SandwichConfig) => {
-    const formulaId = config.formula?.id || '';
-    if (formulaId.startsWith('COUSCOUS_')) return calculateCouscousTotal(config);
-    return calculateGrilladeTotal(config);
-  };
-
-  const calculateTotal = () => {
-    const cartTotal = cart.reduce((acc, item) => acc + calculateItemTotal(item), 0);
-    const currentTotal = calculateItemTotal(currentConfig);
-    return cartTotal + currentTotal;
-  };
-
-  const handleNext = (overrideStep?: StepId, formulaId?: string) => {
-    const currentStep = overrideStep || step;
-    switch (currentStep) {
-      case 'ORDER_TYPE': 
-        setIsCouscousMode(false); 
-        setStep('FORMULA'); 
-        break;
-      case 'FORMULA':
-        const selId = formulaId || currentConfig.formula?.id;
-        if (selId === 'menu_kids') {
-          setIsCouscousMode(false);
-          setStep('KIDS_MENU');
-        } else if (selId?.startsWith('COUSCOUS_')) {
-          setIsCouscousMode(true);
-          setStep('COUSCOUS_MEAT');
-        } else {
-          setIsCouscousMode(false);
-          setStep('PRESETS');
-        }
-        break;
-      case 'COUSCOUS': setStep('COUSCOUS_MEAT'); break;
-      case 'COUSCOUS_MEAT': setStep('DRINKS'); break;
-      case 'KIDS_MENU': setStep('SAUCES'); break;
-      case 'PRESETS':
-        if (currentConfig.preset_sandwich?.id === 'p4') {
-          setStep('MEATS');
-        } else if (currentConfig.preset_sandwich?.id === 'p5') {
-          setStep('STEAKS');
-        } else {
-          setStep('SAUCES');
-        }
-        break;
-      case 'MEATS': setStep('SAUCES'); break;
-      case 'STEAKS': setStep('SAUCES'); break;
-      case 'SAUCES': setStep('EXTRAS'); break;
-      case 'EXTRAS': setStep('DRINKS'); break;
-      case 'DRINKS':
-        const fId = currentConfig.formula?.id || '';
-        const isM = ['menu_standard', 'menu_student', 'menu_kids'].includes(fId);
-        const isC = fId.startsWith('COUSCOUS_');
-        let q = isM ? 1 : 0;
-        if (isC) {
-          if (fId === 'COUSCOUS_S1') q = 2;
-          else if (fId === 'COUSCOUS_S2') q = 3;
-          else if (fId === 'COUSCOUS_S3') q = 4;
-        }
-        const totalQ = (currentConfig.drinks || []).reduce((acc, d) => acc + d.quantity, 0);
-        if (q > 0 && totalQ < q) {
-          alert(`Votre formule inclut ${q} boisson(s) ! Veuillez les choisir.`);
-          return;
-        }
-        setStep('DESSERTS');
-        break;
-      case 'DESSERTS': setStep('CHECKOUT'); setActiveTab('cart'); break;
-    }
-  };
-
-  const handleBack = () => {
-    switch (step) {
-      case 'FORMULA': setStep('ORDER_TYPE'); break;
-      case 'COUSCOUS': setStep('FORMULA'); break;
-      case 'COUSCOUS_MEAT': setStep('COUSCOUS'); break;
-      case 'PRESETS': setStep('FORMULA'); break;
-      case 'KIDS_MENU': setStep('FORMULA'); break;
-      case 'EXTRAS': setStep(currentConfig.formula?.id === 'menu_kids' ? 'KIDS_MENU' : 'PRESETS'); break;
-      case 'DRINKS': setStep(isCouscousMode ? 'COUSCOUS_MEAT' : 'EXTRAS'); break;
-      case 'DESSERTS': setStep('DRINKS'); break;
-      case 'CHECKOUT': setStep('DESSERTS'); setActiveTab('menu'); break;
-    }
-  };
-
-  const handleSubmitOrder = async () => {
-    if (!orderInfo.name || !orderInfo.phone) { alert("Veuillez remplir vos informations"); return; }
-    
-    // Check blacklist
-    const { data: isBanned } = await supabase.from('blacklist').select('phone').eq('phone', orderInfo.phone).single();
-    if (isBanned) {
-      alert("Désolé, votre numéro est restreint. Veuillez contacter le restaurateur.");
-      return;
-    }
-
-    if (!rgpdAccepted) { alert("Veuillez accepter le RGPD"); return; }
-    
-    setIsProcessing(true);
-    
-    const total = calculateTotal();
-    const depositRate = isCouscousMode ? 0.50 : 0.30;
-    const depositAmount = total * depositRate;
-
-    const newOrder: Order = {
-      id: "WEB-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
-      client_name: orderInfo.name,
-      client_phone: orderInfo.phone,
-      items: [...cart, currentConfig],
-      total_price: total,
-      deposit_amount: depositAmount,
-      deposit_status: 'paid', // Simulation paiement réussi
-      status: 'pending',
-      payment_status: 'partial',
-      payment_method: orderInfo.paymentMethod,
-      order_type: orderInfo.type,
-      pickup_time: isCouscousMode ? "Demain (Couscous)" : orderInfo.pickupTime,
-      notes: (orderInfo as any).notes || "", // Ajout des notes
-      created_at: new Date().toISOString(),
-    };
-
-    const { error } = await supabase.from('orders').insert([newOrder]);
-
-    if (error) {
-      console.error("Supabase error:", error);
-      alert("Erreur lors de la validation de la commande. Veuillez réessayer.");
-      setIsProcessing(false);
-      return;
-    }
-
-    // Success flow
-    setTimeout(() => {
-      setIsProcessing(false);
-      setShowConfetti(true);
-      setTimeout(() => {
-        setStep('ORDER_TYPE'); 
-        setActiveTab('menu');
-        setCart([]); 
-        setCurrentConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
-        setShowConfetti(false); 
-        alert("Félicitations ! Votre commande a été reçue. Retrait prévu : " + newOrder.pickup_time);
-      }, 2000);
-    }, 2500);
-  };
+  if (!b.isOpen) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center text-white">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="premium-card p-12 border-primary/20 max-w-sm">
+          <Clock className="text-primary mx-auto mb-6 animate-pulse" size={48} />
+          <h2 className="text-4xl font-serif mb-4 uppercase tracking-widest italic text-gold-gradient">Fermé</h2>
+          <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-black leading-relaxed">
+            Notre grillade se repose.<br/>Revenez nous voir très bientôt !
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   const renderStep = () => {
-    switch (step) {
+    switch (b.step) {
       case 'ORDER_TYPE':
         return (
           <StepContainer title="Bienvenue" subtitle="Sur place ou à emporter ?">
             <div className="grid grid-cols-1 gap-4">
               {ORDER_TYPES.map(type => (
-                <OptionCard key={type.id} option={type} isSelected={orderInfo.type === type.id} onClick={() => { setOrderInfo({...orderInfo, type: type.id as 'on_site' | 'takeaway'}); handleNext('ORDER_TYPE'); }} icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />} hidePrice={true} />
+                <OptionCard 
+                  key={type.id} 
+                  option={type} 
+                  isSelected={b.orderInfo.type === type.id} 
+                  onClick={() => { b.setOrderInfo({...b.orderInfo, type: type.id as any}); b.handleNext('ORDER_TYPE'); }} 
+                  icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />} 
+                  hidePrice={true} 
+                />
               ))}
-              <div className="h-[1px] w-full bg-gray-900 my-4 flex items-center justify-center"><span className="bg-background px-4 text-gray-700 text-[8px] uppercase tracking-widest font-black">Ou réservation spéciale</span></div>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setIsCouscousMode(true); setStep('COUSCOUS'); }} className="w-full bg-white p-5 rounded-2xl flex items-center justify-between gap-4 border border-white group relative overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary p-2.5 rounded-xl text-white group-hover:rotate-12 transition-transform"><Utensils size={20} /></div>
-                  <div className="text-left"><span className="text-primary font-black uppercase tracking-widest text-[11px] block">Pré-commander Couscous</span><span className="text-gray-900/60 text-[8px] uppercase font-bold tracking-widest">Réservé 24h à l&apos;avance • 2 à 4 pers.</span></div>
+              <div className="relative py-8 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+                <span className="relative bg-background px-6 text-gray-700 text-[9px] uppercase tracking-[0.4em] font-black">Spécialité</span>
+              </div>
+              <motion.button 
+                whileHover={{ scale: 1.01, borderColor: "rgba(255, 184, 0, 0.4)" }} 
+                whileTap={{ scale: 0.98 }} 
+                onClick={() => { b.setStep('COUSCOUS'); }} 
+                className="w-full bg-white p-6 rounded-3xl flex items-center justify-between gap-4 border border-white group relative overflow-hidden shadow-2xl shadow-white/5"
+              >
+                <div className="flex items-center gap-5">
+                  <div className="bg-primary p-3 rounded-2xl text-black group-hover:rotate-12 transition-transform duration-500 shadow-lg"><Utensils size={24} /></div>
+                  <div className="text-left">
+                    <span className="text-primary font-black uppercase tracking-widest text-xs block">Réserver un Couscous</span>
+                    <span className="text-gray-900/60 text-[9px] uppercase font-bold tracking-widest">Traditionnel • 24h à l&apos;avance</span>
+                  </div>
                 </div>
-                <div className="w-5 h-5 rounded-full border border-primary flex items-center justify-center group-hover:bg-primary transition-all"><Plus size={10} className="text-primary group-hover:text-white" /></div>
+                <Plus size={18} className="text-primary" />
               </motion.button>
             </div>
           </StepContainer>
@@ -321,8 +80,8 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Couscous Maison" subtitle="Taille de la tablée">
             <div className="grid grid-cols-1 gap-3">
-              {getAvailableOptions('couscous_size').map(size => (
-                <OptionCard key={size.id} option={size} isSelected={currentConfig.formula?.id === size.id} onClick={() => { setCurrentConfig({...currentConfig, formula: size}); setTimeout(() => handleNext('COUSCOUS'), 300); }} />
+              {b.getAvailableOptions('couscous_size').map(size => (
+                <OptionCard key={size.id} option={size} isSelected={b.currentConfig.formula?.id === size.id} onClick={() => { b.setCurrentConfig({...b.currentConfig, formula: size}); setTimeout(() => b.handleNext('COUSCOUS'), 300); }} />
               ))}
             </div>
           </StepContainer>
@@ -331,8 +90,8 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Couscous Maison" subtitle="Choisissez l'accompagnement">
             <div className="grid grid-cols-1 gap-3">
-              {getAvailableOptions('couscous_type').map(type => (
-                <OptionCard key={type.id} option={type} isSelected={currentConfig.preset_sandwich?.id === type.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: type}); setTimeout(() => handleNext('COUSCOUS_MEAT'), 300); }} />
+              {b.getAvailableOptions('couscous_type').map(type => (
+                <OptionCard key={type.id} option={type} isSelected={b.currentConfig.preset_sandwich?.id === type.id} onClick={() => { b.setCurrentConfig({...b.currentConfig, preset_sandwich: type}); setTimeout(() => b.handleNext('COUSCOUS_MEAT'), 300); }} />
               ))}
             </div>
           </StepContainer>
@@ -342,32 +101,34 @@ export default function SandwichBuilder() {
           <StepContainer title="Formule" subtitle="Choisissez votre plaisir">
             <div className="grid grid-cols-1 gap-3">
               {FORMULAS.map(f => (
-                <OptionCard key={f.id} option={f} isSelected={currentConfig.formula?.id === f.id} onClick={() => { setCurrentConfig({...currentConfig, formula: f}); setTimeout(() => handleNext('FORMULA', f.id), 300); }} />
+                <OptionCard key={f.id} option={f} isSelected={b.currentConfig.formula?.id === f.id} onClick={() => { b.setCurrentConfig({...b.currentConfig, formula: f}); setTimeout(() => b.handleNext('FORMULA', f.id), 300); }} />
               ))}
             </div>
           </StepContainer>
         );
       case 'PRESETS':
         return (
-          <StepContainer title="Nos Créations" subtitle="Recettes signatures">
-            <div className="grid grid-cols-1 gap-3">
-              {getAvailableOptions('presets').map(p => {
-                // The base 10€ is always covered by the formula price (Menu or Sandwich Seul)
-                const surchargeVal = Math.max(0, p.price - 10);
-                return (
-                  <OptionCard 
-                    key={p.id} 
-                    option={p} 
-                    isSelected={currentConfig.preset_sandwich?.id === p.id} 
-                    onClick={() => { 
-                      setCurrentConfig({...currentConfig, preset_sandwich: p}); 
-                      setTimeout(() => handleNext('PRESETS'), 300); 
-                    }} 
-                    surchargeValue={surchargeVal} 
-                    hidePrice={surchargeVal === 0} 
-                  />
-                );
-              })}
+          <StepContainer title="Sandwich / Burger" subtitle="Choisissez votre grillade">
+            <div className="space-y-6">
+              <div className="bg-primary/5 border border-primary/20 p-5 rounded-[2rem] flex items-center gap-4">
+                <div className="bg-primary/10 p-2 rounded-xl text-primary"><Star size={18} fill="currentColor" /></div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white leading-relaxed">Frites & Crudités incluses <span className="opacity-40 font-medium">(Sauf Sandwich Seul)</span></p>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {b.getAvailableOptions('presets').map(p => {
+                  const surchargeVal = Math.max(0, p.price - 12);
+                  return (
+                    <OptionCard 
+                      key={p.id} 
+                      option={p} 
+                      isSelected={b.currentConfig.preset_sandwich?.id === p.id} 
+                      onClick={() => { b.setCurrentConfig({...b.currentConfig, preset_sandwich: p}); setTimeout(() => b.handleNext('PRESETS'), 300); }} 
+                      surchargeValue={surchargeVal} 
+                      hidePrice={surchargeVal === 0} 
+                    />
+                  );
+                })}
+              </div>
             </div>
           </StepContainer>
         );
@@ -375,21 +136,21 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Menu Enfant" subtitle="Son petit régal">
             <div className="grid grid-cols-1 gap-3">
-              {getAvailableOptions('kids_menu').map(k => (
-                <OptionCard key={k.id} option={k} isSelected={currentConfig.preset_sandwich?.id === k.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: k}); setTimeout(() => handleNext('KIDS_MENU'), 300); }} hidePrice={true} />
+              {b.getAvailableOptions('kids_menu').map(k => (
+                <OptionCard key={k.id} option={k} isSelected={b.currentConfig.preset_sandwich?.id === k.id} onClick={() => { b.setCurrentConfig({...b.currentConfig, preset_sandwich: k}); setTimeout(() => b.handleNext('KIDS_MENU'), 300); }} hidePrice={true} />
               ))}
             </div>
           </StepContainer>
         );
       case 'MEATS':
-        const meatsCat = menu.find(c => c.id === 'meats');
+        const meatsCat = b.menu.find(c => c.id === 'meats');
         if (!meatsCat) return null;
         return (
           <StepContainer title="Mix Grill" subtitle="Choisissez 2 ou 3 viandes">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 gap-3">
-                {getAvailableOptions('meats').map(opt => {
-                  const currentMeats = currentConfig.meats || [];
+                {b.getAvailableOptions('meats').map(opt => {
+                  const currentMeats = b.currentConfig.meats || [];
                   const isSel = currentMeats.some(m => m.id === opt.id);
                   return (
                     <OptionCard 
@@ -398,10 +159,10 @@ export default function SandwichBuilder() {
                       isSelected={isSel} 
                       onClick={() => {
                         if (isSel) {
-                          setCurrentConfig({...currentConfig, meats: currentMeats.filter(m => m.id !== opt.id)});
+                          b.setCurrentConfig({...b.currentConfig, meats: currentMeats.filter(m => m.id !== opt.id)});
                         } else {
                           if (currentMeats.length >= 3) return;
-                          setCurrentConfig({...currentConfig, meats: [...currentMeats, opt]});
+                          b.setCurrentConfig({...b.currentConfig, meats: [...currentMeats, opt]});
                         }
                       }}
                       hidePrice={true}
@@ -410,348 +171,167 @@ export default function SandwichBuilder() {
                 })}
               </div>
               <motion.button 
-                whileTap={{ scale: 0.95 }}
-                disabled={(currentConfig.meats || []).length < 2}
-                onClick={() => handleNext('MEATS')}
-                className="w-full py-4 bg-primary text-background font-black rounded-2xl uppercase text-[11px] tracking-widest shadow-xl disabled:opacity-30 transition-all mt-4"
+                whileTap={{ scale: 0.98 }}
+                disabled={(b.currentConfig.meats || []).length < 2}
+                onClick={() => b.handleNext('MEATS')}
+                className="w-full py-5 bg-primary text-black font-black rounded-3xl uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-primary/20 disabled:opacity-20 transition-all mt-4"
               >
-                Valider le mélange ({(currentConfig.meats || []).length}/3)
+                Valider le mélange ({(b.currentConfig.meats || []).length}/3)
               </motion.button>
             </div>
           </StepContainer>
         );
       case 'STEAKS':
-        const steaksCat = menu.find(c => c.id === 'steaks_qty');
+        const steaksCat = b.menu.find(c => c.id === 'steaks_qty');
         if (!steaksCat) return null;
         return (
           <StepContainer title="Hamburger" subtitle="Nombre de steaks">
             <div className="grid grid-cols-1 gap-3">
-              {getAvailableOptions('steaks_qty').map(s => (
+              {b.getAvailableOptions('steaks_qty').map(s => (
                 <OptionCard 
                   key={s.id} 
                   option={s} 
-                  isSelected={currentConfig.steaks_qty?.id === s.id} 
-                  onClick={() => { 
-                    setCurrentConfig({...currentConfig, steaks_qty: s}); 
-                    setTimeout(() => handleNext('STEAKS'), 300); 
-                  }} 
+                  isSelected={b.currentConfig.steaks_qty?.id === s.id} 
+                  onClick={() => { b.setCurrentConfig({...b.currentConfig, steaks_qty: s}); setTimeout(() => b.handleNext('STEAKS'), 300); }} 
                 />
               ))}
             </div>
           </StepContainer>
         );
       case 'SAUCES':
-        const saucesCat = menu.find(c => c.id === 'sauces');
+        const saucesCat = b.menu.find(c => c.id === 'sauces');
         if (!saucesCat) return null;
-        return <CategoryStep category={{...saucesCat, options: getAvailableOptions('sauces')}} config={currentConfig} setConfig={setCurrentConfig} onNext={() => handleNext('SAUCES')} type="multiple" limit={3} isSauceStep={true} />;
+        return <CategoryStep category={{...saucesCat, options: b.getAvailableOptions('sauces')}} config={b.currentConfig} setConfig={b.setCurrentConfig} onNext={() => b.handleNext('SAUCES')} type="multiple" limit={3} isSauceStep={true} />;
       case 'EXTRAS':
-        const extrasCat = menu.find(c => c.id === 'extras');
+        const extrasCat = b.menu.find(c => c.id === 'extras');
         if (!extrasCat) return null;
-        return <CategoryStep category={{...extrasCat, options: getAvailableOptions('extras')}} config={currentConfig} setConfig={setCurrentConfig} onNext={() => handleNext('EXTRAS')} type="multiple" />;
+        return <CategoryStep category={{...extrasCat, options: b.getAvailableOptions('extras')}} config={b.currentConfig} setConfig={b.setCurrentConfig} onNext={() => b.handleNext('EXTRAS')} type="multiple" />;
       case 'DRINKS':
-        const formulaIdDrinksStep = currentConfig.formula?.id || '';
-        const isStandardMenu = ['menu_standard', 'menu_student', 'menu_kids'].includes(formulaIdDrinksStep);
-        const isCouscousStep = formulaIdDrinksStep.startsWith('COUSCOUS_');
+        const fId = b.currentConfig.formula?.id || '';
+        const isC = fId.startsWith('COUSCOUS_');
+        let q = ['menu_standard', 'menu_student', 'menu_kids'].includes(fId) ? 1 : 0;
+        if (isC) q = fId === 'COUSCOUS_S1' ? 2 : fId === 'COUSCOUS_S2' ? 3 : 4;
         
-        let q = 0;
-        if (isStandardMenu) q = 1;
-        else if (isCouscousStep) {
-          if (formulaIdDrinksStep === 'COUSCOUS_S1') q = 2;
-          else if (formulaIdDrinksStep === 'COUSCOUS_S2') q = 3;
-          else if (formulaIdDrinksStep === 'COUSCOUS_S3') q = 4;
-        }
-
-        let quotaT = "";
-        if (isStandardMenu) quotaT = "1 Boisson comprise !";
-        else if (isCouscousStep) {
-          if (formulaIdDrinksStep === 'COUSCOUS_S3') quotaT = "4 Cannettes OU 1 Bouteille 1.5L offerte !";
-          else quotaT = `${q} Boissons offertes !`;
-        }
-
-        const availableDrinks = getAvailableOptions('drinks');
+        const availableDrinks = b.getAvailableOptions('drinks');
         const cans = availableDrinks.filter(d => !d.name.includes('1.5L') && !d.name.includes('2L'));
         const bottles = availableDrinks.filter(d => d.name.includes('1.5L') || d.name.includes('2L'));
         return (
-          <StepContainer title="Boissons" subtitle="Choisissez votre rafraîchissement">
-            <div className="space-y-8">
-              {quotaT && availableDrinks.length > 0 && (
-                <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center gap-3 animate-bounce">
-                  <CupSoda className="text-primary" size={18} />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">{quotaT}</p>
+          <StepContainer title="Boissons" subtitle="Rafraîchissement">
+            <div className="space-y-10">
+              {q > 0 && (
+                <div className="bg-primary/10 border border-primary/20 p-5 rounded-[2rem] flex items-center gap-4 animate-pulse">
+                  <CupSoda className="text-primary" size={20} />
+                  <p className="text-[11px] font-black uppercase tracking-widest text-primary">{q} Boisson(s) incluse(s) !</p>
                 </div>
               )}
-              <SideSelector label="Cannettes & Petits formats" options={cans} config={currentConfig} setConfig={setCurrentConfig} type="drinks" quota={q} />
-              {bottles.length > 0 && <SideSelector label="Grandes Bouteilles (1.5L / 2L)" options={bottles} config={currentConfig} setConfig={setCurrentConfig} type="drinks" quota={formulaIdDrinksStep === 'COUSCOUS_S3' ? 1 : 0} />}
+              <SideSelector label="Format Standard" options={cans} config={b.currentConfig} setConfig={b.setCurrentConfig} type="drinks" quota={q} />
+              {bottles.length > 0 && <SideSelector label="Grands Formats (1.5L+)" options={bottles} config={b.currentConfig} setConfig={b.setCurrentConfig} type="drinks" />}
             </div>
           </StepContainer>
         );
       case 'DESSERTS':
         return (
           <StepContainer title="Desserts" subtitle="Une touche sucrée ?">
-            <SideSelector label="Desserts" options={getAvailableOptions('desserts')} config={currentConfig} setConfig={setCurrentConfig} type="desserts" />
+            <SideSelector label="Notre Sélection" options={b.getAvailableOptions('desserts')} config={b.currentConfig} setConfig={b.setCurrentConfig} type="desserts" />
           </StepContainer>
         );
       case 'CHECKOUT':
-        return <CheckoutScreen orderInfo={orderInfo} setOrderInfo={setOrderInfo} cart={cart} currentConfig={currentConfig} calculateTotal={calculateTotal} rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted} isSubmitting={isSubmitting} onSubmit={handleSubmitOrder} onAddAnother={() => setActiveTab('menu')} isCouscousMode={isCouscousMode} />;
+        return <CheckoutScreen orderInfo={b.orderInfo} setOrderInfo={b.setOrderInfo} cart={b.cart} currentConfig={b.currentConfig} calculateTotal={b.calculateTotal} rgpdAccepted={b.rgpdAccepted} setRgpdAccepted={b.setRgpdAccepted} isSubmitting={b.isSubmitting} onSubmit={b.handleSubmitOrder} onAddAnother={() => b.setActiveTab('menu')} isCouscousMode={b.isCouscousMode} />;
       default: return null;
     }
   };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'menu':
-        return (
-          <div className="space-y-6">
-            <div className="mb-8 px-2">
-              <div className="flex justify-between mb-2">
-                {['FORMULA', 'PRESETS', 'DRINKS', 'CHECKOUT'].map((s, i) => {
-                  const stepsOrder: StepId[] = ['ORDER_TYPE', 'FORMULA', 'PRESETS', 'KIDS_MENU', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'];
-                  const currentIndex = stepsOrder.indexOf(step);
-                  const stepIndex = stepsOrder.indexOf(s as StepId);
-                  const isActive = currentIndex >= stepIndex;
-                  return (
-                    <div key={s} className="flex flex-col items-center gap-1">
-                      <div className={cn("w-2 h-2 rounded-full transition-all duration-500", isActive ? "bg-primary shadow-[0_0_10px_rgba(255,0,0,0.5)]" : "bg-gray-800")} />
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="h-[2px] w-full bg-gray-900 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, (['ORDER_TYPE', 'FORMULA', 'PRESETS', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'].indexOf(step) / 6) * 100)}%` }} className="h-full bg-primary" />
-              </div>
-            </div>
-            {renderStep()}
-          </div>
-        );
-      case 'cart':
-        return <CheckoutScreen orderInfo={orderInfo} setOrderInfo={setOrderInfo} cart={cart} currentConfig={currentConfig} calculateTotal={calculateTotal} rgpdAccepted={rgpdAccepted} setRgpdAccepted={setRgpdAccepted} isSubmitting={isSubmitting} onSubmit={handleSubmitOrder} onAddAnother={() => setActiveTab('menu')} isCouscousMode={isCouscousMode} />;
-      default: return null;
-    }
-  };
-
-  if (!isOpen) {
-    return <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center text-white"><motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="premium-card p-10 border-red-500/50"><Clock className="text-red-500 mx-auto mb-6 animate-pulse" size={40} /><h2 className="text-3xl font-serif mb-4 uppercase tracking-widest italic">Fermé</h2><p className="text-gray-500 text-xs uppercase tracking-widest font-bold">Revenez nous voir bientôt !</p></motion.div></div>;
-  }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden max-w-md mx-auto font-sans text-white">
-      <AnimatePresence>{showConfetti && <Confetti />}</AnimatePresence>
-      <AnimatePresence>{isProcessing && (
-        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center">
-          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full mb-6 shadow-[0_0_20px_rgba(255,0,0,0.3)]" />
-          <h3 className="text-xl font-serif italic text-white mb-2 italic">Sécurisation SumUp...</h3>
-          <p className="text-gray-400 text-[10px] uppercase tracking-widest font-black leading-relaxed">Merci de ne pas fermer cette fenêtre.<br/>Nous validons votre acompte de sécurité.</p>
+    <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden max-w-md mx-auto font-sans text-white border-x border-white/5">
+      <AnimatePresence>{b.showConfetti && <Confetti />}</AnimatePresence>
+      <AnimatePresence>{b.isProcessing && (
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-12 text-center">
+          <motion.div animate={{ rotate: 360, borderColor: ["#FFB800", "#ffffff"] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full mb-8 shadow-[0_0_30px_rgba(255,184,0,0.2)]" />
+          <h3 className="text-3xl font-serif italic text-white mb-4 italic text-gold-gradient">SumUp Gateway</h3>
+          <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-black leading-relaxed">Validation de l&apos;acompte sécurisé.<br/>Merci de patienter...</p>
         </div>
       )}</AnimatePresence>
-      <header className="shrink-0 py-6 px-6 text-center border-b border-gray-900/50 bg-background/80 backdrop-blur-md z-40 relative"><h1 className="text-2xl font-serif font-bold text-primary italic">La Grillade O&apos;Charbon</h1><div className="premium-gradient h-[1px] w-16 mx-auto my-1.5 opacity-50" /><p className="text-gray-500 text-[8px] uppercase tracking-[0.3em] font-bold">L&apos;excellence de la grillade</p></header>
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-6 pb-32 relative bg-background"><AnimatePresence mode="wait"><motion.div key={activeTab === 'menu' ? `${activeTab}-${step}` : activeTab} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }} className="min-h-full">{renderTabContent()}</motion.div></AnimatePresence></main>
+
+      <header className="shrink-0 py-8 px-8 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
+        <h1 className="text-3xl font-serif font-black text-primary italic tracking-tight text-gold-gradient">GRILLADE O&apos;CHARBON</h1>
+        <div className="h-[1px] w-12 bg-primary/20 mx-auto my-2" />
+        <p className="text-gray-600 text-[9px] uppercase tracking-[0.4em] font-black">L&apos;art de la flamme</p>
+      </header>
+
+      <main className="flex-1 overflow-y-auto custom-scrollbar px-8 pt-8 pb-40 relative bg-background">
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={`${b.activeTab}-${b.step}`} 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }} 
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+            className="min-h-full"
+          >
+            {b.activeTab === 'menu' ? (
+              <div className="space-y-10">
+                {/* Visual Step Indicator */}
+                <div className="flex justify-between items-center px-1">
+                   {['FORMULA', 'PRESETS', 'DRINKS', 'CHECKOUT'].map((s) => {
+                     const stepsOrder: StepId[] = ['ORDER_TYPE', 'FORMULA', 'PRESETS', 'KIDS_MENU', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'];
+                     const isActive = stepsOrder.indexOf(b.step) >= stepsOrder.indexOf(s as StepId);
+                     return (
+                       <div key={s} className={cn("w-1.5 h-1.5 rounded-full transition-all duration-700", isActive ? "bg-primary shadow-[0_0_10px_rgba(255,184,0,0.8)] scale-125" : "bg-white/10")} />
+                     );
+                   })}
+                </div>
+                {renderStep()}
+              </div>
+            ) : (
+              <CheckoutScreen orderInfo={b.orderInfo} setOrderInfo={b.setOrderInfo} cart={b.cart} currentConfig={b.currentConfig} calculateTotal={b.calculateTotal} rgpdAccepted={b.rgpdAccepted} setRgpdAccepted={b.setRgpdAccepted} isSubmitting={b.isSubmitting} onSubmit={b.handleSubmitOrder} onAddAnother={() => b.setActiveTab('menu')} isCouscousMode={b.isCouscousMode} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
       
-      {/* Persistent Navigation & Total Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 bg-background/95 backdrop-blur-2xl border-t border-gray-900 p-3 pb-5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <div className="flex flex-col gap-2.5">
-          {/* Navigation Action Button (Suivant/Retour) - More Compact */}
-          <div className="flex gap-2">
+      {/* Premium Navigation & Total Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 bg-background/95 backdrop-blur-2xl border-t border-white/5 p-5 pb-8 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-3">
             <motion.button 
               whileTap={{ scale: 0.95 }}
-              onClick={handleBack} 
+              onClick={b.handleBack} 
               className={cn(
-                "flex-1 py-2.5 rounded-xl border border-white/10 bg-black font-black text-[8px] uppercase tracking-widest text-white transition-all", 
-                step === 'ORDER_TYPE' ? "hidden" : ""
+                "flex-1 py-4 rounded-2xl border border-white/10 bg-secondary/50 font-black text-[9px] uppercase tracking-[0.2em] text-gray-400 transition-all", 
+                b.step === 'ORDER_TYPE' ? "hidden" : ""
               )}
             >
               Retour
             </motion.button>
             
-            {['EXTRAS', 'DRINKS', 'DESSERTS'].includes(step) && (
+            {['SAUCES', 'EXTRAS', 'DRINKS', 'DESSERTS'].includes(b.step) && (
               <motion.button 
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleNext()} 
-                className="flex-[2.5] bg-white text-black font-black py-2.5 rounded-xl uppercase text-[9px] tracking-widest shadow-xl flex items-center justify-center gap-2"
+                whileTap={{ scale: 0.98, y: -1 }}
+                onClick={() => b.handleNext()} 
+                className="flex-[2.5] bg-white text-black font-black py-4 rounded-2xl uppercase text-[10px] tracking-[0.2em] shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3"
               >
-                {step === 'DESSERTS' ? "VOIR LE RÉSUMÉ" : "CONTINUER"} <ChevronRight size={12} />
+                {b.step === 'DESSERTS' ? "VOIR LE RÉSUMÉ" : "CONTINUER"} <ChevronRight size={16} strokeWidth={3} />
               </motion.button>
             )}
           </div>
 
           <div className="flex items-center justify-center">
-            {/* Real-time Total Display - Compact Version */}
-            <div className="flex items-baseline gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5 relative">
-              <span className="absolute -top-3 -right-2 text-[6px] text-gray-600 font-mono">v1.9.3</span>
-              <p className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Total :</p>
-              <p className="text-sm font-black text-white tracking-tighter">{calculateTotal().toFixed(2)}€</p>
+            <div className="flex items-center gap-4 bg-white/[0.03] px-6 py-2.5 rounded-full border border-white/5 relative group">
+              <span className="absolute -top-3 -right-2 text-[7px] text-primary font-mono font-black opacity-40 group-hover:opacity-100 transition-opacity uppercase">V1.9.3 FINAL</span>
+              <p className="text-[8px] text-gray-500 font-black uppercase tracking-[0.3em]">Total estimé</p>
+              <p className="text-xl font-black text-white font-mono tracking-tighter">{b.calculateTotal().toFixed(2)}€</p>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Agency Credit */}
-      <div className="fixed bottom-1 left-0 right-0 text-center z-[60]">
-        <a 
-          href="https://www.search-digital.fr/" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="text-[7px] text-white uppercase font-black tracking-[0.3em] hover:text-primary transition-colors cursor-pointer opacity-80"
-        >
-          Propulsé par <span className="underline decoration-primary/50 underline-offset-2">Search-Digital</span>
+      {/* Search Digital Signature */}
+      <div className="fixed bottom-2 left-0 right-0 text-center z-[60]">
+        <a href="https://www.search-digital.fr/" target="_blank" rel="noopener noreferrer" className="text-[7px] text-gray-500 uppercase font-black tracking-[0.4em] hover:text-primary transition-colors opacity-40">
+          PRODUIT PAR <span className="underline decoration-primary/30">SEARCH-DIGITAL</span>
         </a>
       </div>
     </div>
-  );
-}
-
-function StepContainer({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
-  return (<div className="flex-1"><div className="mb-6"><span className="text-[10px] text-primary font-black tracking-[0.2em] uppercase">{title}</span><h2 className="text-2xl font-serif mt-1 italic">{subtitle}</h2></div>{children}</div>);
-}
-
-function OptionCard({ option, isSelected, onClick, icon, hidePrice, surchargeValue }: { option: Option; isSelected: boolean; onClick: () => void; icon?: React.ReactNode; hidePrice?: boolean; surchargeValue?: number }) {
-  const displayPrice = surchargeValue !== undefined ? surchargeValue : option.price;
-  const shouldShowPrice = !hidePrice && (displayPrice !== 0);
-
-  return (
-    <motion.div 
-      whileTap={{ scale: 0.95 }}
-      whileHover={{ scale: 1.02 }}
-      onClick={onClick}
-      className={cn(
-        "premium-card p-5 transition-all duration-300 flex justify-between items-center group cursor-pointer border",
-        isSelected ? "border-primary bg-primary/5 shadow-[0_0_25px_rgba(212,175,55,0.1)]" : "hover:border-primary/40 border-gray-800"
-      )}
-    >
-      <div className="flex items-center gap-4">
-        {icon && <div className={cn("text-gray-500 group-hover:text-primary transition-colors", isSelected && "text-primary")}>{React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ size?: number }>, { size: 20 }) : icon}</div>}
-        <div>
-          <p className={cn("font-black text-[11px] uppercase tracking-[0.1em]", isSelected ? "text-primary" : "text-gray-300")}>{option.name}</p>
-          {option.description && <p className="text-[9px] text-white mt-0.5 leading-tight font-medium opacity-90">{option.description}</p>}
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        {shouldShowPrice && (
-          <span className="text-[10px] text-gray-500 font-mono font-bold">
-            {displayPrice > 0 ? `+${displayPrice.toFixed(2)}€` : `${displayPrice.toFixed(2)}€`}
-          </span>
-        )}
-        <div className={cn("w-5 h-5 rounded-full border border-primary flex items-center justify-center transition-all", isSelected ? "bg-primary text-background" : "bg-black/40 text-transparent")}>
-          <Check size={10} strokeWidth={4} />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function CategoryStep({ category, config, setConfig, onNext, type, limit, isSauceStep }: { category: Category; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; onNext: () => void; type: 'single' | 'multiple'; limit?: number; isSauceStep?: boolean }) {
-  const handleToggle = (option: Option) => {
-    if (type === 'single') {
-      setConfig({ ...config, [category.id]: option });
-      onNext();
-    } else {
-      const current = config[category.id as keyof SandwichConfig] as Option[] || [];
-      const isSelected = current.find(s => s.id === option.id);
-      if (isSelected) {
-        setConfig({ ...config, [category.id]: current.filter(s => s.id !== option.id) });
-      } else {
-        if (limit && current.length >= limit) return;
-        setConfig({ ...config, [category.id]: [...current, option] });
-      }
-    }
-  };
-
-  const isSelected = (id: string) => {
-    const val = config[category.id as keyof SandwichConfig];
-    if (Array.isArray(val)) return (val as (Option | { option: Option; quantity: number })[]).some(i => 'id' in i ? i.id === id : i.option.id === id);
-    return (val as Option)?.id === id;
-  };
-
-  return (
-    <StepContainer title="Sélection" subtitle={category.name}>
-      <div className="grid grid-cols-1 gap-3">
-        {category.options.map(option => {
-          const currentList = config[category.id as keyof SandwichConfig] as Option[] || [];
-          const isIncluded = isSauceStep && currentList.length < 2 && !isSelected(option.id);
-          return (
-            <OptionCard 
-              key={option.id} 
-              option={option} 
-              isSelected={isSelected(option.id)} 
-              onClick={() => handleToggle(option)}
-              hidePrice={isSauceStep && (isIncluded || isSelected(option.id) && currentList.indexOf(currentList.find(s => s.id === option.id)!) < 2)}
-              surchargeValue={isSauceStep ? 0.50 : undefined}
-            />
-          );
-        })}
-      </div>
-    </StepContainer>
-  );
-}
-
-function SideSelector({ label, options, config, setConfig, type, quota }: { label: string; options: Option[]; config: SandwichConfig; setConfig: React.Dispatch<React.SetStateAction<SandwichConfig>>; type: 'drinks' | 'desserts', quota?: number }) {
-  const current = config[type] || [];
-  const getQty = (id: string) => current.find(i => i.option.id === id)?.quantity || 0;
-  const update = (option: Option, delta: number) => {
-    const existing = current.find(i => i.option.id === option.id);
-    if (existing) {
-      const newQty = Math.max(0, existing.quantity + delta);
-      if (newQty === 0) setConfig({ ...config, [type]: current.filter(i => i.option.id !== option.id) });
-      else setConfig({ ...config, [type]: current.map(i => i.option.id === option.id ? { ...i, quantity: newQty } : i) });
-    } else if (delta > 0) { setConfig({ ...config, [type]: [...current, { option, quantity: 1 }] }); }
-  };
-  return (
-    <div className="space-y-4">
-      <h3 className="text-[10px] text-primary font-black uppercase tracking-widest pl-1">{label}</h3>
-      <div className="grid grid-cols-1 gap-3">
-        {options.map(opt => {
-          const qty = getQty(opt.id);
-          const isCan = !opt.name.includes('1.5L') && !opt.name.includes('2L');
-          const isFreeUnitAvailable = type === 'drinks' && isCan && quota && quota > 0;
-          return (
-            <div key={opt.id} className="premium-card p-4 flex justify-between items-center bg-secondary/5 border border-gray-800">
-              <div>
-                <p className="font-black text-[10px] uppercase text-gray-300">{opt.name}</p>
-                <p className="text-[9px] text-gray-600 font-mono">{isFreeUnitAvailable ? "1ère OFFERTE" : `${opt.price.toFixed(2)}€`}</p>
-              </div>
-              <div className="flex items-center gap-4 bg-black/60 p-1.5 rounded-xl border border-gray-800"><button onClick={() => update(opt, -1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button><span className="text-xs font-black w-4 text-center text-primary">{qty}</span><button onClick={() => update(opt, 1)} className="p-2 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button></div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculateTotal, rgpdAccepted, setRgpdAccepted, isSubmitting, onSubmit, onAddAnother, isCouscousMode }: CheckoutScreenProps) {
-  const allItems = [...cart, currentConfig];
-  const total = calculateTotal();
-  const depositRate = isCouscousMode ? 0.50 : 0.30;
-  const depositAmount = total * depositRate;
-  const balanceAmount = total - depositAmount;
-
-  return (
-    <StepContainer title="Résumé" subtitle="Finalisez votre commande">
-      <div className="space-y-4 mb-8 mt-4 overflow-y-auto max-h-[50vh] pr-2 text-white">
-        <div className="bg-primary/10 border border-primary/30 p-4 rounded-2xl mb-2"><div className="flex items-center gap-3 mb-2"><Shield className="text-primary" size={18} /><p className="text-[10px] font-black uppercase tracking-widest text-white">Paiement d&apos;acompte obligatoire</p></div><p className="text-[9px] text-gray-400 leading-relaxed">Pour valider votre commande et éviter les commandes fantômes, un acompte de <span className="text-primary font-bold">{isCouscousMode ? "50%" : "30%"}</span> est requis. Le reste sera à régler sur place lors du retrait.</p></div>
-        <div className="bg-secondary/20 p-4 rounded-xl border border-gray-800 space-y-3 mb-6"><p className="text-[10px] text-primary font-black uppercase tracking-widest mb-2 flex justify-between items-center"><span>Votre Panier ({allItems.length})</span>{!isCouscousMode && <button onClick={onAddAnother} className="text-primary hover:underline text-[8px]">+ AJOUTER</button>}</p>{allItems.map((item, idx) => (<div key={idx} className="pb-2 border-b border-gray-800/50 last:border-0 last:pb-0">{item.formula && <p className="text-xs text-white font-bold">● {item.formula.name}</p>}{item.preset_sandwich && <p className="text-xs text-gray-300 ml-3 italic">→ {item.preset_sandwich.name}</p>}</div>))}</div>
-        {isCouscousMode && <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl mb-4"><p className="text-[10px] text-amber-500 font-black uppercase tracking-widest text-center">🕒 Commande Couscous : Prête demain à la même heure</p></div>}
-        <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50"><label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Paiement souhaité</label><div className="grid grid-cols-2 gap-2">{[{ id: 'card', name: 'CB', icon: <CreditCard size={14} /> }, { id: 'resto_card', name: 'Titre Resto', icon: <UtensilsCrossed size={14} /> }, { id: 'cash', name: 'Espèces', icon: <Wallet size={14} /> }].map(method => (<button key={method.id} onClick={() => setOrderInfo({...orderInfo, paymentMethod: method.id as any})} className={cn("py-3 rounded-xl border text-[10px] font-black transition-all flex items-center justify-center gap-2", orderInfo.paymentMethod === method.id ? "bg-primary text-background border-primary shadow-lg shadow-primary/20" : "border-gray-800 text-white hover:border-gray-600 bg-white/5")}>{method.icon} {method.name}</button>))}</div></div>
-        {!isCouscousMode && <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50 shadow-inner"><label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Temps de retrait estimé</label><div className="grid grid-cols-3 gap-2">{["15 min", "30 min", "45 min"].map(time => (<button key={time} onClick={() => setOrderInfo({...orderInfo, pickupTime: time})} className={cn("py-2.5 rounded-xl border text-[10px] font-black transition-all", orderInfo.pickupTime === time ? "bg-primary text-background border-primary shadow-md shadow-primary/10" : "border-gray-800 text-white hover:border-gray-600 bg-white/5")}>{time}</button>))}</div></div>}
-        <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="VOTRE NOM" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-500" />
-        <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="NUMÉRO DE TÉLÉPHONE" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-500" />
-        
-        <div className="bg-secondary/10 p-4 rounded-2xl border border-gray-800/50">
-          <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-2 text-center">Instructions (ex: Sans oignons...)</label>
-          <textarea 
-            value={(orderInfo as any).notes || ""} 
-            onChange={(e) => setOrderInfo({...orderInfo, notes: e.target.value} as any)} 
-            placeholder="Écrivez ici vos demandes particulières..." 
-            className="w-full bg-transparent border-none outline-none text-[10px] text-gray-300 placeholder:text-gray-600 resize-none h-12 font-medium"
-          />
-        </div>
-
-        <div className="flex gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10"><button onClick={() => setRgpdAccepted(!rgpdAccepted)} className={cn("w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 shadow-sm", rgpdAccepted ? "bg-primary border-primary text-background" : "border-gray-700 hover:border-primary/50")}>{rgpdAccepted && <Check size={14} strokeWidth={4} />}</button><p className="text-[9px] text-gray-500 leading-normal font-medium">J&apos;autorise l&apos;utilisation de mon numéro pour la gestion de ma commande et mon programme VIP. <Link href="/legals" className="text-primary hover:underline font-black">LIRE LES MENTIONS</Link></p></div>
-      </div>
-      <div className="bg-secondary/30 rounded-3xl p-6 border border-gray-800/50 mb-12 shadow-2xl">
-        <div className="space-y-3 mb-6"><div className="flex justify-between items-center text-gray-500 text-[10px] font-black uppercase tracking-widest"><span>Total Commande</span><span>{total.toFixed(2)}€</span></div><div className="flex justify-between items-center text-white text-xs font-black uppercase tracking-widest bg-white/5 p-3 rounded-xl border border-white/10"><span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-primary animate-pulse" />Acompte à payer ({isCouscousMode ? "50%" : "30%"})</span><span className="text-primary text-xl">{depositAmount.toFixed(2)}€</span></div><div className="flex justify-between items-center text-gray-600 text-[9px] font-bold uppercase tracking-widest px-1"><span>Reste à payer sur place</span><span>{balanceAmount.toFixed(2)}€</span></div></div>
-        <button onClick={onSubmit} disabled={isSubmitting} className="w-full premium-gradient text-background font-black py-5 rounded-2xl shadow-xl shadow-primary/20 flex flex-col items-center justify-center gap-1 active:scale-95 disabled:opacity-50 tracking-[0.1em] uppercase">{isSubmitting ? (<div className="w-5 h-5 border-3 border-background border-t-transparent rounded-full animate-spin" />) : (<><div className="flex items-center gap-2 text-[11px]"><CreditCard size={18} strokeWidth={3} /> Payer l&apos;acompte ({depositAmount.toFixed(2)}€)</div><span className="text-[7px] opacity-70">Paiement sécurisé • Validation immédiate</span></>)}</button>
-      </div>
-    </StepContainer>
   );
 }
 
@@ -759,10 +339,27 @@ function Confetti() {
   const [particles, setParticles] = useState<Array<{x: number; y: number; rotate: number; color: string}>>([]);
   useEffect(() => {
     const timer = setTimeout(() => {
-      const newParticles = [...Array(60)].map(() => ({ x: (Math.random() - 0.5) * 1000, y: (Math.random() - 0.5) * 1000, rotate: Math.random() * 720, color: ["bg-primary", "bg-white", "bg-yellow-600", "bg-amber-200"][Math.floor(Math.random() * 4)] }));
+      const newParticles = [...Array(40)].map(() => ({ 
+        x: (Math.random() - 0.5) * 800, 
+        y: (Math.random() - 0.5) * 800, 
+        rotate: Math.random() * 360, 
+        color: ["bg-primary", "bg-white", "bg-yellow-600"][Math.floor(Math.random() * 3)] 
+      }));
       setParticles(newParticles);
     }, 0);
     return () => clearTimeout(timer);
   }, []);
-  return (<div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">{particles.map((p, i) => (<motion.div key={i} initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }} animate={{ opacity: 0, x: p.x, y: p.y, rotate: p.rotate, scale: 0 }} transition={{ duration: 3, ease: "easeOut" }} className={cn("absolute w-2 h-2 rounded-sm", p.color)} />))}</div>);
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center">
+      {particles.map((p, i) => (
+        <motion.div 
+          key={i} 
+          initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }} 
+          animate={{ opacity: 0, x: p.x, y: p.y, rotate: p.rotate, scale: 0 }} 
+          transition={{ duration: 2.5, ease: "easeOut" }} 
+          className={cn("absolute w-2 h-2 rounded-full", p.color)} 
+        />
+      ))}
+    </div>
+  );
 }
