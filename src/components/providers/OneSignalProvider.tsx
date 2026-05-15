@@ -19,6 +19,7 @@ export default function OneSignalProvider({ children }: { children: React.ReactN
         notifyButton: {
           enable: false,
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any).then(() => {
         console.log("OneSignal: Initialisé avec succès sur " + window.location.origin);
       }).catch(err => {

@@ -81,14 +81,14 @@ export default function SandwichBuilder() {
     name: "", phone: "", type: "takeaway", pickupTime: "", paymentMethod: "card"
   });
 
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [waitTime, setWaitTime] = useState("15 min");
+
   useEffect(() => {
     if (waitTime) {
       setOrderInfo(prev => ({ ...prev, pickupTime: waitTime }));
     }
   }, [waitTime]);
-
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [waitTime, setWaitTime] = useState("15 min");
 
   useEffect(() => {
     const checkWaitTime = () => {
@@ -268,7 +268,7 @@ export default function SandwichBuilder() {
           <StepContainer title="Bienvenue" subtitle="Sur place ou à emporter ?">
             <div className="grid grid-cols-1 gap-4">
               {ORDER_TYPES.map(type => (
-                <OptionCard key={type.id} option={type} isSelected={orderInfo.type === type.id} onClick={() => { setOrderInfo({...orderInfo, type: type.id as any}); handleNext('ORDER_TYPE'); }} icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />} hidePrice={true} />
+                <OptionCard key={type.id} option={type} isSelected={orderInfo.type === type.id} onClick={() => { setOrderInfo({...orderInfo, type: type.id as 'on_site' | 'takeaway'}); handleNext('ORDER_TYPE'); }} icon={type.id === 'takeaway' ? <ShoppingCart /> : <MapPin />} hidePrice={true} />
               ))}
               <div className="h-[1px] w-full bg-gray-900 my-4 flex items-center justify-center"><span className="bg-background px-4 text-gray-700 text-[8px] uppercase tracking-widest font-black">Ou réservation spéciale</span></div>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setIsCouscousMode(true); setStep('COUSCOUS'); }} className="w-full bg-white p-5 rounded-2xl flex items-center justify-between gap-4 border border-white group relative overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)]">
