@@ -53,7 +53,7 @@ export default function AdminPage() {
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
             <Lock className="text-primary" size={30} />
           </div>
-          <h1 className="text-2xl font-serif font-bold text-white italic">Accès Admin</h1>
+          <h1 className="text-2xl font-serif font-bold text-white italic text-fire-gradient">Accès Admin</h1>
           <p className="text-gray-400 text-sm mt-2">Identifiez-vous pour gérer les commandes</p>
         </div>
 

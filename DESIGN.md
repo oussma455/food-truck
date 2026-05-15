@@ -11,8 +11,8 @@ Une interface "Gourmet Dark" alliant la rudesse de la grillade au charbon et l'�
 - **Deep Charcoal** (#080808) — Fond principal (Canvas).
 - **Pure Surface** (#111111) — Cartes et conteneurs secondaires.
 - **Charcoal Ink** (#18181B) — Éléments d'interface tertiaires.
-- **Vibrant Gold** (#FFB800) — Unique accent pour les CTAs, prix et états actifs.
-- **Alert Red** (#EF4444) — Pour les retraits d'ingrédients et erreurs (Saturation contrôlée).
+- **Vivid Red** (#EF4444) — Unique accent pour les CTAs, prix et états actifs (Symbole du Feu).
+- **Pure White** (#FFFFFF) — Pour les textes importants et contrastes forts.
 - **Whisper White** (#F9FAFB) — Texte principal, haute lisibilité.
 
 ## 3. Typography Rules

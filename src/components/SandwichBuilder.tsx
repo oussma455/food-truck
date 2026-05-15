@@ -343,7 +343,7 @@ function Confetti() {
         x: (Math.random() - 0.5) * 800, 
         y: (Math.random() - 0.5) * 800, 
         rotate: Math.random() * 360, 
-        color: ["bg-primary", "bg-white", "bg-yellow-600"][Math.floor(Math.random() * 3)] 
+        color: ["bg-primary", "bg-white", "bg-red-900"][Math.floor(Math.random() * 3)] 
       }));
       setParticles(newParticles);
     }, 0);

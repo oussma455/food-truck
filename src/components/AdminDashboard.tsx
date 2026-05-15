@@ -133,12 +133,12 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-8">
               <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-                <div className="relative bg-primary text-black p-5 rounded-2xl shadow-xl shadow-primary/10">
+                <div className="relative bg-primary text-white p-5 rounded-2xl shadow-xl shadow-primary/10">
                   <LayoutDashboard size={32} strokeWidth={2.5} />
                 </div>
               </div>
               <div>
-                <h1 className="text-4xl font-serif font-black italic text-gold-gradient">Command Center</h1>
+                <h1 className="text-4xl font-serif font-black italic text-fire-gradient">Command Center</h1>
                 <div className="flex items-center gap-3 mt-2">
                   <div className={cn("w-2 h-2 rounded-full animate-pulse", isOpen ? "bg-green-500" : "bg-red-500")} />
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">{isOpen ? "Truck Ouvert" : "Truck Fermé"}</span>

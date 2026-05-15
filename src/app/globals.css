@@ -3,9 +3,9 @@
 :root {
   --background: #080808;
   --foreground: #F9FAFB;
-  --primary: #FFB800; /* Vibrant Gold */
+  --primary: #EF4444; /* Vivid Red (Fire) */
   --secondary: #111111; /* Deep charcoal surface */
-  --accent: #FFB800;
+  --accent: #FFFFFF;
 }
 
 @theme inline {
@@ -28,11 +28,11 @@ body {
 
 /* Premium aesthetic utilities */
 .premium-gradient {
-  background: linear-gradient(135deg, #FFB800 0%, #D4AF37 100%);
+  background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);
 }
 
 .premium-border {
-  border: 1px solid rgba(255, 184, 0, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.1);
 }
 
 .premium-card {
@@ -44,12 +44,12 @@ body {
 }
 
 .premium-card:hover {
-  border-color: rgba(255, 184, 0, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
   background: rgba(17, 17, 17, 0.9);
 }
 
-.text-gold-gradient {
-  background: linear-gradient(135deg, #FFB800 0%, #D4AF37 100%);
+.text-fire-gradient {
+  background: linear-gradient(135deg, #EF4444 0%, #FFFFFF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
