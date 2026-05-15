@@ -90,9 +90,9 @@ export const SANDWICH_CATEGORIES: Category[] = [
     id: "couscous_size",
     name: "Nombre de personnes",
     options: [
-      { id: "s1", name: "Couscous 2 Personnes", price: 28, isAvailable: true },
-      { id: "s2", name: "Couscous 3 Personnes", price: 39, isAvailable: true },
-      { id: "s3", name: "Couscous 4 Personnes", price: 48, isAvailable: true },
+      { id: "COUSCOUS_S1", name: "Couscous 2 Personnes", price: 28, isAvailable: true },
+      { id: "COUSCOUS_S2", name: "Couscous 3 Personnes", price: 39, isAvailable: true },
+      { id: "COUSCOUS_S3", name: "Couscous 4 Personnes", price: 48, isAvailable: true },
     ],
   },
 ];
