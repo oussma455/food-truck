@@ -242,7 +242,7 @@ export default function SandwichBuilder() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground max-w-md mx-auto font-sans text-white border-x border-white/5 relative">
+    <div className="relative min-h-screen flex flex-col bg-background text-foreground max-w-md mx-auto font-sans text-white border-x border-white/5">
       <AnimatePresence>{b.showConfetti && <Confetti />}</AnimatePresence>
       <AnimatePresence>{b.isProcessing && (
         <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-12 text-center">
