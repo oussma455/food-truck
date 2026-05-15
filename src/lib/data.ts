@@ -35,6 +35,20 @@ export const SANDWICH_CATEGORIES: Category[] = [
     ],
   },
   {
+    id: "sauces",
+    name: "Les Sauces",
+    options: [
+      { id: "s1", name: "Maison Truffée", price: 0, isAvailable: true },
+      { id: "s2", name: "Algérienne", price: 0, isAvailable: true },
+      { id: "s3", name: "Blanche Maison", price: 0, isAvailable: true },
+      { id: "s4", name: "Samouraï", price: 0, isAvailable: true },
+      { id: "s5", name: "Andalouse", price: 0, isAvailable: true },
+      { id: "s6", name: "Ketchup", price: 0, isAvailable: true },
+      { id: "s7", name: "Mayonnaise", price: 0, isAvailable: true },
+      { id: "s8", name: "BBQ", price: 0, isAvailable: true },
+    ],
+  },
+  {
     id: "kids_menu",
     name: "Menu Enfant",
     options: [
@@ -80,10 +94,10 @@ export const SANDWICH_CATEGORIES: Category[] = [
     id: "couscous_type",
     name: "Type de Couscous",
     options: [
-      { id: "c1", name: "Couscous Poulet", price: 0, isAvailable: true, description: "Poulet braisé et légumes frais" },
-      { id: "c2", name: "Couscous Agneau", price: 3, isAvailable: true, description: "Souris d'agneau fondante" },
-      { id: "c3", name: "Couscous Bœuf", price: 2, isAvailable: true, description: "Bœuf mijoté aux épices" },
-      { id: "c4", name: "Couscous Végétarien", price: -2, isAvailable: true, description: "Sept légumes du potager" },
+      { id: "COUSCOUS_T1", name: "Couscous Poulet", price: 0, isAvailable: true, description: "Poulet braisé et légumes frais" },
+      { id: "COUSCOUS_T2", name: "Couscous Agneau", price: 3, isAvailable: true, description: "Souris d'agneau fondante" },
+      { id: "COUSCOUS_T3", name: "Couscous Bœuf", price: 2, isAvailable: true, description: "Bœuf mijoté aux épices" },
+      { id: "COUSCOUS_T4", name: "Couscous Végétarien", price: -2, isAvailable: true, description: "Sept légumes du potager" },
     ],
   },
   {

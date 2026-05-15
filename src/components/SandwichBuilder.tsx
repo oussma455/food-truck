@@ -209,8 +209,9 @@ export default function SandwichBuilder() {
         break;
       case 'COUSCOUS': setStep('COUSCOUS_MEAT'); break;
       case 'COUSCOUS_MEAT': setStep('DRINKS'); break;
-      case 'KIDS_MENU': setStep('DRINKS'); break;
-      case 'PRESETS': setStep('EXTRAS'); break;
+      case 'KIDS_MENU': setStep('SAUCES'); break;
+      case 'PRESETS': setStep('SAUCES'); break;
+      case 'SAUCES': setStep('EXTRAS'); break;
       case 'EXTRAS': setStep('DRINKS'); break;
       case 'DRINKS':
         const fId = currentConfig.formula?.id || '';
@@ -355,6 +356,10 @@ export default function SandwichBuilder() {
             </div>
           </StepContainer>
         );
+      case 'SAUCES':
+        const saucesCat = menu.find(c => c.id === 'sauces');
+        if (!saucesCat) return null;
+        return <CategoryStep category={{...saucesCat, options: getAvailableOptions('sauces')}} config={currentConfig} setConfig={setCurrentConfig} onNext={() => handleNext('SAUCES')} type="multiple" limit={3} isSauceStep={true} />;
       case 'EXTRAS':
         const extrasCat = menu.find(c => c.id === 'extras');
         if (!extrasCat) return null;

@@ -13,18 +13,18 @@ export interface Category {
   options: Option[];
 }
 
-export type StepId = 
-  | 'ORDER_TYPE' 
-  | 'FORMULA' 
-  | 'PRESETS' 
+export type StepId =
+  | 'ORDER_TYPE'
+  | 'FORMULA'
+  | 'PRESETS'
   | 'KIDS_MENU'
-  | 'EXTRAS' 
-  | 'DRINKS' 
-  | 'DESSERTS' 
+  | 'SAUCES'
+  | 'EXTRAS'
+  | 'DRINKS'
+  | 'DESSERTS'
   | 'COUSCOUS'
   | 'COUSCOUS_MEAT'
   | 'CHECKOUT';
-
 export interface SandwichConfig {
   formula?: Option;
   creation_mode?: 'signature' | 'custom';
