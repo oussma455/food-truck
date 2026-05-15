@@ -60,6 +60,25 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isKitchenMode, setIsKitchenMode] = useState(false);
+  const [blacklist, setBlacklist] = useState<string[]>(() => {
+    if (typeof window !== "undefined") return JSON.parse(localStorage.getItem("truck_blacklist") || "[]");
+    return [];
+  });
+
+  const handleBan = (phone: string) => {
+    if (!phone || phone === "N/A") return;
+    const newBlacklist = [...new Set([...blacklist, phone])];
+    setBlacklist(newBlacklist);
+    localStorage.setItem("truck_blacklist", JSON.stringify(newBlacklist));
+    alert(`Le numéro ${phone} a été banni.`);
+  };
+
+  const handleUnban = (phone: string) => {
+    const newBlacklist = blacklist.filter(p => p !== phone);
+    setBlacklist(newBlacklist);
+    localStorage.setItem("truck_blacklist", JSON.stringify(newBlacklist));
+  };
+
   const [waitTime, setWaitTime] = useState(() => {
     if (typeof window !== "undefined") return localStorage.getItem("truck_wait_time") || "15 min";
     return "15 min";
@@ -185,14 +204,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const addToBlacklist = (phone: string) => {
-    const current = JSON.parse(localStorage.getItem("blacklisted_phones") || "[]");
-    if (!current.includes(phone)) {
-      localStorage.setItem("blacklisted_phones", JSON.stringify([...current, phone]));
-      alert(`Le numéro ${phone} a été banni.`);
-    }
-  };
-
   const handleLogout = () => {
     localStorage.removeItem("admin_auth");
     window.location.reload();
@@ -256,9 +267,9 @@ export default function AdminDashboard() {
         {activeTab === 'orders' && (
           <motion.div key="orders" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <div className={cn("grid gap-8", isKitchenMode ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 lg:grid-cols-3")}>
-              <OrderColumn title="À Faire" color="text-amber-500" orders={orders.filter(o => o.status === 'pending')} status="pending" updateStatus={updateStatus} cancelOrder={cancelOrder} isKitchenMode={isKitchenMode} onBlacklist={addToBlacklist} />
-              <OrderColumn title="En Cuisine" color="text-blue-500" orders={orders.filter(o => o.status === 'preparing')} status="preparing" updateStatus={updateStatus} cancelOrder={cancelOrder} isKitchenMode={isKitchenMode} onBlacklist={addToBlacklist} />
-              <OrderColumn title="Prêt" color="text-green-500" orders={orders.filter(o => o.status === 'ready')} status="ready" updateStatus={updateStatus} cancelOrder={cancelOrder} isKitchenMode={isKitchenMode} onBlacklist={addToBlacklist} />
+              <OrderColumn title="À Faire" color="text-amber-500" orders={orders.filter(o => o.status === 'pending')} status="pending" updateStatus={updateStatus} cancelOrder={cancelOrder} isKitchenMode={isKitchenMode} onBan={handleBan} />
+              <OrderColumn title="En Cuisine" color="text-blue-500" orders={orders.filter(o => o.status === 'preparing')} status="preparing" updateStatus={updateStatus} cancelOrder={cancelOrder} isKitchenMode={isKitchenMode} onBan={handleBan} />
+              <OrderColumn title="Prêt" color="text-green-500" orders={orders.filter(o => o.status === 'ready')} status="ready" updateStatus={updateStatus} cancelOrder={cancelOrder} isKitchenMode={isKitchenMode} onBan={handleBan} />
             </div>
           </motion.div>
         )}
@@ -368,10 +379,10 @@ interface OrderColumnProps {
   updateStatus: (id: string, status: Order["status"]) => void;
   cancelOrder: (id: string) => void;
   isKitchenMode: boolean;
-  onBlacklist: (phone: string) => void;
+  onBan: (phone: string) => void;
 }
 
-function OrderColumn({ title, color, orders, status, updateStatus, cancelOrder, isKitchenMode, onBlacklist }: OrderColumnProps) {
+function OrderColumn({ title, color, orders, status, updateStatus, cancelOrder, isKitchenMode, onBan }: OrderColumnProps) {
   return (
     <div className="space-y-4">
       <h2 className={cn("text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2 mb-6", color)}>
@@ -383,7 +394,7 @@ function OrderColumn({ title, color, orders, status, updateStatus, cancelOrder, 
       <div className="space-y-4">
         <AnimatePresence>
           {orders.map((order: Order) => (
-            <OrderCard key={order.id} order={order} isKitchenMode={isKitchenMode} onNext={() => updateStatus(order.id, status === 'pending' ? 'preparing' : status === 'preparing' ? 'ready' : 'completed')} onCancel={() => cancelOrder(order.id)} onBlacklist={onBlacklist} isReady={status === 'ready'} />
+            <OrderCard key={order.id} order={order} isKitchenMode={isKitchenMode} onNext={() => updateStatus(order.id, status === 'pending' ? 'preparing' : status === 'preparing' ? 'ready' : 'completed')} onCancel={() => cancelOrder(order.id)} onBan={onBan} isReady={status === 'ready'} />
           ))}
         </AnimatePresence>
       </div>
@@ -396,11 +407,11 @@ interface OrderCardProps {
   onNext: () => void;
   onCancel: () => void;
   isReady: boolean;
-  onBlacklist: (phone: string) => void;
+  onBan: (phone: string) => void;
   isKitchenMode?: boolean;
 }
 
-function OrderCard({ order, onNext, onCancel, isReady, isKitchenMode = false }: OrderCardProps) {
+function OrderCard({ order, onNext, onCancel, isReady, onBan, isKitchenMode = false }: OrderCardProps) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className={cn("premium-card border-l-4 border-l-primary bg-secondary/10 transition-all", isKitchenMode ? "p-8" : "p-5")}>
       <div className="flex justify-between items-start mb-4">
@@ -419,6 +430,16 @@ function OrderCard({ order, onNext, onCancel, isReady, isKitchenMode = false }: 
           </div>
           {!isKitchenMode && (
             <div className="flex flex-col items-end gap-1 mt-2">
+              <button 
+                onClick={() => {
+                  if (window.confirm(`Bannir le numéro ${order.client_phone} ? Ce client ne pourra plus commander.`)) {
+                    onBan(order.client_phone);
+                  }
+                }}
+                className="text-[7px] font-black text-red-500/40 hover:text-red-500 uppercase tracking-widest border border-red-500/20 px-2 py-0.5 rounded-full transition-all mb-2"
+              >
+                Bannir Numéro
+              </button>
               {order.deposit_status === 'paid' ? (
                 <>
                   <span className="text-[8px] font-black px-2 py-0.5 rounded-full border bg-green-500/10 text-green-500 border-green-500/30 uppercase tracking-widest">

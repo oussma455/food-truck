@@ -249,6 +249,16 @@ export default function SandwichBuilder() {
 
   const handleSubmitOrder = async () => {
     if (!orderInfo.name || !orderInfo.phone) { alert("Veuillez remplir vos informations"); return; }
+    
+    // Check blacklist
+    if (typeof window !== "undefined") {
+      const blacklist = JSON.parse(localStorage.getItem("truck_blacklist") || "[]");
+      if (blacklist.includes(orderInfo.phone)) {
+        alert("Désolé, votre numéro est restreint. Veuillez contacter le restaurateur.");
+        return;
+      }
+    }
+
     if (!rgpdAccepted) { alert("Veuillez accepter le RGPD"); return; }
     setIsSubmitting(true);
     setTimeout(() => {
