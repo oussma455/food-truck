@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SANDWICH_CATEGORIES, FORMULAS, ORDER_TYPES } from "@/lib/data";
 import { SandwichConfig, Option, Order, Category } from "@/types";
-import { X, Plus, Check, MinusCircle, Phone, ShoppingCart, User, ArrowRight, ArrowLeft, Trash2 } from "lucide-react";
+import { X, Plus, Check, MinusCircle, Phone, ShoppingCart, User, ArrowRight, ArrowLeft, Trash2, Minus } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -430,7 +430,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 disabled={basket.length === 0 && (!config.formula || !config.preset_sandwich)}
                 className="w-full premium-gradient text-background font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-20 disabled:pointer-events-none"
               >
-                Valider l'Appel <ArrowRight size={20} />
+                Valider l&apos;Appel <ArrowRight size={20} />
               </button>
             </div>
           </div>
