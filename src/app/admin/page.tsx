@@ -6,14 +6,17 @@ import { motion } from "framer-motion";
 import { Lock } from "lucide-react";
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("admin_auth") === "true";
-    }
-    return false;
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsAuthenticated(localStorage.getItem("admin_auth") === "true");
+    }
+    setIsChecking(false);
+  }, []);
 
   // Pour la démo/V1, on utilise un mot de passe simple
   // En production, on utilisera Supabase Auth
@@ -30,9 +33,9 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
-    // Initial check handled by useState initializer
-  }, []);
+  if (isChecking) {
+    return <div className="min-h-screen bg-black" />;
+  }
 
   if (isAuthenticated) {
     return <AdminDashboard />;
