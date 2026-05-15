@@ -78,10 +78,28 @@ export default function SandwichBuilder() {
   const [orderInfo, setOrderInfo] = useState<{
     name: string; phone: string; type: "on_site" | "takeaway"; pickupTime: string; paymentMethod: PaymentMethod
   }>({
-    name: "", phone: "", type: "takeaway", pickupTime: "15 min", paymentMethod: "card"
+    name: "", phone: "", type: "takeaway", pickupTime: "", paymentMethod: "card"
   });
 
+  useEffect(() => {
+    if (waitTime) {
+      setOrderInfo(prev => ({ ...prev, pickupTime: waitTime }));
+    }
+  }, [waitTime]);
+
   const [isProcessing, setIsProcessing] = useState(false);
+  const [waitTime, setWaitTime] = useState("15 min");
+
+  useEffect(() => {
+    const checkWaitTime = () => {
+      const savedTime = localStorage.getItem("truck_wait_time") || "15 min";
+      setWaitTime(savedTime);
+    };
+    checkWaitTime();
+    window.addEventListener('storage', checkWaitTime);
+    return () => window.removeEventListener('storage', checkWaitTime);
+  }, []);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loyaltyPoints] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
