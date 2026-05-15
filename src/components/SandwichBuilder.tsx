@@ -145,13 +145,20 @@ export default function SandwichBuilder() {
       case 'MEATS':
         const meatsCat = b.menu.find(c => c.id === 'meats');
         if (!meatsCat) return null;
+        const currentMeatsCount = (b.currentConfig.meats || []).length;
         return (
           <StepContainer title="Mix Grill" subtitle="Choisissez vos viandes">
             <div className="space-y-6">
+              <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary text-center">
+                  2 viandes incluses <span className="opacity-60 font-medium">(+2€ par viande supp.)</span>
+                </p>
+              </div>
               <div className="grid grid-cols-1 gap-3">
                 {b.getAvailableOptions('meats').sort((a, b) => a.price - b.price).map(opt => {
                   const currentMeats = b.currentConfig.meats || [];
                   const isSel = currentMeats.some(m => m.id === opt.id);
+                  const surchargeVal = (currentMeatsCount >= 2 && !isSel) ? 2 : 0;
                   return (
                     <OptionCard 
                       key={opt.id} 
@@ -165,18 +172,19 @@ export default function SandwichBuilder() {
                           b.setCurrentConfig({...b.currentConfig, meats: [...currentMeats, opt]});
                         }
                       }}
-                      hidePrice={true}
+                      surchargeValue={surchargeVal}
+                      hidePrice={surchargeVal === 0}
                     />
                   );
                 })}
               </div>
               <motion.button 
                 whileTap={{ scale: 0.98 }}
-                disabled={(b.currentConfig.meats || []).length < 2}
+                disabled={currentMeatsCount < 2}
                 onClick={() => b.handleNext('MEATS')}
                 className="w-full py-5 bg-primary text-black font-black rounded-3xl uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-primary/20 disabled:opacity-20 transition-all mt-4"
               >
-                Valider le mélange ({(b.currentConfig.meats || []).length}/5)
+                Valider le mélange ({currentMeatsCount}/5)
               </motion.button>
             </div>
           </StepContainer>
@@ -221,7 +229,9 @@ export default function SandwichBuilder() {
               {q > 0 && (
                 <div className="bg-primary/10 border border-primary/20 p-5 rounded-[2rem] flex items-center gap-4 animate-pulse">
                   <CupSoda className="text-primary" size={20} />
-                  <p className="text-[11px] font-black uppercase tracking-widest text-primary">{q} Boisson(s) incluse(s) !</p>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-primary">
+                    {fId === 'COUSCOUS_S3' ? "4 Canettes ou 1 Bouteille (1.5L) incluses !" : `${q} Boisson(s) incluse(s) !`}
+                  </p>
                 </div>
               )}
               <SideSelector label="Format Standard" options={cans} config={b.currentConfig} setConfig={b.setCurrentConfig} type="drinks" quota={q} />
@@ -254,7 +264,7 @@ export default function SandwichBuilder() {
 
       <header className="sticky top-0 py-4 px-6 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
         <div className="flex flex-col items-center">
-          <h1 className="text-[10px] font-black text-white uppercase tracking-[0.4em] leading-none mb-1 opacity-60">La Grillade</h1>
+          <h1 className="text-sm font-serif font-black text-white italic tracking-widest uppercase leading-none mb-1">La Grillade</h1>
           <h2 className="text-3xl font-serif font-black text-primary italic tracking-tighter text-fire-gradient leading-none">O&apos;CHARBON</h2>
         </div>
       </header>

@@ -106,7 +106,7 @@ export function useSandwichBuilder() {
       if (config.preset_sandwich && formulaId !== 'menu_kids') {
         total += Math.max(0, config.preset_sandwich.price - 12);
       }
-      // Mix Grill: +2€ for each meat above 2
+      // Mix Grill: +2€ for each meat above 2 (2 meats included in the 15€ price)
       if (config.preset_sandwich?.id === 'p4' && config.meats && config.meats.length > 2) {
         total += (config.meats.length - 2) * 2;
       }
@@ -158,9 +158,21 @@ export function useSandwichBuilder() {
         const fId = currentConfig.formula?.id || '';
         let q = ['menu_standard', 'menu_student', 'menu_kids'].includes(fId) ? 1 : 0;
         if (fId.startsWith('COUSCOUS_')) q = fId === 'COUSCOUS_S1' ? 2 : fId === 'COUSCOUS_S2' ? 3 : 4;
-        if (q > 0 && (currentConfig.drinks || []).reduce((acc, d) => acc + d.quantity, 0) < q) {
-          alert(`Votre formule inclut ${q} boisson(s) !`);
-          return;
+        
+        const currentDrinks = currentConfig.drinks || [];
+        const hasBottle = currentDrinks.some(d => d.option.name.includes('1.5L') && d.quantity > 0);
+        const totalDrinksQty = currentDrinks.reduce((acc, d) => acc + d.quantity, 0);
+        
+        if (q > 0) {
+          if (fId === 'COUSCOUS_S3' && hasBottle) {
+            if (totalDrinksQty < 1) {
+              alert("Votre formule inclut 1 bouteille (1.5L) ou 4 canettes !");
+              return;
+            }
+          } else if (totalDrinksQty < q) {
+            alert(`Votre formule inclut ${q} boisson(s) !`);
+            return;
+          }
         }
         setStep('DESSERTS');
         break;
