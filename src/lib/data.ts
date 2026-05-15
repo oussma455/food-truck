@@ -1,15 +1,15 @@
 import { Category, Option } from "@/types";
 
 export const ORDER_TYPES: Option[] = [
-  { id: "takeaway", name: "À Emporter", price: 0, description: "Prêt dans un sac biodégradable" },
-  { id: "on_site", name: "Sur Place", price: 0, description: "Servi sur un plateau premium" },
+  { id: "takeaway", name: "À Emporter", price: 0 },
+  { id: "on_site", name: "Sur Place", price: 0 },
 ];
 
 export const FORMULAS: Option[] = [
   { id: "menu_standard", name: "Menu Complet", price: 15.0, description: "Sandwich + Frites + Boisson au choix" },
   { id: "menu_student", name: "Menu Étudiant", price: 13.0, description: "Sandwich + Frites + Boisson (sur présentation de carte)" },
   { id: "sandwich_only", name: "Sandwich Seul", price: 12.0, description: "Le sandwich sans boisson et sans frites" },
-  { id: "menu_kids", name: "Menu Enfant", price: 8.5, description: "Petit Sandwich + Frites + Boisson + Surprise" },
+  { id: "menu_kids", name: "Menu Enfant", price: 8.5, description: "Petit Sandwich + Frites + Boisson" },
 ];
 
 export const SANDWICH_CATEGORIES: Category[] = [

@@ -17,11 +17,11 @@ export default function StepContainer({ title, subtitle, children }: StepContain
       exit={{ opacity: 0, x: -10 }}
       className="flex-1"
     >
-      <div className="mb-8">
-        <span className="text-[10px] text-primary font-black tracking-[0.3em] uppercase block mb-1">
+      <div className="mb-4">
+        <span className="text-[9px] text-primary font-black tracking-[0.2em] uppercase block mb-0.5 opacity-60">
           {title}
         </span>
-        <h2 className="text-4xl font-serif mt-1 italic text-white leading-none">
+        <h2 className="text-3xl font-serif italic text-white leading-tight">
           {subtitle}
         </h2>
       </div>

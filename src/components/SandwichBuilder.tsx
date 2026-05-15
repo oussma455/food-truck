@@ -252,26 +252,25 @@ export default function SandwichBuilder() {
         </div>
       )}</AnimatePresence>
 
-      <header className="shrink-0 py-8 px-8 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
-        <h1 className="text-3xl font-serif font-black text-primary italic tracking-tight text-gold-gradient">GRILLADE O&apos;CHARBON</h1>
-        <div className="h-[1px] w-12 bg-primary/20 mx-auto my-2" />
-        <p className="text-gray-600 text-[9px] uppercase tracking-[0.4em] font-black">L&apos;art de la flamme</p>
+      <header className="shrink-0 py-4 px-6 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
+        <h1 className="text-2xl font-serif font-black text-primary italic tracking-tight text-fire-gradient leading-none">GRILLADE O&apos;CHARBON</h1>
+        <p className="text-gray-600 text-[8px] uppercase tracking-[0.3em] font-black mt-1">L&apos;art de la flamme</p>
       </header>
 
-      <main className="flex-1 overflow-y-auto custom-scrollbar px-8 pt-8 pb-40 relative bg-background">
+      <main className="flex-1 overflow-y-auto custom-scrollbar px-6 pt-6 pb-32 relative bg-background">
         <AnimatePresence mode="wait">
           <motion.div 
             key={`${b.activeTab}-${b.step}`} 
-            initial={{ opacity: 0, y: 20 }} 
+            initial={{ opacity: 0, y: 15 }} 
             animate={{ opacity: 1, y: 0 }} 
-            exit={{ opacity: 0, y: -20 }} 
+            exit={{ opacity: 0, y: -15 }} 
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
             className="min-h-full"
           >
             {b.activeTab === 'menu' ? (
-              <div className="space-y-10">
+              <div className="space-y-6">
                 {/* Visual Step Indicator */}
-                <div className="flex justify-between items-center px-1">
+                <div className="flex justify-between items-center px-1 mb-2">
                    {['FORMULA', 'PRESETS', 'DRINKS', 'CHECKOUT'].map((s) => {
                      const stepsOrder: StepId[] = ['ORDER_TYPE', 'FORMULA', 'PRESETS', 'KIDS_MENU', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'];
                      const isActive = stepsOrder.indexOf(b.step) >= stepsOrder.indexOf(s as StepId);
