@@ -706,11 +706,10 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
               <button 
                 onClick={handleSubmit} 
                 disabled={basket.length === 0 && (!config.formula || !config.preset_sandwich)}
-                className="w-full py-6 bg-gradient-to-r from-primary to-yellow-600 text-black font-black rounded-2xl flex items-center justify-center gap-4 uppercase text-[12px] tracking-[0.3em] shadow-[0_10px_40px_rgba(255,184,0,0.2)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-10 disabled:grayscale disabled:pointer-events-none relative overflow-hidden"
+                className="w-full py-6 premium-gradient text-black font-black rounded-2xl flex items-center justify-center gap-4 uppercase text-[12px] tracking-[0.3em] shadow-[0_10px_40px_rgba(239,68,68,0.2)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-10 disabled:grayscale disabled:pointer-events-none relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-white/20 translate-y-[100%] hover:translate-y-0 transition-transform duration-500" />
-                <span className="relative z-10">Confirmer la Commande</span>
-                <ArrowRight size={22} className="relative z-10" />
+                <span className="relative z-10 text-white">Confirmer la Commande</span>
+                <ArrowRight size={22} className="relative z-10 text-white" />
               </button>
             </div>
           </div>

@@ -153,6 +153,19 @@ export function useSandwichBuilder() {
     }
   };
 
+  const handleAddAnother = () => {
+    if (currentConfig.formula) {
+      setCart([...cart, currentConfig]);
+    }
+    setCurrentConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
+    setStep('FORMULA');
+    setActiveTab('menu');
+  };
+
+  const handleRemoveFromCart = (index: number) => {
+    setCart(cart.filter((_, i) => i !== index));
+  };
+
   const handleSubmitOrder = async () => {
     if (!orderInfo.name || !orderInfo.phone) { alert("Veuillez remplir vos informations"); return; }
     const { data: isBanned } = await supabase.from('blacklist').select('phone').eq('phone', orderInfo.phone).single();
@@ -161,11 +174,24 @@ export function useSandwichBuilder() {
     
     setIsProcessing(true);
     const total = calculateTotal();
+    
+    // N'inclure currentConfig que s'il a une formule, sinon on prend juste le panier
+    const finalItems = [...cart];
+    if (currentConfig.formula) {
+      finalItems.push(currentConfig);
+    }
+    
+    if (finalItems.length === 0) {
+      alert("Votre panier est vide.");
+      setIsProcessing(false);
+      return;
+    }
+
     const newOrder: Order = {
       id: "WEB-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
       client_name: orderInfo.name,
       client_phone: orderInfo.phone,
-      items: [...cart, currentConfig],
+      items: finalItems,
       total_price: total,
       deposit_amount: total * (isCouscousMode ? 0.5 : 0.3),
       deposit_status: 'paid',
@@ -195,7 +221,7 @@ export function useSandwichBuilder() {
   return {
     isOpen, waitTime, menu, step, cart, currentConfig, orderInfo, activeTab,
     isCouscousMode, isProcessing, showConfetti, rgpdAccepted, isSubmitting,
-    setStep, setCart, setCurrentConfig, setOrderInfo, setActiveTab, setRgpdAccepted,
-    getAvailableOptions, calculateTotal, handleNext, handleBack, handleSubmitOrder
+    setStep, setCart, setCurrentConfig, setOrderInfo, setActiveTab, setRgpdAccepted, setIsCouscousMode,
+    getAvailableOptions, calculateTotal, handleNext, handleBack, handleSubmitOrder, handleAddAnother, handleRemoveFromCart
   };
 }

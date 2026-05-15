@@ -31,13 +31,14 @@ interface CheckoutScreenProps {
   readonly isSubmitting: boolean;
   readonly onSubmit: () => void;
   readonly onAddAnother: () => void;
+  readonly onRemoveCartItem?: (index: number) => void;
   readonly isCouscousMode: boolean;
 }
 
 export default function CheckoutScreen({ 
   orderInfo, setOrderInfo, cart, currentConfig, 
   calculateTotal, rgpdAccepted, setRgpdAccepted, 
-  isSubmitting, onSubmit, onAddAnother, isCouscousMode 
+  isSubmitting, onSubmit, onAddAnother, onRemoveCartItem, isCouscousMode 
 }: CheckoutScreenProps) {
   const allItems = [...cart, currentConfig].filter(i => i.formula);
   const total = calculateTotal();
@@ -58,28 +59,51 @@ export default function CheckoutScreen({
         </div>
 
         {/* Basket Recap */}
-        <div className="bg-secondary/40 p-4 rounded-2xl border border-white/5 space-y-2">
+        <div className="bg-secondary/40 p-4 rounded-2xl border border-white/5 space-y-3">
           <div className="flex justify-between items-center pb-1.5 border-b border-white/5">
             <h4 className="text-[9px] text-primary font-black uppercase tracking-widest">Votre Panier ({allItems.length})</h4>
             {!isCouscousMode && (
-              <button onClick={onAddAnother} className="text-[8px] text-white/40 hover:text-primary font-black uppercase tracking-widest">+ Ajouter</button>
+              <button onClick={onAddAnother} className="text-[8px] text-white/40 hover:text-primary font-black uppercase tracking-widest transition-colors">+ Ajouter</button>
             )}
           </div>
-          <div className="space-y-2">
-            {allItems.map((item, idx) => (
-              <div key={idx} className="group relative">
+          <div className="space-y-3">
+            {cart.map((item, idx) => (
+              <div key={idx} className="group relative bg-white/[0.02] p-2 rounded-xl border border-white/5">
+                <button 
+                  onClick={() => onRemoveCartItem?.(idx)}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 size={10} />
+                </button>
                 <p className="text-[10px] text-white font-black uppercase tracking-wider flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-primary" />
                   {item.formula?.name}
                 </p>
                 {item.preset_sandwich && (
-                  <p className="text-[8px] text-gray-500 ml-3 italic font-medium">
+                  <p className="text-[8px] text-gray-500 ml-3 italic font-medium leading-none mt-1">
                     {item.preset_sandwich.name} 
                     {item.meats && ` (${item.meats.map(m => m.name).join('+')})`}
                   </p>
                 )}
               </div>
             ))}
+            {currentConfig.formula && (
+              <div className="group relative bg-primary/[0.02] p-2 rounded-xl border border-primary/10">
+                <div className="flex justify-between items-center">
+                  <p className="text-[10px] text-white font-black uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                    {currentConfig.formula.name}
+                  </p>
+                  <span className="text-[7px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-black uppercase">En cours</span>
+                </div>
+                {currentConfig.preset_sandwich && (
+                  <p className="text-[8px] text-gray-500 ml-3 italic font-medium leading-none mt-1">
+                    {currentConfig.preset_sandwich.name}
+                    {currentConfig.meats && ` (${currentConfig.meats.map(m => m.name).join('+')})`}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

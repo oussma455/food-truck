@@ -59,9 +59,9 @@ export default function SandwichBuilder() {
                 <span className="relative bg-background px-6 text-gray-700 text-[9px] uppercase tracking-[0.4em] font-black">Spécialité</span>
               </div>
               <motion.button 
-                whileHover={{ scale: 1.01, borderColor: "rgba(255, 184, 0, 0.4)" }} 
+                whileHover={{ scale: 1.01, borderColor: "rgba(239, 68, 68, 0.4)" }} 
                 whileTap={{ scale: 0.98 }} 
-                onClick={() => { b.setStep('COUSCOUS'); }} 
+                onClick={() => { b.setIsCouscousMode(true); b.setStep('COUSCOUS'); }} 
                 className="w-full bg-white p-6 rounded-3xl flex items-center justify-between gap-4 border border-white group relative overflow-hidden shadow-2xl shadow-white/5"
               >
                 <div className="flex items-center gap-5">
@@ -272,17 +272,30 @@ export default function SandwichBuilder() {
                 {/* Visual Step Indicator */}
                 <div className="flex justify-between items-center px-1 mb-2">
                    {['FORMULA', 'PRESETS', 'DRINKS', 'CHECKOUT'].map((s) => {
-                     const stepsOrder: StepId[] = ['ORDER_TYPE', 'FORMULA', 'PRESETS', 'KIDS_MENU', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'];
+                     const stepsOrder: StepId[] = ['ORDER_TYPE', 'FORMULA', 'COUSCOUS', 'COUSCOUS_MEAT', 'PRESETS', 'KIDS_MENU', 'MEATS', 'STEAKS', 'SAUCES', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'];
                      const isActive = stepsOrder.indexOf(b.step) >= stepsOrder.indexOf(s as StepId);
                      return (
-                       <div key={s} className={cn("w-1.5 h-1.5 rounded-full transition-all duration-700", isActive ? "bg-primary shadow-[0_0_10px_rgba(255,184,0,0.8)] scale-125" : "bg-white/10")} />
+                       <div key={s} className={cn("w-1.5 h-1.5 rounded-full transition-all duration-700", isActive ? "bg-primary shadow-[0_0_10px_rgba(239,68,68,0.8)] scale-125" : "bg-white/10")} />
                      );
                    })}
                 </div>
                 {renderStep()}
               </div>
             ) : (
-              <CheckoutScreen orderInfo={b.orderInfo} setOrderInfo={b.setOrderInfo} cart={b.cart} currentConfig={b.currentConfig} calculateTotal={b.calculateTotal} rgpdAccepted={b.rgpdAccepted} setRgpdAccepted={b.setRgpdAccepted} isSubmitting={b.isSubmitting} onSubmit={b.handleSubmitOrder} onAddAnother={() => b.setActiveTab('menu')} isCouscousMode={b.isCouscousMode} />
+              <CheckoutScreen 
+                orderInfo={b.orderInfo} 
+                setOrderInfo={b.setOrderInfo} 
+                cart={b.cart} 
+                currentConfig={b.currentConfig} 
+                calculateTotal={b.calculateTotal} 
+                rgpdAccepted={b.rgpdAccepted} 
+                setRgpdAccepted={b.setRgpdAccepted} 
+                isSubmitting={b.isSubmitting} 
+                onSubmit={b.handleSubmitOrder} 
+                onAddAnother={b.handleAddAnother} 
+                onRemoveCartItem={b.handleRemoveFromCart}
+                isCouscousMode={b.isCouscousMode} 
+              />
             )}
           </motion.div>
         </AnimatePresence>
