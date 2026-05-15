@@ -51,7 +51,9 @@ export function useSandwichBuilder() {
   const getAvailableOptions = (categoryId: string) => {
     const category = menu.find(c => c.id === categoryId);
     if (!category) return [];
-    return category.options.filter(o => o.isAvailable !== false);
+    return category.options
+      .filter(o => o.isAvailable !== false)
+      .sort((a, b) => a.price - b.price);
   };
 
   const calculateItemTotal = (config: SandwichConfig) => {

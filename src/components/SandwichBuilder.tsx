@@ -42,7 +42,7 @@ export default function SandwichBuilder() {
     switch (b.step) {
       case 'ORDER_TYPE':
         return (
-          <StepContainer title="Bienvenue" subtitle="Bienvenue ! Choisissez :">
+          <StepContainer title="Bienvenue" subtitle="">
             <div className="grid grid-cols-1 gap-4">
               {ORDER_TYPES.map(type => (
                 <OptionCard 
@@ -100,7 +100,7 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Formule" subtitle="Choisissez votre plaisir">
             <div className="grid grid-cols-1 gap-3">
-              {FORMULAS.map(f => (
+              {[...FORMULAS].sort((a, b) => a.price - b.price).map(f => (
                 <OptionCard key={f.id} option={f} isSelected={b.currentConfig.formula?.id === f.id} onClick={() => { b.setCurrentConfig({...b.currentConfig, formula: f}); setTimeout(() => b.handleNext('FORMULA', f.id), 300); }} />
               ))}
             </div>
@@ -111,7 +111,7 @@ export default function SandwichBuilder() {
           <StepContainer title="Sandwich / Burger" subtitle="Choisissez votre grillade">
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-3">
-                {b.getAvailableOptions('presets').map(p => {
+                {b.getAvailableOptions('presets').sort((a, b) => a.price - b.price).map(p => {
                   const surchargeVal = Math.max(0, p.price - 12);
                   return (
                     <OptionCard 
@@ -132,7 +132,7 @@ export default function SandwichBuilder() {
         return (
           <StepContainer title="Menu Enfant" subtitle="Son petit régal">
             <div className="grid grid-cols-1 gap-3">
-              {b.getAvailableOptions('kids_menu').map(k => (
+              {b.getAvailableOptions('kids_menu').sort((a, b) => a.price - b.price).map(k => (
                 <OptionCard key={k.id} option={k} isSelected={b.currentConfig.preset_sandwich?.id === k.id} onClick={() => { b.setCurrentConfig({...b.currentConfig, preset_sandwich: k}); setTimeout(() => b.handleNext('KIDS_MENU'), 300); }} hidePrice={true} />
               ))}
             </div>
@@ -142,10 +142,10 @@ export default function SandwichBuilder() {
         const meatsCat = b.menu.find(c => c.id === 'meats');
         if (!meatsCat) return null;
         return (
-          <StepContainer title="Mix Grill" subtitle="Choisissez 2 ou 3 viandes">
+          <StepContainer title="Mix Grill" subtitle="Choisissez vos viandes">
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-3">
-                {b.getAvailableOptions('meats').map(opt => {
+                {b.getAvailableOptions('meats').sort((a, b) => a.price - b.price).map(opt => {
                   const currentMeats = b.currentConfig.meats || [];
                   const isSel = currentMeats.some(m => m.id === opt.id);
                   return (
@@ -157,7 +157,7 @@ export default function SandwichBuilder() {
                         if (isSel) {
                           b.setCurrentConfig({...b.currentConfig, meats: currentMeats.filter(m => m.id !== opt.id)});
                         } else {
-                          if (currentMeats.length >= 3) return;
+                          if (currentMeats.length >= 5) return;
                           b.setCurrentConfig({...b.currentConfig, meats: [...currentMeats, opt]});
                         }
                       }}
@@ -172,7 +172,7 @@ export default function SandwichBuilder() {
                 onClick={() => b.handleNext('MEATS')}
                 className="w-full py-5 bg-primary text-black font-black rounded-3xl uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-primary/20 disabled:opacity-20 transition-all mt-4"
               >
-                Valider le mélange ({(b.currentConfig.meats || []).length}/3)
+                Valider le mélange ({(b.currentConfig.meats || []).length}/5)
               </motion.button>
             </div>
           </StepContainer>
@@ -250,7 +250,6 @@ export default function SandwichBuilder() {
 
       <header className="sticky top-0 py-4 px-6 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
         <h1 className="text-2xl font-serif font-black text-primary italic tracking-tight text-fire-gradient leading-none">GRILLADE O&apos;CHARBON</h1>
-        <p className="text-gray-600 text-[8px] uppercase tracking-[0.3em] font-black mt-1">L&apos;art de la flamme</p>
       </header>
 
       <main className="px-6 pt-6 relative bg-background">
