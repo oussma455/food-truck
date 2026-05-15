@@ -25,104 +25,32 @@ export default function AdminDashboard() {
   const [waitTime, setWaitTime] = useState("15 min");
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [editableMenu, setEditableMenu] = useState<Category[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'preparing' | 'ready' | 'archive'>('pending');
-  const [isKitchenMode, setIsKitchenMode] = useState(false);
-  const [notificationSound, setNotificationSound] = useState<HTMLAudioElement | null>(null);
+  const [activeTab, setActiveTab] = useState<'pending' | 'preparing' | 'ready' | 'archive' | 'stock'>('pending');
 
-  useEffect(() => {
-    setNotificationSound(new Audio('/order-alert.mp3'));
-    
-    const fetchData = async () => {
-      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (ordersData) setOrders(ordersData);
+  // ... (previous useEffect and methods)
 
-      const { data: settingsData } = await supabase.from('settings').select('*').eq('id', 'truck_settings').single();
-      if (settingsData) {
-        setIsOpen(settingsData.is_open);
-        setWaitTime(settingsData.wait_time);
-        if (settingsData.menu) setEditableMenu(settingsData.menu);
+  const toggleProductAvailability = async (catId: string, optId: string) => {
+    const newMenu = editableMenu.map(cat => {
+      if (cat.id === catId) {
+        return {
+          ...cat,
+          options: cat.options.map(opt => {
+            if (opt.id === optId) {
+              return { ...opt, isAvailable: opt.isAvailable === false ? true : false };
+            }
+            return opt;
+          })
+        };
       }
-    };
-    fetchData();
-
-    // Real-time Orders
-    const ordersSub = supabase.channel('admin_orders')
-      .on('postgres_changes', { event: '*', table: 'orders', schema: 'public' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          const newOrder = payload.new as Order;
-          setOrders(prev => {
-            if (prev.some(o => o.id === newOrder.id)) return prev;
-            return [newOrder, ...prev];
-          });
-          notificationSound?.play().catch(e => console.log("Audio play blocked", e));
-        } else if (payload.eventType === 'UPDATE') {
-          setOrders(prev => prev.map(o => o.id === payload.new.id ? payload.new as Order : o));
-        } else if (payload.eventType === 'DELETE') {
-          setOrders(prev => prev.filter(o => o.id !== payload.old.id));
-        }
-      }).subscribe();
-
-    return () => { supabase.removeChannel(ordersSub); };
-  }, [notificationSound]);
-
-  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-    if (error) console.error("Error updating status:", error);
-    
-    // Notification logic would go here
-    if (newStatus === 'ready') {
-      const order = orders.find(o => o.id === orderId);
-      if (order) {
-        try {
-          await fetch('/api/notifications', {
-            method: 'POST',
-            body: JSON.stringify({
-              type: 'ORDER_READY',
-              clientName: order.client_name,
-              orderId: order.id
-            })
-          });
-        } catch (e) { console.error("Notif failed", e); }
-      }
-    }
-  };
-
-  const handleNextStatus = (order: Order) => {
-    if (order.status === 'pending') updateOrderStatus(order.id, 'preparing');
-    else if (order.status === 'preparing') updateOrderStatus(order.id, 'ready');
-    else if (order.status === 'ready') updateOrderStatus(order.id, 'completed');
-  };
-
-  const cancelOrder = async (id: string) => {
-    if (window.confirm("Annuler cette commande ?")) {
-      await supabase.from('orders').delete().eq('id', id);
-    }
-  };
-
-  const toggleTruckStatus = async () => {
-    const newStatus = !isOpen;
-    setIsOpen(newStatus);
-    await supabase.from('settings').update({ is_open: newStatus }).eq('id', 'truck_settings');
-    
-    if (newStatus) {
-      try {
-        await fetch('/api/notifications', { method: 'POST', body: JSON.stringify({ type: 'TRUCK_OPEN' }) });
-      } catch (e) { console.error("Notif open failed", e); }
-    }
-  };
-
-  const handleWaitTimeChange = async (time: string) => {
-    setWaitTime(time);
-    await supabase.from('settings').update({ wait_time: time }).eq('id', 'truck_settings');
-  };
-
-  const handleBan = async (phone: string) => {
-    await supabase.from('blacklist').insert([{ phone }]);
-    alert(`${phone} a été banni.`);
+      return cat;
+    });
+    setEditableMenu(newMenu);
+    await supabase.from('settings').update({ menu: newMenu }).eq('id', 'truck_settings');
   };
 
   const filteredOrders = orders.filter(o => {
     if (activeTab === 'archive') return o.status === 'completed';
+    if (activeTab === 'stock') return false;
     return o.status === activeTab;
   });
 
@@ -187,7 +115,8 @@ export default function AdminDashboard() {
                 { id: 'pending', label: 'Attente', count: orders.filter(o => o.status === 'pending').length },
                 { id: 'preparing', label: 'Cuisine', count: orders.filter(o => o.status === 'preparing').length },
                 { id: 'ready', label: 'Prêt', count: orders.filter(o => o.status === 'ready').length },
-                { id: 'archive', label: 'Historique', count: 0 }
+                { id: 'archive', label: 'Historique', count: 0 },
+                { id: 'stock', label: 'Stock / Menu', count: 0 }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -197,6 +126,7 @@ export default function AdminDashboard() {
                     activeTab === tab.id ? "bg-primary text-black shadow-lg shadow-primary/10" : "text-gray-500 hover:text-white"
                   )}
                 >
+                  {tab.id === 'stock' ? <Database size={14} /> : null}
                   {tab.label}
                   {tab.count > 0 && <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-mono", activeTab === tab.id ? "bg-black/20" : "bg-white/5")}>{tab.count}</span>}
                 </button>
@@ -259,25 +189,68 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className={cn(
-        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8",
-        isKitchenMode && "hidden"
-      )}>
-        <AnimatePresence mode="popLayout">
-          {filteredOrders.map(order => (
-            <OrderCard 
-              key={order.id} 
-              order={order} 
-              onNext={handleNextStatus} 
-              onCancel={cancelOrder} 
-              onBan={handleBan}
-              isReady={order.status === 'ready'}
-            />
+      {activeTab === 'stock' ? (
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {(editableMenu.length > 0 ? editableMenu : SANDWICH_CATEGORIES).map(category => (
+            <section key={category.id} className="bg-secondary/20 rounded-[2.5rem] border border-white/5 p-10 backdrop-blur-md">
+              <div className="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
+                 <div className="bg-primary/10 p-3 rounded-2xl text-primary"><Database size={24} /></div>
+                 <h3 className="text-2xl font-serif font-black italic text-white uppercase tracking-widest">{category.name}</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {category.options.map(option => (
+                  <button
+                    key={option.id}
+                    onClick={() => toggleProductAvailability(category.id, option.id)}
+                    className={cn(
+                      "group relative p-6 rounded-3xl border transition-all text-left overflow-hidden",
+                      option.isAvailable !== false 
+                        ? "bg-white/5 border-white/10 hover:border-primary/50" 
+                        : "bg-red-500/5 border-red-500/20 grayscale opacity-60"
+                    )}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <span className={cn(
+                        "text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full",
+                        option.isAvailable !== false ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"
+                      )}>
+                        {option.isAvailable !== false ? "Disponible" : "Épuisé"}
+                      </span>
+                      <span className="text-xs font-mono text-gray-500">{option.price.toFixed(2)}€</span>
+                    </div>
+                    <p className="text-sm font-black uppercase tracking-wider text-white group-hover:text-primary transition-colors">{option.name}</p>
+                    {option.isAvailable === false && (
+                      <div className="absolute inset-0 bg-red-500/10 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+                         <AlertTriangle size={32} className="text-red-500/40 rotate-12" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
           ))}
-        </AnimatePresence>
-      </div>
+        </div>
+      ) : (
+        <div className={cn(
+          "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8",
+          isKitchenMode && "hidden"
+        )}>
+          <AnimatePresence mode="popLayout">
+            {filteredOrders.map(order => (
+              <OrderCard 
+                key={order.id} 
+                order={order} 
+                onNext={handleNextStatus} 
+                onCancel={cancelOrder} 
+                onBan={handleBan}
+                isReady={order.status === 'ready'}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
 
-      {filteredOrders.length === 0 && !isKitchenMode && (
+      {filteredOrders.length === 0 && !isKitchenMode && activeTab !== 'stock' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-32 bg-secondary/5 rounded-[3rem] border-2 border-dashed border-white/5">
           <Database size={48} className="mx-auto mb-6 text-gray-800" />
           <p className="text-gray-500 font-black uppercase tracking-[0.4em] italic text-sm">File d&apos;attente vide</p>

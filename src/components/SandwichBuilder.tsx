@@ -249,7 +249,10 @@ export default function SandwichBuilder() {
       )}</AnimatePresence>
 
       <header className="sticky top-0 py-4 px-6 text-center bg-background/80 backdrop-blur-md z-40 relative border-b border-white/5">
-        <h1 className="text-2xl font-serif font-black text-primary italic tracking-tight text-fire-gradient leading-none">GRILLADE O&apos;CHARBON</h1>
+        <div className="flex flex-col items-center">
+          <h1 className="text-[10px] font-black text-white uppercase tracking-[0.4em] leading-none mb-1 opacity-60">La Grillade</h1>
+          <h2 className="text-3xl font-serif font-black text-primary italic tracking-tighter text-fire-gradient leading-none">O&apos;CHARBON</h2>
+        </div>
       </header>
 
       <main className="px-6 pt-6 relative bg-background">
