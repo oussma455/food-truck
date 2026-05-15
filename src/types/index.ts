@@ -54,5 +54,6 @@ export interface Order {
   payment_method: PaymentMethod;
   order_type: 'on_site' | 'takeaway';
   pickup_time: string;
+  notes?: string;
   created_at: string;
 }

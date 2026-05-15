@@ -3,123 +3,157 @@
 import React, { useState, useEffect } from "react";
 import { Order, Category } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, PhoneCall, Plus, ShoppingCart, MapPin, TrendingUp, DollarSign, Package, Power } from "lucide-react";
+import { Clock, ChefHat, Bell, LogOut, Trash2, XCircle, PhoneCall, Plus, ShoppingCart, MapPin, TrendingUp, DollarSign, Package, Power, Printer } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import ManualOrderModal from "./ManualOrderModal";
 import { SANDWICH_CATEGORIES } from "@/lib/data";
+import { supabase } from "@/lib/supabase";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const MOCK_ORDERS: Order[] = [
-  {
-    id: "1",
-    client_name: "Jean D.",
-    client_phone: "0601020304",
-    items: [{
-      bread: { id: "b2", name: "Pain Brioché", price: 1.5 },
-      meat: { id: "m1", name: "Bœuf Effiloché (12h)", price: 5 },
-      sauces: [{ id: "s1", name: "Maison Truffée", price: 0.5 }],
-      extras: [{ id: "e1", name: "Cheddar Fondu", price: 1 }],
-      drinks: [],
-      desserts: [],
-    }],
-    total_price: 18,
-    status: "pending",
-    payment_status: "paid",
-    payment_method: "online",
-    order_type: "takeaway",
-    pickup_time: "15 min",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    client_name: "Marie L.",
-    client_phone: "0611223344",
-    items: [{
-      bread: { id: "b1", name: "Baguette Tradition", price: 0 },
-      meat: { id: "m2", name: "Poulet Mariné", price: 4 },
-      sauces: [{ id: "s2", name: "Algérienne", price: 0 }],
-      extras: [],
-      drinks: [],
-      desserts: [],
-    }],
-    total_price: 14,
-    status: "preparing",
-    payment_status: "unpaid",
-    payment_method: "card",
-    order_type: "on_site",
-    pickup_time: "Dès que possible",
-    created_at: new Date().toISOString(),
-  },
-];
-
 export default function AdminDashboard() {
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isKitchenMode, setIsKitchenMode] = useState(false);
-  const [blacklist, setBlacklist] = useState<string[]>(() => {
-    if (typeof window !== "undefined") return JSON.parse(localStorage.getItem("truck_blacklist") || "[]");
-    return [];
-  });
+  const [blacklist, setBlacklist] = useState<string[]>([]);
+  const [waitTime, setWaitTime] = useState("15 min");
+  const [isOpen, setIsOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'stats'>('orders');
+  const [editableMenu, setEditableMenu] = useState<Category[]>(SANDWICH_CATEGORIES);
 
-  const handleBan = (phone: string) => {
+  // Initial Load & Realtime Subscription
+  useEffect(() => {
+    // 1. Fetch initial data
+    const fetchData = async () => {
+      // Orders
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (ordersData) setOrders(ordersData as Order[]);
+
+      // Settings
+      const { data: settingsData } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('id', 'truck_settings')
+        .single();
+      
+      if (settingsData) {
+        setIsOpen(settingsData.is_open);
+        setWaitTime(settingsData.wait_time);
+        if (settingsData.menu) setEditableMenu(settingsData.menu);
+      }
+
+      // Blacklist
+      const { data: blacklistData } = await supabase
+        .from('blacklist')
+        .select('phone');
+      if (blacklistData) setBlacklist(blacklistData.map(b => b.phone));
+    };
+
+    fetchData();
+
+    // 2. Realtime Subscriptions
+    const ordersSubscription = supabase
+      .channel('orders_channel')
+      .on('postgres_changes', { event: '*', table: 'orders', schema: 'public' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setOrders(prev => [payload.new as Order, ...prev]);
+          // Jouer un son quand une nouvelle commande arrive
+          const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+          audio.play().catch(e => console.log("Audio play blocked by browser. User must interact first."));
+        } else if (payload.eventType === 'UPDATE') {
+          setOrders(prev => prev.map(o => o.id === payload.new.id ? payload.new as Order : o));
+        } else if (payload.eventType === 'DELETE') {
+          setOrders(prev => prev.filter(o => o.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
+    const settingsSubscription = supabase
+      .channel('settings_channel')
+      .on('postgres_changes', { event: 'UPDATE', table: 'settings', schema: 'public' }, (payload) => {
+        setIsOpen(payload.new.is_open);
+        setWaitTime(payload.new.wait_time);
+        if (payload.new.menu) setEditableMenu(payload.new.menu);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersSubscription);
+      supabase.removeChannel(settingsSubscription);
+    };
+  }, []);
+
+  const handleBan = async (phone: string) => {
     if (!phone || phone === "N/A") return;
-    const newBlacklist = [...new Set([...blacklist, phone])];
-    setBlacklist(newBlacklist);
-    localStorage.setItem("truck_blacklist", JSON.stringify(newBlacklist));
+    await supabase.from('blacklist').insert([{ phone }]);
+    setBlacklist(prev => [...new Set([...prev, phone])]);
     alert(`Le numéro ${phone} a été banni.`);
   };
 
-  const handleUnban = (phone: string) => {
-    const newBlacklist = blacklist.filter(p => p !== phone);
-    setBlacklist(newBlacklist);
-    localStorage.setItem("truck_blacklist", JSON.stringify(newBlacklist));
+  const handleUnban = async (phone: string) => {
+    await supabase.from('blacklist').delete().eq('phone', phone);
+    setBlacklist(prev => prev.filter(p => p !== phone));
   };
 
-  const [waitTime, setWaitTime] = useState(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("truck_wait_time") || "15 min";
-    return "15 min";
-  });
-
-  // Sound alert for new orders
-  useEffect(() => {
-    const lastOrderCount = parseInt(localStorage.getItem("last_order_count") || "0");
-    if (orders.length > lastOrderCount) {
-      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
-      audio.play().catch(e => console.log("Sound play blocked by browser", e));
-    }
-    localStorage.setItem("last_order_count", orders.length.toString());
-  }, [orders.length]);
-
-  const handleWaitTimeChange = (newTime: string) => {
+  const handleWaitTimeChange = async (newTime: string) => {
     setWaitTime(newTime);
-    localStorage.setItem("truck_wait_time", newTime);
+    await supabase.from('settings').update({ wait_time: newTime }).eq('id', 'truck_settings');
   };
-  const [isOpen, setIsOpen] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("truck_status") !== "closed";
-    }
-    return true;
-  });
-  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'stats'>('orders');
-  const [editableMenu, setEditableMenu] = useState<Category[]>(() => {
-    if (typeof window !== "undefined") {
-      const savedMenu = localStorage.getItem("truck_menu");
-      return savedMenu ? JSON.parse(savedMenu) : SANDWICH_CATEGORIES;
-    }
-    return SANDWICH_CATEGORIES;
-  });
 
-  useEffect(() => {
-    // Initial loading handled by useState initializers
-  }, []);
+  const toggleTruckStatus = async () => {
+    const newStatus = !isOpen;
+    setIsOpen(newStatus);
+    await supabase.from('settings').update({ is_open: newStatus }).eq('id', 'truck_settings');
+    
+    if (newStatus) {
+      // Jouer un son local pour l'admin
+      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      audio.play().catch(e => console.log("Audio play blocked by browser"));
+      
+      // Appel de l'API de notification
+      try {
+        await fetch('/api/notifications', { 
+          method: 'POST',
+          body: JSON.stringify({ type: 'TRUCK_OPEN' })
+        });
+      } catch (err) {
+        console.error("Erreur notification:", err);
+      }
+    }
+  };
 
-  const saveMenu = (newMenu: Category[]) => {
+  const updateStatus = async (id: string, newStatus: Order["status"]) => {
+    await supabase.from('orders').update({ status: newStatus }).eq('id', id);
+    
+    // Notification si la commande est prête
+    if (newStatus === 'ready') {
+      const order = orders.find(o => o.id === id);
+      if (order) {
+        try {
+          await fetch('/api/notifications', {
+            method: 'POST',
+            body: JSON.stringify({ 
+              type: 'ORDER_READY', 
+              clientName: order.client_name, 
+              orderId: order.id 
+            })
+          });
+        } catch (err) {
+          console.error("Erreur notification ready:", err);
+        }
+      }
+    }
+  };
+
+  const saveMenu = async (newMenu: Category[]) => {
     setEditableMenu(newMenu);
-    localStorage.setItem("truck_menu", JSON.stringify(newMenu));
+    await supabase.from('settings').update({ menu: newMenu }).eq('id', 'truck_settings');
   };
 
   const addItem = (catIdx: number) => {
@@ -161,46 +195,44 @@ export default function AdminDashboard() {
     return { totalRevenue, completedOrders, averageOrder };
   };
 
+  const exportToCSV = () => {
+    const headers = ["Date", "ID", "Client", "Téléphone", "Prix Total", "Acompte", "Méthode", "Statut"];
+    const rows = orders.map(o => [
+      new Date(o.created_at).toLocaleDateString(),
+      o.id,
+      o.client_name,
+      o.client_phone,
+      o.total_price.toFixed(2),
+      o.deposit_amount?.toFixed(2) || "0.00",
+      o.payment_method,
+      o.status
+    ]);
+
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `compta_grillade_${new Date().getMonth() + 1}_${new Date().getFullYear()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const stats = calculateStats();
 
-  const toggleTruckStatus = async () => {
-    const newStatus = !isOpen ? "open" : "closed";
-    localStorage.setItem("truck_status", newStatus);
-    setIsOpen(!isOpen);
-    
-    if (newStatus === "open") {
-      // Jouer un son local pour l'admin
-      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-      audio.play().catch(e => console.log("Audio play blocked by browser"));
-      
-      // Appel de l'API de notification
-      try {
-        const response = await fetch('/api/notifications', {
-          method: 'POST',
-        });
-        const data = await response.json();
-        if (data.success) {
-          console.log("Notification envoyée avec succès !");
-        } else {
-          console.error("Erreur lors de l'envoi de la notification:", data.error);
-        }
-      } catch (err) {
-        console.error("Erreur réseau lors de l'envoi de la notification:", err);
-      }
-    }
+  const handleOrderCreated = async (newOrder: Order) => {
+    await supabase.from('orders').insert([newOrder]);
   };
 
-  const updateStatus = (id: string, newStatus: Order["status"]) => {
-    setOrders(orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o)));
-  };
-
-  const handleOrderCreated = (newOrder: Order) => {
-    setOrders([newOrder, ...orders]);
-  };
-
-  const cancelOrder = (id: string) => {
-    if (window.confirm("Voulez-vous vraiment annuler cette commande ?")) {
-      setOrders(orders.filter(o => o.id !== id));
+  const cancelOrder = async (id: string) => {
+    const reason = window.prompt("Veuillez indiquer la raison de l'annulation (ex: rupture de stock, client absent) :");
+    if (reason !== null) {
+      await supabase.from('orders').update({ 
+        status: 'cancelled',
+        notes: reason 
+      }).eq('id', id);
     }
   };
 
@@ -347,6 +379,39 @@ export default function AdminDashboard() {
               <StatCard icon={<Package className="text-blue-500" />} label="Commandes" value={stats.completedOrders.toString()} color="border-blue-500" />
               <StatCard icon={<TrendingUp className="text-amber-500" />} label="Panier Moyen" value={stats.averageOrder.toFixed(2) + "€"} color="border-amber-500" />
             </div>
+
+            <div className="flex justify-center">
+              <button 
+                onClick={exportToCSV}
+                className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center gap-3 shadow-lg transition-all"
+              >
+                <Package size={18} /> Exporter Compta (CSV)
+              </button>
+            </div>
+
+            <div className="premium-card p-6 bg-secondary/10 border-gray-800">
+              <h3 className="text-white font-black uppercase tracking-[0.3em] text-[10px] mb-6 flex items-center gap-2">
+                <Clock size={14} className="text-primary" /> Historique des Commandes (Archives)
+              </h3>
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {orders.filter(o => o.status === 'completed').length === 0 ? (
+                  <p className="text-center text-gray-500 text-[10px] uppercase font-black py-8">Aucune commande archivée</p>
+                ) : (
+                  orders.filter(o => o.status === 'completed').map((order) => (
+                    <div key={order.id} className="flex justify-between items-center p-4 bg-black/40 rounded-xl border border-gray-800/50 hover:border-gray-700 transition-all">
+                      <div>
+                        <p className="text-white font-bold text-xs">{order.client_name}</p>
+                        <p className="text-[9px] text-gray-500 font-mono">{new Date(order.created_at).toLocaleDateString()} - {order.client_phone}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-primary font-black text-sm">{order.total_price.toFixed(2)}€</p>
+                        <p className="text-[8px] text-gray-600 uppercase font-black">{order.payment_method === 'card' ? 'CB' : 'Autre'}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -428,34 +493,91 @@ function OrderCard({ order, onNext, onCancel, isReady, onBan, isKitchenMode = fa
             <Clock size={10} />
             <span className="text-[9px] font-black uppercase tracking-tighter">{order.pickup_time}</span>
           </div>
-          {!isKitchenMode && (
-            <div className="flex flex-col items-end gap-1 mt-2">
+          <div className="flex gap-2 justify-end">
+            <button 
+              onClick={() => {
+                const printWindow = window.open('', '_blank', 'width=300,height=600');
+                if (!printWindow) return;
+
+                const itemsHtml = order.items.map(item => `
+                  <div style="border-bottom: 1px dashed #ccc; padding: 5px 0;">
+                    <strong>${item.formula?.name || 'SANDWICH'}</strong><br/>
+                    ${item.preset_sandwich ? `<i>${item.preset_sandwich.name}</i><br/>` : ''}
+                    <small>
+                      Sauces: ${item.sauces.map(s => s.name).join(', ')}<br/>
+                      ${item.extras && item.extras.length > 0 ? `Extras: ${item.extras.map(e => e.name).join(', ')}<br/>` : ''}
+                      ${item.drinks && item.drinks.length > 0 ? `Boissons: ${item.drinks.map(d => `${d.option.name} x${d.quantity}`).join(', ')}<br/>` : ''}
+                    </small>
+                  </div>
+                `).join('');
+
+                const html = `
+                  <html>
+                    <head>
+                      <style>
+                        body { font-family: 'Courier New', Courier, monospace; width: 58mm; margin: 0; padding: 10px; font-size: 12px; }
+                        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
+                        .total { font-size: 16px; font-weight: bold; text-align: right; margin-top: 10px; border-top: 1px solid #000; }
+                        .notes { background: #eee; padding: 5px; margin-top: 10px; font-style: italic; border: 1px solid #000; }
+                        @media print { @page { margin: 0; } }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="header">
+                        <h2 style="margin:0;">GRILLADE O'CHARBON</h2>
+                        <p style="margin:5px 0;">ID: ${order.id}</p>
+                        <p style="margin:2px 0;">${new Date(order.created_at).toLocaleString()}</p>
+                      </div>
+                      <div class="client">
+                        <strong>Client: ${order.client_name}</strong><br/>
+                        Type: ${order.order_type === 'takeaway' ? 'À EMPORTER' : 'SUR PLACE'}<br/>
+                        Retrait: ${order.pickup_time}
+                      </div>
+                      ${order.notes ? `<div class="notes">NOTE: ${order.notes}</div>` : ''}
+                      <div class="items" style="margin-top:10px;">
+                        ${itemsHtml}
+                      </div>
+                      <div class="total">
+                        TOTAL: ${order.total_price.toFixed(2)}€
+                      </div>
+                    </body>
+                  </html>
+                `;
+                printWindow.document.write(html);
+                printWindow.document.close();
+                printWindow.focus();
+                setTimeout(() => {
+                  printWindow.print();
+                  printWindow.close();
+                }, 250);
+              }}
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-primary hover:border-primary/50 transition-all"
+              title="Imprimer Ticket"
+            >
+              <Printer size={16} />
+            </button>
+            {!isKitchenMode && (
               <button 
                 onClick={() => {
                   if (window.confirm(`Bannir le numéro ${order.client_phone} ? Ce client ne pourra plus commander.`)) {
                     onBan(order.client_phone);
                   }
                 }}
-                className="text-[7px] font-black text-red-500/40 hover:text-red-500 uppercase tracking-widest border border-red-500/20 px-2 py-0.5 rounded-full transition-all mb-2"
+                className="text-[7px] font-black text-red-500/40 hover:text-red-500 uppercase tracking-widest border border-red-500/20 px-2 py-0.5 rounded-full transition-all"
               >
                 Bannir Numéro
               </button>
-              {order.deposit_status === 'paid' ? (
-                <>
-                  <span className="text-[8px] font-black px-2 py-0.5 rounded-full border bg-green-500/10 text-green-500 border-green-500/30 uppercase tracking-widest">
-                    Acompte Payé ({order.deposit_amount?.toFixed(2)}€)
-                  </span>
-                  <span className="text-[9px] text-primary font-bold">Reste: {(order.total_price - (order.deposit_amount || 0)).toFixed(2)}€ ({order.payment_method === 'card' ? 'CB' : order.payment_method === 'resto_card' ? 'TR' : 'Esp'})</span>
-                </>
-              ) : (
-                <span className="text-[8px] font-black px-2 py-0.5 rounded-full border bg-red-500/10 text-red-500 border-red-500/30 uppercase tracking-widest">
-                  {order.payment_method === 'card' ? 'CB' : order.payment_method === 'resto_card' ? 'Titre Resto' : 'Espèces'} (Non payé)
-                </span>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
+
+      {order.notes && (
+        <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-xl">
+          <p className="text-[7px] text-primary font-black uppercase tracking-widest mb-1">Instruction Spéciale</p>
+          <p className="text-[10px] text-white font-medium italic">"{order.notes}"</p>
+        </div>
+      )}
 
       <div className="space-y-4">
         {order.items.map((item, idx) => (

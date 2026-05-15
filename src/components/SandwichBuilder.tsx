@@ -9,6 +9,7 @@ import { ShoppingCart, Check, Plus, Minus, Clock, MapPin, Phone, Shield, Graduat
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -28,82 +29,57 @@ interface CheckoutScreenProps {
   isCouscousMode: boolean;
 }
 
-// Production Version 1.9 - Absolute Fixes
+// Production Version 1.9.3 - Supabase Integrated
 export default function SandwichBuilder() {
-  const [isOpen] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("truck_status") !== "closed";
-    }
-    return true;
-  });
-
+  const [isOpen, setIsOpen] = useState(true);
+  const [waitTime, setWaitTime] = useState("15 min");
+  const [menu, setMenu] = useState<Category[]>(SANDWICH_CATEGORIES);
   const [step, setStep] = useState<StepId>('ORDER_TYPE');
+  const [cart, setCart] = useState<SandwichConfig[]>([]);
+  const [currentConfig, setCurrentConfig] = useState<SandwichConfig>({ sauces: [], extras: [], drinks: [], desserts: [] });
+  const [orderInfo, setOrderInfo] = useState({ 
+    name: '', 
+    phone: '', 
+    pickupTime: '15 min', 
+    type: 'takeaway' as 'on_site' | 'takeaway', 
+    paymentMethod: 'card' as PaymentMethod 
+  });
   const [activeTab, setActiveTab] = useState<'menu' | 'cart'>('menu');
   const [isCouscousMode, setIsCouscousMode] = useState(false);
-  
-  const [menu] = useState<Category[]>(() => {
-    if (typeof window !== "undefined") {
-      const savedMenu = localStorage.getItem("truck_menu");
-      const baseMenu = [...SANDWICH_CATEGORIES];
-      
-      if (savedMenu) {
-        try {
-          const parsedMenu = JSON.parse(savedMenu);
-          return baseMenu.map(baseCat => {
-            const savedCat = parsedMenu.find((c: Category) => c.id === baseCat.id);
-            if (!savedCat) return baseCat;
-            const mergedOptions = baseCat.options.map(baseOpt => {
-              const savedOpt = savedCat.options.find((o: Option) => o.id === baseOpt.id);
-              return savedOpt ? { ...baseOpt, isAvailable: savedOpt.isAvailable } : baseOpt;
-            });
-            return { ...baseCat, options: mergedOptions };
-          });
-        } catch (e) { console.error("Error parsing menu", e); }
-      }
-      return baseMenu;
-    }
-    return SANDWICH_CATEGORIES;
-  });
-
-  const getAvailableOptions = (categoryId: string) => {
-    const category = menu.find(c => c.id === categoryId);
-    return category ? category.options.filter(o => o.isAvailable !== false) : [];
-  };
-
-  const [cart, setCart] = useState<SandwichConfig[]>([]);
-  const [currentConfig, setCurrentConfig] = useState<SandwichConfig>({
-    sauces: [], extras: [], drinks: [], desserts: [],
-  });
-
-  const [orderInfo, setOrderInfo] = useState<{
-    name: string; phone: string; type: "on_site" | "takeaway"; pickupTime: string; paymentMethod: PaymentMethod
-  }>({
-    name: "", phone: "", type: "takeaway", pickupTime: "", paymentMethod: "card"
-  });
-
   const [isProcessing, setIsProcessing] = useState(false);
-  const [waitTime, setWaitTime] = useState("15 min");
 
   useEffect(() => {
-    if (waitTime) {
-      setOrderInfo(prev => ({ ...prev, pickupTime: waitTime }));
-    }
-  }, [waitTime]);
-
-  useEffect(() => {
-    const checkWaitTime = () => {
-      const savedTime = localStorage.getItem("truck_wait_time") || "15 min";
-      setWaitTime(savedTime);
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('settings').select('*').eq('id', 'truck_settings').single();
+      if (data) {
+        setIsOpen(data.is_open);
+        setWaitTime(data.wait_time);
+        if (data.menu) setMenu(data.menu);
+      }
     };
-    checkWaitTime();
-    window.addEventListener('storage', checkWaitTime);
-    return () => window.removeEventListener('storage', checkWaitTime);
+    fetchSettings();
+
+    // Subscribe to settings changes
+    const sub = supabase.channel('client_settings')
+      .on('postgres_changes', { event: 'UPDATE', table: 'settings', schema: 'public' }, (payload) => {
+        setIsOpen(payload.new.is_open);
+        setWaitTime(payload.new.wait_time);
+        if (payload.new.menu) setMenu(payload.new.menu);
+      }).subscribe();
+
+    return () => { supabase.removeChannel(sub); };
   }, []);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loyaltyPoints] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
+
+  const getAvailableOptions = (categoryId: string) => {
+    const category = menu.find(c => c.id === categoryId);
+    if (!category) return [];
+    return category.options.filter(o => o.isAvailable !== false);
+  };
 
   const calculateGrilladeTotal = (config: SandwichConfig) => {
     let total = config.formula?.price || 0;
@@ -252,24 +228,59 @@ export default function SandwichBuilder() {
     if (!orderInfo.name || !orderInfo.phone) { alert("Veuillez remplir vos informations"); return; }
     
     // Check blacklist
-    if (typeof window !== "undefined") {
-      const blacklist = JSON.parse(localStorage.getItem("truck_blacklist") || "[]");
-      if (blacklist.includes(orderInfo.phone)) {
-        alert("Désolé, votre numéro est restreint. Veuillez contacter le restaurateur.");
-        return;
-      }
+    const { data: isBanned } = await supabase.from('blacklist').select('phone').eq('phone', orderInfo.phone).single();
+    if (isBanned) {
+      alert("Désolé, votre numéro est restreint. Veuillez contacter le restaurateur.");
+      return;
     }
 
     if (!rgpdAccepted) { alert("Veuillez accepter le RGPD"); return; }
-    setIsSubmitting(true);
+    
+    setIsProcessing(true);
+    
+    const total = calculateTotal();
+    const depositRate = isCouscousMode ? 0.50 : 0.30;
+    const depositAmount = total * depositRate;
+
+    const newOrder: Order = {
+      id: "WEB-" + Math.random().toString(36).substr(2, 5).toUpperCase(),
+      client_name: orderInfo.name,
+      client_phone: orderInfo.phone,
+      items: [...cart, currentConfig],
+      total_price: total,
+      deposit_amount: depositAmount,
+      deposit_status: 'paid', // Simulation paiement réussi
+      status: 'pending',
+      payment_status: 'partial',
+      payment_method: orderInfo.paymentMethod,
+      order_type: orderInfo.type,
+      pickup_time: isCouscousMode ? "Demain (Couscous)" : orderInfo.pickupTime,
+      notes: (orderInfo as any).notes || "", // Ajout des notes
+      created_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('orders').insert([newOrder]);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      alert("Erreur lors de la validation de la commande. Veuillez réessayer.");
+      setIsProcessing(false);
+      return;
+    }
+
+    // Success flow
     setTimeout(() => {
+      setIsProcessing(false);
       setShowConfetti(true);
       setTimeout(() => {
-        setIsSubmitting(false); setStep('ORDER_TYPE'); setActiveTab('menu');
-        setCart([]); setCurrentConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
-        setShowConfetti(false); alert("Commande validée !");
+        setStep('ORDER_TYPE'); 
+        setActiveTab('menu');
+        setCart([]); 
+        setCurrentConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
+        setShowConfetti(false); 
+        alert("Félicitations ! Votre commande a été reçue. Retrait prévu : " + newOrder.pickup_time);
       }, 2000);
-    }, 1500);
+    }, 2500);
   };
 
   const renderStep = () => {
@@ -648,7 +659,20 @@ function CheckoutScreen({ orderInfo, setOrderInfo, cart, currentConfig, calculat
         {isCouscousMode && <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl mb-4"><p className="text-[10px] text-amber-500 font-black uppercase tracking-widest text-center">🕒 Commande Couscous : Prête demain à la même heure</p></div>}
         <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50"><label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Paiement souhaité</label><div className="grid grid-cols-2 gap-2">{[{ id: 'card', name: 'CB', icon: <CreditCard size={14} /> }, { id: 'resto_card', name: 'Titre Resto', icon: <UtensilsCrossed size={14} /> }, { id: 'cash', name: 'Espèces', icon: <Wallet size={14} /> }].map(method => (<button key={method.id} onClick={() => setOrderInfo({...orderInfo, paymentMethod: method.id as any})} className={cn("py-3 rounded-xl border text-[10px] font-black transition-all flex items-center justify-center gap-2", orderInfo.paymentMethod === method.id ? "bg-primary text-background border-primary shadow-lg shadow-primary/20" : "border-gray-800 text-white hover:border-gray-600 bg-white/5")}>{method.icon} {method.name}</button>))}</div></div>
         {!isCouscousMode && <div className="bg-secondary/10 p-5 rounded-2xl border border-gray-800/50 shadow-inner"><label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-4 text-center">Temps de retrait estimé</label><div className="grid grid-cols-3 gap-2">{["15 min", "30 min", "45 min"].map(time => (<button key={time} onClick={() => setOrderInfo({...orderInfo, pickupTime: time})} className={cn("py-2.5 rounded-xl border text-[10px] font-black transition-all", orderInfo.pickupTime === time ? "bg-primary text-background border-primary shadow-md shadow-primary/10" : "border-gray-800 text-white hover:border-gray-600 bg-white/5")}>{time}</button>))}</div></div>}
-        <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="VOTRE NOM" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-500" /><input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="NUMÉRO DE TÉLÉPHONE" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-500" /><div className="flex gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10"><button onClick={() => setRgpdAccepted(!rgpdAccepted)} className={cn("w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 shadow-sm", rgpdAccepted ? "bg-primary border-primary text-background" : "border-gray-700 hover:border-primary/50")}>{rgpdAccepted && <Check size={14} strokeWidth={4} />}</button><p className="text-[9px] text-gray-500 leading-normal font-medium">J&apos;autorise l&apos;utilisation de mon numéro pour la gestion de ma commande et mon programme VIP. <Link href="/legals" className="text-primary hover:underline font-black">LIRE LES MENTIONS</Link></p></div>
+        <input type="text" value={orderInfo.name} onChange={(e) => setOrderInfo({...orderInfo, name: e.target.value})} placeholder="VOTRE NOM" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-500" />
+        <input type="tel" value={orderInfo.phone} onChange={(e) => setOrderInfo({...orderInfo, phone: e.target.value})} placeholder="NUMÉRO DE TÉLÉPHONE" className="w-full bg-secondary/20 border border-gray-800 p-4 rounded-2xl focus:border-primary outline-none transition-all text-[11px] font-black uppercase tracking-widest text-white placeholder:text-gray-500" />
+        
+        <div className="bg-secondary/10 p-4 rounded-2xl border border-gray-800/50">
+          <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-2 text-center">Instructions (ex: Sans oignons...)</label>
+          <textarea 
+            value={(orderInfo as any).notes || ""} 
+            onChange={(e) => setOrderInfo({...orderInfo, notes: e.target.value} as any)} 
+            placeholder="Écrivez ici vos demandes particulières..." 
+            className="w-full bg-transparent border-none outline-none text-[10px] text-gray-300 placeholder:text-gray-600 resize-none h-12 font-medium"
+          />
+        </div>
+
+        <div className="flex gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10"><button onClick={() => setRgpdAccepted(!rgpdAccepted)} className={cn("w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 shadow-sm", rgpdAccepted ? "bg-primary border-primary text-background" : "border-gray-700 hover:border-primary/50")}>{rgpdAccepted && <Check size={14} strokeWidth={4} />}</button><p className="text-[9px] text-gray-500 leading-normal font-medium">J&apos;autorise l&apos;utilisation de mon numéro pour la gestion de ma commande et mon programme VIP. <Link href="/legals" className="text-primary hover:underline font-black">LIRE LES MENTIONS</Link></p></div>
       </div>
       <div className="bg-secondary/30 rounded-3xl p-6 border border-gray-800/50 mb-12 shadow-2xl">
         <div className="space-y-3 mb-6"><div className="flex justify-between items-center text-gray-500 text-[10px] font-black uppercase tracking-widest"><span>Total Commande</span><span>{total.toFixed(2)}€</span></div><div className="flex justify-between items-center text-white text-xs font-black uppercase tracking-widest bg-white/5 p-3 rounded-xl border border-white/10"><span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-primary animate-pulse" />Acompte à payer ({isCouscousMode ? "50%" : "30%"})</span><span className="text-primary text-xl">{depositAmount.toFixed(2)}€</span></div><div className="flex justify-between items-center text-gray-600 text-[9px] font-bold uppercase tracking-widest px-1"><span>Reste à payer sur place</span><span>{balanceAmount.toFixed(2)}€</span></div></div>

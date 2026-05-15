@@ -227,6 +227,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       payment_method: "cash",
       order_type: orderType,
       pickup_time: "Téléphone",
+      notes: (clientInfo as any).notes || "",
       created_at: new Date().toISOString(),
     });
     onClose();
@@ -592,16 +593,25 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 </div>
                 <div className="relative group">
                   <Phone size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" />
-                  <input 
-                    type="tel" 
-                    placeholder="TÉLÉPHONE" 
-                    className="w-full bg-white/[0.05] border border-white/10 p-5 pl-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] outline-none focus:border-primary focus:bg-white/[0.08] transition-all text-white placeholder:text-gray-600 shadow-inner" 
-                    value={clientInfo.phone} 
-                    onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })} 
+                  <input
+                    type="tel"
+                    placeholder="TÉLÉPHONE"
+                    className="w-full bg-white/[0.05] border border-white/10 p-5 pl-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] outline-none focus:border-primary focus:bg-white/[0.08] transition-all text-white placeholder:text-gray-600 shadow-inner"
+                    value={clientInfo.phone}
+                    onChange={(e) => setClientInfo({ ...clientInfo, phone: e.target.value })}
                   />
                 </div>
-              </div>
 
+                <div className="relative group bg-white/[0.03] border border-white/5 p-5 rounded-2xl">
+                  <label className="text-[9px] text-primary uppercase font-black tracking-[0.2em] block mb-2">Instructions Spéciales (ex: Sans oignons...)</label>
+                  <textarea 
+                    value={(clientInfo as any).notes || ""} 
+                    onChange={(e) => setClientInfo({ ...clientInfo, notes: e.target.value } as any)} 
+                    placeholder="Notes pour la cuisine..." 
+                    className="w-full bg-transparent border-none outline-none text-[10px] text-gray-300 placeholder:text-gray-600 resize-none h-16 font-medium"
+                  />
+                </div>
+                </div>
               <div className="pt-2 border-t border-white/5 flex justify-between items-end mb-2">
                 <div>
                   <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Total Global</span>
