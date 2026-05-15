@@ -101,7 +101,30 @@ export function SideSelector({ label, options, config, setConfig, type, quota }:
         {options.map(opt => {
           const qty = getQty(opt.id);
           const isCan = !opt.name.includes('1.5L') && !opt.name.includes('2L');
-          const isFreeUnitAvailable = type === 'drinks' && isCan && quota && quota > 0;
+          const isBottle15 = opt.name.includes('1.5L');
+          
+          let isFreeUnitAvailable = false;
+          
+          if (type === 'drinks' && quota && quota > 0) {
+            if (quota === 4) {
+              // Logique Couscous 4 Pers : 4 canettes OU 1 bouteille 1.5L
+              const hasBottleInCart = current.some(i => i.option.name.includes('1.5L') && i.quantity > 0);
+              const totalCansInCart = current.filter(i => !i.option.name.includes('1.5L') && !i.option.name.includes('2L'))
+                .reduce((acc, i) => acc + i.quantity, 0);
+              
+              if (isBottle15) {
+                isFreeUnitAvailable = totalCansInCart === 0 && !hasBottleInCart;
+              } else if (isCan) {
+                isFreeUnitAvailable = !hasBottleInCart && totalCansInCart < 4;
+              }
+            } else {
+              // Logique standard (1, 2 ou 3 canettes)
+              const totalCansInCart = current.filter(i => !i.option.name.includes('1.5L') && !i.option.name.includes('2L'))
+                .reduce((acc, i) => acc + i.quantity, 0);
+              isFreeUnitAvailable = isCan && totalCansInCart < quota;
+            }
+          }
+
           return (
             <div key={opt.id} className="premium-card p-4 flex justify-between items-center bg-white/[0.02] border border-white/5">
               <div>

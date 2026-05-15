@@ -62,14 +62,44 @@ export function useSandwichBuilder() {
 
     if (isCouscous) {
       if (config.preset_sandwich) total += config.preset_sandwich.price;
-      // Drinks logic for couscous
-      const drinks = config.drinks || [];
-      let drinkQuota = formulaId === 'COUSCOUS_S1' ? 2 : formulaId === 'COUSCOUS_S2' ? 3 : 4;
       
-      const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L')).flatMap(d => Array(d.quantity).fill(d.option.price)).sort((a, b) => b - a);
-      const paidCans = cansPrices.slice(drinkQuota);
-      total += paidCans.reduce((acc, p) => acc + p, 0);
-      total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+      const drinks = config.drinks || [];
+      const totalDrinkQty = drinks.reduce((acc, d) => acc + d.quantity, 0);
+      
+      if (formulaId === 'COUSCOUS_S3') {
+        // Logique 4 Personnes : 4 canettes OU 1 bouteille 1.5L
+        const hasBottle = drinks.some(d => d.option.name.includes('1.5L') && d.quantity > 0);
+        
+        if (hasBottle) {
+          // Si une bouteille est prise, elle est gratuite, tout le reste est payant
+          let bottleFound = false;
+          total += drinks.reduce((acc, d) => {
+            const isTargetBottle = d.option.name.includes('1.5L');
+            if (isTargetBottle && !bottleFound) {
+              bottleFound = true;
+              return acc + (d.option.price * (d.quantity - 1));
+            }
+            return acc + (d.option.price * d.quantity);
+          }, 0);
+        } else {
+          // Sinon, 4 canettes gratuites
+          const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
+            .flatMap(d => Array(d.quantity).fill(d.option.price))
+            .sort((a, b) => b - a);
+          total += cansPrices.slice(4).reduce((acc, p) => acc + p, 0);
+          // Les bouteilles 2L restent payantes
+          total += drinks.filter(d => d.option.name.includes('2L')).reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+        }
+      } else {
+        // Logique 2 et 3 Personnes : Uniquement canettes
+        let drinkQuota = formulaId === 'COUSCOUS_S1' ? 2 : 3;
+        const cansPrices = drinks.filter(d => !d.option.name.includes('1.5L') && !d.option.name.includes('2L'))
+          .flatMap(d => Array(d.quantity).fill(d.option.price))
+          .sort((a, b) => b - a);
+        total += cansPrices.slice(drinkQuota).reduce((acc, p) => acc + p, 0);
+        total += drinks.filter(d => d.option.name.includes('1.5L') || d.option.name.includes('2L'))
+          .reduce((acc, d) => acc + (d.option.price * d.quantity), 0);
+      }
     } else {
       if (config.preset_sandwich && formulaId !== 'menu_kids') {
         total += Math.max(0, config.preset_sandwich.price - 12);
