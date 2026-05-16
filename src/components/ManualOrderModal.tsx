@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { 
   X, Plus, Check, ShoppingCart, 
   ArrowRight, ArrowLeft, Minus, 
-  ReceiptText, Utensils, CupSoda, Trash2
+  ReceiptText, Utensils, CupSoda, Trash2, MapPin
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
