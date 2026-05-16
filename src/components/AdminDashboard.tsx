@@ -102,6 +102,12 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleNextStatus = (order: Order) => {
+    if (order.status === 'pending') updateOrderStatus(order.id, 'preparing');
+    else if (order.status === 'preparing') updateOrderStatus(order.id, 'ready');
+    else if (order.status === 'ready') updateOrderStatus(order.id, 'completed');
+  };
+
   const cancelOrder = async (id: string) => {
     if (window.confirm("Annuler cette commande ?")) {
       const previousOrders = [...orders];
