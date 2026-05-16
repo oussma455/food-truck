@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "La Grillade O'Charbon - Premium Grill",
   description: "Commandez votre grillade gourmet en un clic",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export const viewport: Viewport = {
