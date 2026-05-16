@@ -392,7 +392,7 @@ export default function AdminDashboard() {
                         {option.isAvailable !== false ? "En Stock" : "Rupture"}
                       </button>
                       <button 
-                        onClick={() => removeOptionFromCategory(category.id, optId)}
+                        onClick={() => removeOptionFromCategory(category.id, option.id)}
                         className="p-2 text-gray-700 hover:text-red-500 transition-colors"
                       >
                         <X size={16} />
