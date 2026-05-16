@@ -34,18 +34,18 @@ function POSOptionCard({
       className={cn(
         "relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer h-28 overflow-hidden group",
         isSelected 
-          ? "border-green-500 bg-green-500/10 shadow-[0_0_20px_rgba(34,197,94,0.15)] ring-1 ring-green-500" 
+          ? "border-primary bg-primary/10 shadow-[0_0_20px_rgba(239,68,68,0.15)] ring-1 ring-primary" 
           : "border-white/5 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20"
       )}
     >
       <div className="flex justify-between items-start">
         <div className={cn(
           "p-2 rounded-xl transition-colors",
-          isSelected ? "bg-green-500 text-black" : "bg-white/5 text-gray-500"
+          isSelected ? "bg-primary text-white" : "bg-white/5 text-gray-500"
         )}>
           {icon ? (React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 16 }) : icon) : <Plus size={16} />}
         </div>
-        {isSelected && <Check size={14} strokeWidth={4} className="text-green-500" />}
+        {isSelected && <Check size={14} strokeWidth={4} className="text-primary" />}
       </div>
 
       <div>
@@ -69,12 +69,12 @@ function POSOptionCard({
 function POSBasketItem({ item, idx, onRemove, calculatePrice }: { item: SandwichConfig, idx: number, onRemove: (i: number) => void, calculatePrice: (i: SandwichConfig) => number }) {
   return (
     <div className="bg-white/[0.02] p-3 rounded-xl border border-white/5 group relative">
-      <button onClick={() => onRemove(idx)} className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-all scale-75"><Trash2 size={12} /></button>
+      <button onClick={() => onRemove(idx)} className="absolute -top-1 -right-1 bg-primary text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-all scale-75"><Trash2 size={12} /></button>
       <div className="flex justify-between items-start gap-2">
-        <span className="text-[7px] text-green-500 font-black uppercase tracking-widest truncate flex-1">{item.formula?.name}</span>
-        <span className="text-[8px] font-mono text-white font-bold">{calculatePrice(item).toFixed(2)}€</span>
+        <span className="text-[7px] text-gray-400 font-black uppercase tracking-widest truncate flex-1">{item.formula?.name}</span>
+        <span className="text-[8px] font-mono text-green-500 font-bold">{calculatePrice(item).toFixed(2)}€</span>
       </div>
-      <p className="text-[9px] font-bold text-gray-300 uppercase leading-none mt-1">{item.preset_sandwich?.name}</p>
+      <p className="text-[9px] font-bold text-white uppercase leading-none mt-1">{item.preset_sandwich?.name}</p>
     </div>
   );
 }
@@ -241,6 +241,14 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     setStep('ORDER_TYPE');
   };
 
+  const clearOrder = () => {
+    if (window.confirm("Tout effacer et recommencer ?")) {
+      resetCurrentConfig();
+      setBasket([]);
+      setStep('ORDER_TYPE');
+    }
+  };
+
   const handleSubmit = async () => {
     const finalItems = [...basket];
     if (currentConfig.formula && currentConfig.preset_sandwich) finalItems.push(currentConfig);
@@ -310,7 +318,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 <div key={s.id} className="flex items-center gap-3 shrink-0">
                   <div className={cn(
                     "w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-black transition-all",
-                    active ? "border-green-500 bg-green-500 text-black" : past ? "border-green-500 bg-green-500/10 text-green-500" : "border-white/10 text-gray-700"
+                    active ? "border-primary bg-primary text-white" : past ? "border-primary/40 text-primary/40" : "border-white/10 text-gray-700"
                   )}>
                     {past ? <Check size={14} strokeWidth={4} /> : i + 1}
                   </div>
@@ -320,7 +328,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
               );
             })}
           </div>
-          <button onClick={onClose} className="p-4 rounded-2xl bg-white/5 hover:bg-green-500 hover:text-black transition-all group">
+          <button onClick={onClose} className="p-4 rounded-2xl bg-white/5 hover:bg-primary transition-all group">
             <X size={20} className="group-hover:rotate-90 transition-transform" />
           </button>
         </header>
@@ -334,7 +342,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 
                 {/* STEP TITLE */}
                 <div className="mb-8 flex items-center gap-4">
-                  <div className="h-10 w-1.5 bg-green-500 rounded-full" />
+                  <div className="h-10 w-1.5 bg-primary rounded-full" />
                   <h2 className="text-3xl font-black uppercase tracking-tighter italic">{STEPS_MAP.find(s => s.id === step)?.label}</h2>
                 </div>
 
@@ -402,7 +410,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                         const list = currentConfig[cat] || [];
                         const item = list.find(x => x.option.id === opt.id);
                         return (
-                          <div key={opt.id} className={cn("p-4 rounded-2xl border flex flex-col justify-between h-28 transition-all", item ? "border-green-500 bg-green-500/10" : "border-white/5 bg-white/[0.02]")}>
+                          <div key={opt.id} className={cn("p-4 rounded-2xl border flex flex-col justify-between h-28 transition-all", item ? "border-primary bg-primary/10" : "border-white/5 bg-white/[0.02]")}>
                             <p className="text-[10px] font-black uppercase tracking-wider text-gray-200 line-clamp-1">{opt.name}</p>
                             <div className="flex items-center justify-between bg-black/40 p-2 rounded-xl border border-white/10">
                               <button onClick={() => {
@@ -410,12 +418,12 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                                 const newQty = item.quantity - 1;
                                 if (newQty === 0) setCurrentConfig({...currentConfig, [cat]: list.filter(x => x.option.id !== opt.id)});
                                 else setCurrentConfig({...currentConfig, [cat]: list.map(x => x.option.id === opt.id ? {...x, quantity: newQty} : x)});
-                              }} className="p-1 text-gray-500 hover:text-green-500"><Minus size={14} /></button>
+                              }} className="p-1 text-gray-500 hover:text-primary"><Minus size={14} /></button>
                               <span className="text-xs font-black w-4 text-center text-white">{item?.quantity || 0}</span>
                               <button onClick={() => {
                                 if (item) setCurrentConfig({...currentConfig, [cat]: list.map(x => x.option.id === opt.id ? {...x, quantity: x.quantity + 1} : x)});
                                 else setCurrentConfig({...currentConfig, [cat]: [...list, { option: opt, quantity: 1 }]});
-                              }} className="p-1 text-gray-500 hover:text-green-500"><Plus size={14} /></button>
+                              }} className="p-1 text-gray-500 hover:text-primary"><Plus size={14} /></button>
                             </div>
                           </div>
                         );
@@ -428,14 +436,15 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
                   {step === 'CHECKOUT' && (
                     <div className="col-span-full max-w-xl mx-auto w-full space-y-8 py-10">
-                       <div className="bg-green-500/5 border border-green-500/20 p-8 rounded-[2rem] text-center">
-                          <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-green-500 mb-6">ARTICLE PRÊT</h4>
+                       <div className="bg-primary/5 border border-primary/20 p-8 rounded-[2rem] text-center relative overflow-hidden group">
+                          <button onClick={clearOrder} className="absolute top-6 right-6 p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={20} /></button>
+                          <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-6 italic">ARTICLE PRÊT</h4>
                           <p className="text-4xl font-serif font-black italic text-white uppercase">{currentConfig.preset_sandwich?.name}</p>
                           <p className="text-xs text-gray-500 font-bold uppercase mt-2 tracking-widest">{currentConfig.formula?.name}</p>
                           <p className="text-5xl font-black font-mono text-green-500 mt-8">{calculateItemPrice(currentConfig).toFixed(2)}€</p>
                        </div>
                        <div className="grid grid-cols-2 gap-4">
-                          <button onClick={addItemToBasket} className="py-6 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"><Plus size={18} /> UN AUTRE ARTICLE</button>
+                          <button onClick={addItemToBasket} className="py-6 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3 italic"><Plus size={18} /> UN AUTRE ARTICLE</button>
                           <button onClick={handleSubmit} className="py-6 bg-green-500 text-black rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-green-500/20 hover:scale-105 transition-all">TERMINER LA COMMANDE</button>
                        </div>
                     </div>
@@ -449,9 +458,9 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
           {/* RIGHT BASKET RAIL (ALWAYS VISIBLE) */}
           <aside className="w-64 border-l border-white/5 flex flex-col shrink-0 bg-black/20">
             <div className="p-6 border-b border-white/5 flex items-center gap-3">
-              <ShoppingCart size={14} className="text-green-500" />
+              <ShoppingCart size={14} className="text-primary" />
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">PANIER</h3>
-              {basket.length > 0 && <span className="bg-green-500 text-black text-[9px] px-2 py-0.5 rounded-full font-black ml-auto">{basket.length}</span>}
+              {basket.length > 0 && <span className="bg-primary text-white text-[9px] px-2 py-0.5 rounded-full font-black ml-auto">{basket.length}</span>}
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
               {basket.map((item, idx) => (
@@ -466,7 +475,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
             <div className="p-6 border-t border-white/5 bg-black/40">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">TOTAL</span>
-                <span className="text-xl font-black font-mono text-white tracking-tighter">{calculateTotal().toFixed(2)}€</span>
+                <span className="text-xl font-black font-mono text-green-500 tracking-tighter">{calculateTotal().toFixed(2)}€</span>
               </div>
               <button 
                 onClick={handleSubmit} 
@@ -487,22 +496,22 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
           <div className="flex gap-4 flex-1">
             <div className="flex-1 relative group">
-              <User size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
-              <input type="text" placeholder="NOM DU CLIENT" value={clientInfo.name} onChange={(e) => setClientInfo({...clientInfo, name: e.target.value.toUpperCase()})} className="w-full pl-14 pr-6 py-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] font-black tracking-widest text-white focus:border-green-500/50 outline-none placeholder:text-gray-800 transition-all" />
+              <User size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-primary transition-colors" />
+              <input type="text" placeholder="NOM DU CLIENT" value={clientInfo.name} onChange={(e) => setClientInfo({...clientInfo, name: e.target.value.toUpperCase()})} className="w-full pl-14 pr-6 py-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] font-black tracking-widest text-white focus:border-primary/50 outline-none placeholder:text-gray-800 transition-all" />
             </div>
             <div className="flex-1 relative group">
-              <Phone size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
-              <input type="tel" placeholder="TÉLÉPHONE" value={clientInfo.phone} onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})} className="w-full pl-14 pr-6 py-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] font-black tracking-widest text-white focus:border-green-500/50 outline-none placeholder:text-gray-800 transition-all" />
+              <Phone size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-primary transition-colors" />
+              <input type="tel" placeholder="TÉLÉPHONE" value={clientInfo.phone} onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})} className="w-full pl-14 pr-6 py-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] font-black tracking-widest text-white focus:border-primary/50 outline-none placeholder:text-gray-800 transition-all" />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
              <div className="text-right flex flex-col justify-center">
-                <span className="text-[7px] font-black text-gray-600 uppercase tracking-widest leading-none mb-1">Total Commande</span>
+                <span className="text-[7px] font-black text-gray-600 uppercase tracking-widest leading-none mb-1 italic">Total Global</span>
                 <span className="text-3xl font-black font-mono text-green-500 leading-none tracking-tighter">{calculateTotal().toFixed(2)}€</span>
              </div>
              <div className="w-[1px] h-10 bg-white/10 mx-2" />
-             <button onClick={() => setStep('CHECKOUT')} className="p-5 rounded-2xl bg-white text-black hover:bg-green-500 transition-all shadow-xl">
+             <button onClick={() => setStep('CHECKOUT')} className="p-5 rounded-2xl bg-white text-black hover:bg-primary transition-all shadow-xl">
                <ReceiptText size={20} />
              </button>
           </div>
