@@ -31,7 +31,7 @@ export const SANDWICH_CATEGORIES: Category[] = [
       { id: "p2", name: "Sandwich Kefta", price: 12, description: "Kefta maison, frites, salade, tomates, oignons", isAvailable: true },
       { id: "p3", name: "Sandwich Poulet", price: 12, description: "Poulet mariné, frites, salade, tomates, oignons", isAvailable: true },
       { id: "p5", name: "Hamburger", price: 12, description: "Steak boucher, cheddar, frites, crudités", isAvailable: true },
-      { id: "p4", name: "Le Mix Grill", price: 15, description: "Mélange de 2 viandes au choix (+2€/viande supp.), frites, crudités", isAvailable: true },
+      { id: "p4", name: "Le Mix Grill", price: 14, description: "Mélange de 2 viandes au choix (+2€/viande supp.), frites, crudités", isAvailable: true },
     ],
   },
   {
