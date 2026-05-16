@@ -143,52 +143,6 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     return false;
   };
 
-  const handleBack = () => {
-    if (step === 1) setStep(0);
-    else if (step === 2) setStep(0);
-    else if (step === 3) setStep(isCouscousMode ? 2 : 1);
-    else if (step === 4) setStep(3);
-    else if (step === 5) setStep(3);
-    else if (step === 6) {
-      if (config.preset_sandwich?.id === 'p4') setStep(4);
-      else if (config.preset_sandwich?.id === 'p5') setStep(5);
-      else setStep(3);
-    }
-    else if (step === 7) setStep(6);
-    else if (step === 8) setStep(isCouscousMode ? 3 : 7);
-    else if (step === 9) setStep(8);
-  };
-
-  const handleNext = () => {
-    if (step === 8) {
-      const fId = config.formula?.id || '';
-      let q = ['menu_standard', 'menu_student', 'menu_kids'].includes(fId) ? 1 : 0;
-      if (fId.startsWith('COUSCOUS_')) q = fId === 'COUSCOUS_S1' ? 2 : fId === 'COUSCOUS_S2' ? 3 : 4;
-      
-      const currentDrinks = config.drinks || [];
-      const hasBottle = currentDrinks.some(d => d.option.name.includes('1.5L') && d.quantity > 0);
-      const totalDrinksQty = currentDrinks.reduce((acc, d) => acc + d.quantity, 0);
-      
-      if (q > 0) {
-        if (fId === 'COUSCOUS_S3' && hasBottle) {
-          if (totalDrinksQty < 1) {
-            alert("Cette formule inclut 1 bouteille (1.5L) ou 4 canettes !");
-            return;
-          }
-        } else if (totalDrinksQty < q) {
-          alert(`Cette formule inclut ${q} boisson(s) !`);
-          return;
-        }
-      }
-    }
-    setStep(step + 1);
-  };
-
-  const isNextDisabled = () => {
-    if (step === 4 && (config.meats || []).length < 2) return true;
-    return false;
-  };
-
   const handleOptionToggle = (option: Option) => {
     const catId = currentCategory.id;
     
