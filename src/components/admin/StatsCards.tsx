@@ -16,7 +16,7 @@ export default function StatsCards({ orders }: StatsCardsProps) {
   const dailyCA = orders.reduce((acc, o) => acc + o.total_price, 0);
 
   const stats = [
-    { label: "Commandes Actives", value: activeOrders, icon: <Bell className="text-primary" />, color: "border-primary/20" },
+    { label: "Commandes Actives", value: activeOrders, icon: <Bell className="text-green-500" />, color: "border-green-500/20" },
     { label: "À Emporter", value: takeawayCount, icon: <ShoppingCart className="text-amber-500" />, color: "border-amber-500/20" },
     { label: "Sur Place", value: onSiteCount, icon: <MapPin className="text-blue-500" />, color: "border-blue-500/20" },
     { 

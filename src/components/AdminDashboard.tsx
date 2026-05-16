@@ -223,16 +223,16 @@ export default function AdminDashboard() {
           <header className="flex justify-between items-center mb-12 bg-secondary/20 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
             <div className="flex items-center gap-8">
               <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-                <div className="relative bg-primary text-white p-5 rounded-2xl shadow-xl shadow-primary/10">
+                <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full" />
+                <div className="relative bg-green-500 text-black p-5 rounded-2xl shadow-xl shadow-green-500/10">
                   <LayoutDashboard size={32} strokeWidth={2.5} />
                 </div>
               </div>
               <div>
-                <h1 className="text-4xl font-serif font-black italic text-fire-gradient">Command Center</h1>
+                <h1 className="text-4xl font-serif font-black italic text-green-500">Centre de Commande</h1>
                 <div className="flex items-center gap-3 mt-2">
                   <div className={cn("w-2 h-2 rounded-full animate-pulse", isOpen ? "bg-green-500" : "bg-red-500")} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">{isOpen ? "Truck Ouvert" : "Truck Fermé"}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">{isOpen ? "Camion Ouvert" : "Camion Fermé"}</span>
                 </div>
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function AdminDashboard() {
                 onClick={() => setIsManualModalOpen(true)}
                 className="flex items-center gap-4 px-10 py-5 rounded-3xl bg-white text-black text-[13px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-white/5 hover:scale-[1.02] active:scale-95 transition-all border-b-4 border-gray-200"
               >
-                <Plus size={22} strokeWidth={4} className="text-red-500" /> Commande Téléphone
+                <Plus size={22} strokeWidth={4} className="text-green-500" /> Commande Téléphone
               </button>
               
               <div className="w-[1px] h-12 bg-white/10 mx-2" />
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
                   isOpen ? "bg-red-500/10 text-red-500 border border-red-500/20" : "bg-green-500 text-black"
                 )}
               >
-                {isOpen ? "Fermer le Truck" : "Ouvrir le Truck"}
+                {isOpen ? "Fermer le Camion" : "Ouvrir le Camion"}
               </button>
               
               <button 
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
                   onClick={() => setActiveTab(tab.id as any)}
                   className={cn(
                     "px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-3",
-                    activeTab === tab.id ? "bg-primary text-black shadow-lg shadow-primary/10" : "text-gray-500 hover:text-white"
+                    activeTab === tab.id ? "bg-green-500 text-black shadow-lg shadow-green-500/10" : "text-gray-500 hover:text-white"
                   )}
                 >
                   {tab.id === 'stock' ? <Database size={14} /> : null}
@@ -295,9 +295,9 @@ export default function AdminDashboard() {
             <div className="flex gap-4">
                <button 
                 onClick={() => setIsKitchenMode(true)}
-                className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-secondary border border-white/10 text-[11px] font-black uppercase tracking-widest hover:border-primary/50 transition-all group"
+                className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-secondary border border-white/10 text-[11px] font-black uppercase tracking-widest hover:border-green-500/50 transition-all group"
               >
-                <ChefHat size={18} className="group-hover:rotate-12 transition-transform" /> Mode Cuisine
+                <ChefHat size={18} className="group-hover:rotate-12 transition-transform" /> Poste Cuisine
               </button>
             </div>
           </div>
@@ -308,12 +308,12 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 z-[100] bg-black p-8 overflow-hidden flex flex-col">
           <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
              <div className="flex items-center gap-4">
-                <ChefHat className="text-primary" size={32} />
-                <h2 className="text-3xl font-black uppercase tracking-[0.3em] text-white italic">Kitchen Cockpit</h2>
+                <ChefHat className="text-green-500" size={32} />
+                <h2 className="text-3xl font-black uppercase tracking-[0.3em] text-white italic">Poste de Cuisine</h2>
              </div>
              <div className="flex items-center gap-6">
-                <div className="bg-primary/10 px-6 py-3 rounded-2xl border border-primary/20 flex items-center gap-4">
-                   <Clock className="text-primary" size={20} />
+                <div className="bg-green-500/10 px-6 py-3 rounded-2xl border border-green-500/20 flex items-center gap-4">
+                   <Clock className="text-green-500" size={20} />
                    <span className="text-2xl font-black font-mono text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                 </div>
                 <button 
@@ -354,17 +354,17 @@ export default function AdminDashboard() {
             <section key={category.id} className="bg-secondary/20 rounded-[2.5rem] border border-white/5 p-10 backdrop-blur-md">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 border-b border-white/5 pb-8">
                  <div className="flex items-center gap-6">
-                    <div className="bg-primary/10 p-4 rounded-2xl text-primary shadow-lg shadow-primary/5"><Database size={28} /></div>
+                    <div className="bg-green-500/10 p-4 rounded-2xl text-green-500 shadow-lg shadow-green-500/5"><Database size={28} /></div>
                     <input 
                       type="text" 
                       value={category.name} 
                       onChange={(e) => updateCategoryName(category.id, e.target.value)}
-                      className="text-3xl font-serif font-black italic text-white uppercase tracking-widest bg-transparent border-none outline-none focus:text-primary transition-colors w-full md:w-auto"
+                      className="text-3xl font-serif font-black italic text-white uppercase tracking-widest bg-transparent border-none outline-none focus:text-green-500 transition-colors w-full md:w-auto"
                     />
                  </div>
                  <button 
                   onClick={() => addOptionToCategory(category.id)}
-                  className="flex items-center gap-3 px-8 py-3 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-primary transition-all shadow-xl"
+                  className="flex items-center gap-3 px-8 py-3 bg-white text-black rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-green-500 transition-all shadow-xl"
                  >
                    <Plus size={16} strokeWidth={3} /> Ajouter un article
                  </button>
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
                     className={cn(
                       "group relative p-6 rounded-[2rem] border transition-all overflow-hidden flex flex-col justify-between min-h-[180px]",
                       option.isAvailable !== false 
-                        ? "bg-white/[0.03] border-white/5 hover:border-primary/30" 
+                        ? "bg-white/[0.03] border-white/5 hover:border-green-500/30" 
                         : "bg-red-500/5 border-red-500/20"
                     )}
                   >
@@ -404,7 +404,7 @@ export default function AdminDashboard() {
                         type="text" 
                         value={option.name}
                         onChange={(e) => updateOptionDetails(category.id, option.id, { name: e.target.value })}
-                        className="w-full bg-transparent border-none outline-none text-sm font-black uppercase tracking-wider text-white focus:text-primary transition-colors"
+                        className="w-full bg-transparent border-none outline-none text-sm font-black uppercase tracking-wider text-white focus:text-green-500 transition-colors"
                       />
                       <div className="flex items-center gap-2 bg-black/20 p-2 rounded-xl border border-white/5 w-fit">
                         <input 
@@ -412,7 +412,7 @@ export default function AdminDashboard() {
                           step="0.5"
                           value={option.price}
                           onChange={(e) => updateOptionDetails(category.id, option.id, { price: parseFloat(e.target.value) || 0 })}
-                          className="w-16 bg-transparent border-none outline-none text-xs font-mono text-primary font-black text-center"
+                          className="w-16 bg-transparent border-none outline-none text-xs font-mono text-green-500 font-black text-center"
                         />
                         <span className="text-[10px] font-black text-gray-600 mr-1">€</span>
                       </div>

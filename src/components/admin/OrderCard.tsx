@@ -92,7 +92,7 @@ export default function OrderCard({ order, onNext, onCancel, isReady, onBan, isK
         </head>
         <body>
           <div class="header">
-            <h2 style="margin:0;">GRILLADE O'CHARBON</h2>
+            <h2 style="margin:0;">LA GRILLADE O'CHARBON</h2>
             <p style="margin:5px 0;">ID: ${order.id}</p>
             <p style="margin:2px 0;">${new Date(order.created_at).toLocaleString()}</p>
           </div>
@@ -121,15 +121,15 @@ export default function OrderCard({ order, onNext, onCancel, isReady, onBan, isK
       exit={{ opacity: 0, scale: 0.9 }} 
       className={cn(
         "premium-card border-l-4 transition-all duration-500",
-        isReady ? "border-l-green-500" : "border-l-primary",
+        isReady ? "border-l-green-500" : "border-l-green-500",
         isKitchenMode ? "p-10" : "p-6"
       )}
     >
       <div className="flex justify-between items-start mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            {order.order_type === 'takeaway' ? <ShoppingCart size={14} className="text-primary" /> : <MapPin size={14} className="text-primary" />}
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">{order.order_type === 'takeaway' ? 'À Emporter' : 'Sur Place'}</span>
+            {order.order_type === 'takeaway' ? <ShoppingCart size={14} className="text-green-500" /> : <MapPin size={14} className="text-green-500" />}
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-green-500">{order.order_type === 'takeaway' ? 'À Emporter' : 'Sur Place'}</span>
           </div>
           <h3 className={cn("font-black text-white italic", isKitchenMode ? "text-4xl mb-2" : "text-xl uppercase tracking-wider")}>{order.client_name}</h3>
           <p className="text-xs text-gray-500 font-mono font-bold tracking-widest">{order.client_phone}</p>
@@ -150,18 +150,18 @@ export default function OrderCard({ order, onNext, onCancel, isReady, onBan, isK
         {order.items.map((item, idx) => (
           <div key={idx} className="bg-white/[0.02] p-4 rounded-2xl border border-white/5">
             <div className="flex justify-between items-center mb-2">
-              <span className={cn("text-primary font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[9px]")}>{item.formula?.name}</span>
+              <span className={cn("text-green-500 font-black uppercase tracking-widest", isKitchenMode ? "text-sm" : "text-[9px]")}>{item.formula?.name}</span>
               <span className={cn("text-white font-black", isKitchenMode ? "text-2xl" : "text-sm")}>{item.preset_sandwich?.name}</span>
             </div>
             {item.preset_sandwich?.id === 'p4' && item.meats && (
-              <p className={cn("text-primary/70 font-black italic mb-2", isKitchenMode ? "text-xl" : "text-[10px]")}>
+              <p className={cn("text-green-500/70 font-black italic mb-2", isKitchenMode ? "text-xl" : "text-[10px]")}>
                 ({item.meats.map(m => m.name).join(' + ')})
               </p>
             )}
             <div className="flex flex-wrap gap-2">
                {item.sauces.map(s => <span key={s.id} className="text-[9px] bg-white/5 text-gray-400 px-2 py-0.5 rounded-full uppercase font-bold">{s.name}</span>)}
                {item.removed_ingredients?.map(ing => <span key={ing} className="text-[9px] bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full uppercase font-black">SANS {ing}</span>)}
-               {item.extras?.map(e => <span key={e.id} className="text-[9px] bg-primary/20 text-primary px-2 py-0.5 rounded-full uppercase font-black">+{e.name}</span>)}
+               {item.extras?.map(e => <span key={e.id} className="text-[9px] bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full uppercase font-black">+{e.name}</span>)}
             </div>
           </div>
         ))}
@@ -176,7 +176,7 @@ export default function OrderCard({ order, onNext, onCancel, isReady, onBan, isK
 
       <div className="flex justify-between items-center pt-6 border-t border-white/5">
         <div className="flex gap-2">
-          <button onClick={handlePrint} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-primary transition-all shadow-lg hover:border-primary/50 group" title="Imprimer Ticket">
+          <button onClick={handlePrint} className="p-3 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-green-500 transition-all shadow-lg hover:border-green-500/50 group" title="Imprimer Ticket">
             <Printer size={20} className="group-hover:scale-110 transition-transform" />
           </button>
           {!isKitchenMode && (
@@ -196,8 +196,8 @@ export default function OrderCard({ order, onNext, onCancel, isReady, onBan, isK
             onClick={() => onNext(order)}
             className={cn(
               "px-8 py-3 rounded-xl font-black uppercase tracking-[0.2em] text-xs transition-all shadow-xl",
-              order.status === 'pending' ? "bg-primary text-black" : 
-              order.status === 'preparing' ? "bg-green-500 text-white" : "bg-gray-800 text-gray-400"
+              order.status === 'pending' ? "bg-green-500 text-black" : 
+              order.status === 'preparing' ? "bg-green-500 text-black font-black" : "bg-gray-800 text-gray-400"
             )}
           >
             {order.status === 'pending' ? 'Lancer' : order.status === 'preparing' ? 'Prêt' : 'Archiver'}
