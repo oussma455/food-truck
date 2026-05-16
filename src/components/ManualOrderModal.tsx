@@ -18,7 +18,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Ultra-Compact POS Option Card
+// Ultra-Compact POS Option Card - Fully Adaptive
 function POSOptionCard({ 
   option, isSelected, onClick, icon, surchargeValue, hidePrice
 }: { 
@@ -32,31 +32,31 @@ function POSOptionCard({
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={cn(
-        "relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer h-28 overflow-hidden group",
+        "relative flex flex-col justify-between p-6 rounded-[2rem] border transition-all duration-200 cursor-pointer h-full min-h-[140px] lg:min-h-[180px] overflow-hidden group",
         isSelected 
-          ? "border-primary bg-primary/10 shadow-[0_0_20px_rgba(239,68,68,0.15)] ring-1 ring-primary" 
+          ? "border-primary bg-primary/10 shadow-[0_0_30px_rgba(239,68,68,0.15)] ring-2 ring-primary" 
           : "border-white/5 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20"
       )}
     >
       <div className="flex justify-between items-start">
         <div className={cn(
-          "p-2 rounded-xl transition-colors",
+          "p-3 rounded-2xl transition-colors shadow-inner",
           isSelected ? "bg-primary text-white" : "bg-white/5 text-gray-500"
         )}>
-          {icon ? (React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 16 }) : icon) : <Plus size={16} />}
+          {icon ? (React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 20 }) : icon) : <Plus size={20} />}
         </div>
-        {isSelected && <Check size={14} strokeWidth={4} className="text-primary" />}
+        {isSelected && <Check size={18} strokeWidth={4} className="text-primary" />}
       </div>
 
       <div>
         <p className={cn(
-          "font-black text-[10px] uppercase tracking-wider leading-tight line-clamp-2",
-          isSelected ? "text-white" : "text-gray-400"
+          "font-black text-xs lg:text-sm uppercase tracking-widest leading-tight line-clamp-2",
+          isSelected ? "text-white" : "text-gray-400 group-hover:text-gray-200"
         )}>
           {option.name}
         </p>
         {hasSurcharge && (
-          <p className="text-[9px] font-mono font-black text-green-500 mt-1">
+          <p className="text-[10px] lg:text-xs font-mono font-black text-green-500 mt-2">
             {displayPrice > 0 ? `+${displayPrice.toFixed(2)}€` : `${displayPrice.toFixed(2)}€`}
           </p>
         )}
@@ -68,13 +68,13 @@ function POSOptionCard({
 // POS Sidebar Item
 function POSBasketItem({ item, idx, onRemove, calculatePrice }: { item: SandwichConfig, idx: number, onRemove: (i: number) => void, calculatePrice: (i: SandwichConfig) => number }) {
   return (
-    <div className="bg-white/[0.02] p-3 rounded-xl border border-white/5 group relative">
+    <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/5 group relative">
       <button onClick={() => onRemove(idx)} className="absolute -top-1 -right-1 bg-primary text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-all scale-75"><Trash2 size={12} /></button>
       <div className="flex justify-between items-start gap-2">
-        <span className="text-[7px] text-gray-400 font-black uppercase tracking-widest truncate flex-1">{item.formula?.name}</span>
-        <span className="text-[8px] font-mono text-green-500 font-bold">{calculatePrice(item).toFixed(2)}€</span>
+        <span className="text-[8px] text-gray-400 font-black uppercase tracking-widest truncate flex-1">{item.formula?.name}</span>
+        <span className="text-[10px] font-mono text-green-500 font-bold">{calculatePrice(item).toFixed(2)}€</span>
       </div>
-      <p className="text-[9px] font-bold text-white uppercase leading-none mt-1">{item.preset_sandwich?.name}</p>
+      <p className="text-[10px] font-bold text-white uppercase leading-none mt-1">{item.preset_sandwich?.name}</p>
     </div>
   );
 }
@@ -215,23 +215,26 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
   };
 
   const handleBack = () => {
-    const stepsOrder: StepId[] = ['ORDER_TYPE', 'FORMULA', 'COUSCOUS', 'COUSCOUS_MEAT', 'PRESETS', 'KIDS_MENU', 'MEATS', 'STEAKS', 'SAUCES', 'EXTRAS', 'DRINKS', 'DESSERTS', 'CHECKOUT'];
-    const idx = stepsOrder.indexOf(step);
-    if (idx <= 0) return;
-
-    if (step === 'FORMULA') setStep('ORDER_TYPE');
+    if (step === 'FORMULA') { setStep('ORDER_TYPE'); setIsCouscousMode(false); }
     else if (step === 'COUSCOUS') setStep('FORMULA');
     else if (step === 'COUSCOUS_MEAT') setStep('COUSCOUS');
-    else if (step === 'PRESETS' || step === 'KIDS_MENU') setStep('FORMULA');
-    else if (step === 'MEATS' || step === 'STEAKS') setStep('PRESETS');
+    else if (step === 'PRESETS') setStep('FORMULA');
+    else if (step === 'KIDS_MENU') setStep('FORMULA');
+    else if (step === 'MEATS') setStep('PRESETS');
+    else if (step === 'STEAKS') setStep('PRESETS');
     else if (step === 'SAUCES') {
-      if (currentConfig.formula?.id === 'menu_kids') setStep('KIDS_MENU');
-      else if (currentConfig.preset_sandwich?.id === 'p4') setStep('MEATS');
-      else if (currentConfig.preset_sandwich?.id === 'p5') setStep('STEAKS');
-      else setStep('PRESETS');
+       if (currentConfig.formula?.id === 'menu_kids') setStep('KIDS_MENU');
+       else if (currentConfig.preset_sandwich?.id === 'p4') setStep('MEATS');
+       else if (currentConfig.preset_sandwich?.id === 'p5') setStep('STEAKS');
+       else setStep('PRESETS');
     }
-    else if (step === 'DRINKS' && isCouscousMode) setStep('COUSCOUS_MEAT');
-    else setStep(stepsOrder[idx - 1]);
+    else if (step === 'EXTRAS') setStep('SAUCES');
+    else if (step === 'DRINKS') {
+       if (isCouscousMode) setStep('COUSCOUS_MEAT');
+       else setStep('EXTRAS');
+    }
+    else if (step === 'DESSERTS') setStep('DRINKS');
+    else if (step === 'CHECKOUT') setStep('DESSERTS');
   };
 
   const addItemToBasket = () => {
@@ -306,7 +309,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/98 backdrop-blur-3xl text-white font-sans overflow-hidden">
-      <div className="w-full h-full flex flex-col max-w-[1600px] mx-auto overflow-hidden">
+      <div className="w-full h-full flex flex-col mx-auto overflow-hidden">
         
         {/* HEADER / STEPPER */}
         <header className="h-20 border-b border-white/5 flex items-center px-8 justify-between bg-black/40 shrink-0">
@@ -347,7 +350,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 </div>
 
                 {/* OPTIONS GRID - DYNAMIC LAYOUT */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8 gap-6 pb-10">
                   
                   {step === 'ORDER_TYPE' && ORDER_TYPES.map(t => (
                     <POSOptionCard key={t.id} option={t} isSelected={orderType === t.id && !isCouscousMode} onClick={() => { setOrderType(t.id as any); setIsCouscousMode(false); handleNext('ORDER_TYPE'); }} icon={t.id === 'takeaway' ? <ShoppingCart /> : <MapPin />} hidePrice />
@@ -410,9 +413,9 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                         const list = currentConfig[cat] || [];
                         const item = list.find(x => x.option.id === opt.id);
                         return (
-                          <div key={opt.id} className={cn("p-4 rounded-2xl border flex flex-col justify-between h-28 transition-all", item ? "border-primary bg-primary/10" : "border-white/5 bg-white/[0.02]")}>
-                            <p className="text-[10px] font-black uppercase tracking-wider text-gray-200 line-clamp-1">{opt.name}</p>
-                            <div className="flex items-center justify-between bg-black/40 p-2 rounded-xl border border-white/10">
+                          <div key={opt.id} className={cn("p-6 rounded-3xl border flex flex-col justify-between min-h-[140px] lg:min-h-[180px] transition-all", item ? "border-primary bg-primary/10" : "border-white/5 bg-white/[0.02]")}>
+                            <p className="text-[10px] lg:text-xs font-black uppercase tracking-wider text-gray-200 line-clamp-2">{opt.name}</p>
+                            <div className="flex items-center justify-between bg-black/40 p-3 rounded-2xl border border-white/10 mt-4 shadow-inner">
                               <button onClick={() => {
                                 if (!item) return;
                                 const newQty = item.quantity - 1;
@@ -435,17 +438,17 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                   )}
 
                   {step === 'CHECKOUT' && (
-                    <div className="col-span-full max-w-xl mx-auto w-full space-y-8 py-10">
-                       <div className="bg-primary/5 border border-primary/20 p-8 rounded-[2rem] text-center relative overflow-hidden group">
-                          <button onClick={clearOrder} className="absolute top-6 right-6 p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={20} /></button>
-                          <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-6 italic">ARTICLE PRÊT</h4>
-                          <p className="text-4xl font-serif font-black italic text-white uppercase">{currentConfig.preset_sandwich?.name}</p>
-                          <p className="text-xs text-gray-500 font-bold uppercase mt-2 tracking-widest">{currentConfig.formula?.name}</p>
-                          <p className="text-5xl font-black font-mono text-green-500 mt-8">{calculateItemPrice(currentConfig).toFixed(2)}€</p>
+                    <div className="col-span-full max-w-2xl mx-auto w-full space-y-8 py-10">
+                       <div className="bg-primary/5 border border-primary/20 p-12 rounded-[3rem] text-center relative overflow-hidden group w-full">
+                          <button onClick={clearOrder} className="absolute top-8 right-8 p-3 bg-red-500/10 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-lg"><Trash2 size={24} /></button>
+                          <h4 className="text-[11px] font-black uppercase tracking-[0.5em] text-primary mb-8 italic">ARTICLE PRÊT</h4>
+                          <p className="text-5xl font-serif font-black italic text-white uppercase tracking-tighter">{currentConfig.preset_sandwich?.name}</p>
+                          <p className="text-sm text-gray-500 font-bold uppercase mt-4 tracking-[0.3em]">{currentConfig.formula?.name}</p>
+                          <p className="text-6xl font-black font-mono text-green-500 mt-12 tracking-tighter">{calculateItemPrice(currentConfig).toFixed(2)}€</p>
                        </div>
-                       <div className="grid grid-cols-2 gap-4">
-                          <button onClick={addItemToBasket} className="py-6 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3 italic"><Plus size={18} /> UN AUTRE ARTICLE</button>
-                          <button onClick={handleSubmit} className="py-6 bg-green-500 text-black rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-green-500/20 hover:scale-105 transition-all">TERMINER LA COMMANDE</button>
+                       <div className="grid grid-cols-2 gap-6 w-full">
+                          <button onClick={addItemToBasket} className="py-8 bg-white/5 border border-white/10 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-4 italic"><Plus size={24} /> UN AUTRE ARTICLE</button>
+                          <button onClick={handleSubmit} className="py-8 bg-green-500 text-black rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-2xl shadow-green-500/20 hover:scale-105 transition-all">TERMINER LA COMMANDE</button>
                        </div>
                     </div>
                   )}
@@ -456,31 +459,31 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
           </main>
 
           {/* RIGHT BASKET RAIL (ALWAYS VISIBLE) */}
-          <aside className="w-64 border-l border-white/5 flex flex-col shrink-0 bg-black/20">
-            <div className="p-6 border-b border-white/5 flex items-center gap-3">
-              <ShoppingCart size={14} className="text-primary" />
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">PANIER</h3>
-              {basket.length > 0 && <span className="bg-primary text-white text-[9px] px-2 py-0.5 rounded-full font-black ml-auto">{basket.length}</span>}
+          <aside className="w-80 border-l border-white/5 flex flex-col shrink-0 bg-black/20">
+            <div className="p-8 border-b border-white/5 flex items-center gap-4">
+              <ShoppingCart size={18} className="text-primary" />
+              <h3 className="text-xs font-black uppercase tracking-[0.3em]">PANIER</h3>
+              {basket.length > 0 && <span className="bg-primary text-white text-[10px] px-3 py-1 rounded-full font-black ml-auto shadow-lg shadow-primary/20">{basket.length}</span>}
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
               {basket.map((item, idx) => (
                 <POSBasketItem key={idx} item={item} idx={idx} onRemove={(i) => setBasket(basket.filter((_, x) => x !== i))} calculatePrice={calculateItemPrice} />
               ))}
               {basket.length === 0 && !currentConfig.formula && (
                 <div className="h-40 flex flex-col items-center justify-center opacity-5">
-                  <ReceiptText size={32} />
+                  <ReceiptText size={48} />
                 </div>
               )}
             </div>
-            <div className="p-6 border-t border-white/5 bg-black/40">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest">TOTAL</span>
-                <span className="text-xl font-black font-mono text-green-500 tracking-tighter">{calculateTotal().toFixed(2)}€</span>
+            <div className="p-8 border-t border-white/5 bg-black/40">
+              <div className="flex justify-between items-center mb-6">
+                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">TOTAL</span>
+                <span className="text-3xl font-black font-mono text-green-500 tracking-tighter">{calculateTotal().toFixed(2)}€</span>
               </div>
               <button 
                 onClick={handleSubmit} 
                 disabled={basket.length === 0 && (!currentConfig.formula || !currentConfig.preset_sandwich)}
-                className="w-full py-4 bg-green-500 text-black font-black rounded-xl uppercase text-[9px] tracking-widest disabled:opacity-10 shadow-lg"
+                className="w-full py-6 bg-green-500 text-black font-black rounded-2xl uppercase text-[11px] tracking-[0.2em] disabled:opacity-10 shadow-2xl shadow-green-500/10 active:scale-95 transition-all"
               >
                 ENCAISSER
               </button>
@@ -489,30 +492,30 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         </div>
 
         {/* BOTTOM COMMAND STRIP */}
-        <footer className="h-24 border-t border-white/10 flex items-center px-10 gap-10 bg-black shrink-0">
-          <button onClick={handleBack} className={cn("p-5 rounded-2xl bg-white/5 border border-white/10 text-gray-500 hover:text-white transition-all", step === 'ORDER_TYPE' && "opacity-0 pointer-events-none")}>
-            <ArrowLeft size={20} />
+        <footer className="h-28 border-t border-white/10 flex items-center px-12 gap-12 bg-black shrink-0">
+          <button onClick={handleBack} className={cn("p-6 rounded-[2rem] bg-white/5 border border-white/10 text-gray-500 hover:text-white transition-all", step === 'ORDER_TYPE' && "opacity-0 pointer-events-none")}>
+            <ArrowLeft size={24} />
           </button>
 
-          <div className="flex gap-4 flex-1">
+          <div className="flex gap-6 flex-1">
             <div className="flex-1 relative group">
-              <User size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-primary transition-colors" />
-              <input type="text" placeholder="NOM DU CLIENT" value={clientInfo.name} onChange={(e) => setClientInfo({...clientInfo, name: e.target.value.toUpperCase()})} className="w-full pl-14 pr-6 py-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] font-black tracking-widest text-white focus:border-primary/50 outline-none placeholder:text-gray-800 transition-all" />
+              <User size={16} className="absolute left-8 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-primary transition-colors" />
+              <input type="text" placeholder="NOM DU CLIENT" value={clientInfo.name} onChange={(e) => setClientInfo({...clientInfo, name: e.target.value.toUpperCase()})} className="w-full pl-16 pr-8 py-5 rounded-2xl bg-white/[0.02] border border-white/5 text-xs font-black tracking-widest text-white focus:border-primary/50 outline-none placeholder:text-gray-800 transition-all shadow-inner" />
             </div>
             <div className="flex-1 relative group">
-              <Phone size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-primary transition-colors" />
-              <input type="tel" placeholder="TÉLÉPHONE" value={clientInfo.phone} onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})} className="w-full pl-14 pr-6 py-4 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] font-black tracking-widest text-white focus:border-primary/50 outline-none placeholder:text-gray-800 transition-all" />
+              <Phone size={16} className="absolute left-8 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-primary transition-colors" />
+              <input type="tel" placeholder="TÉLÉPHONE" value={clientInfo.phone} onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})} className="w-full pl-16 pr-8 py-5 rounded-2xl bg-white/[0.02] border border-white/5 text-xs font-black tracking-widest text-white focus:border-primary/50 outline-none placeholder:text-gray-800 transition-all shadow-inner" />
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
              <div className="text-right flex flex-col justify-center">
-                <span className="text-[7px] font-black text-gray-600 uppercase tracking-widest leading-none mb-1 italic">Total Global</span>
-                <span className="text-3xl font-black font-mono text-green-500 leading-none tracking-tighter">{calculateTotal().toFixed(2)}€</span>
+                <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest leading-none mb-2 italic">Total Global</span>
+                <span className="text-4xl font-black font-mono text-green-500 leading-none tracking-tighter">{calculateTotal().toFixed(2)}€</span>
              </div>
-             <div className="w-[1px] h-10 bg-white/10 mx-2" />
-             <button onClick={() => setStep('CHECKOUT')} className="p-5 rounded-2xl bg-white text-black hover:bg-primary transition-all shadow-xl">
-               <ReceiptText size={20} />
+             <div className="w-[1px] h-12 bg-white/10 mx-4" />
+             <button onClick={() => setStep('CHECKOUT')} className="p-6 rounded-[2rem] bg-white text-black hover:bg-primary hover:text-white transition-all shadow-2xl">
+               <ReceiptText size={24} />
              </button>
           </div>
         </footer>
