@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { 
   X, Plus, Check, ShoppingCart, 
   ArrowRight, ArrowLeft, Minus, 
-  AlertCircle, ReceiptText, Utensils, Search
+  ReceiptText, Utensils
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -39,13 +39,16 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
   const [clientInfo, setClientInfo] = useState({ name: "Client Téléphone", phone: "", notes: "" });
 
   const modalCategories = [
-    { id: "order_type", name: "Type de commande", options: ORDER_TYPES },
+    { id: "order_type", name: "Type de commande", options: [
+      { id: 'on_site', name: 'Sur Place', price: 0, isAvailable: true },
+      { id: 'takeaway', name: 'À Emporter', price: 0, isAvailable: true },
+      { id: 'couscous', name: 'Réserver un Couscous', price: 0, isAvailable: true },
+    ]},
     { id: "formula", name: "Choix Formule", options: FORMULAS },
     { id: "couscous_size", name: "Taille du Couscous", options: menuCategories.find(c => c.id === 'couscous_size')?.options || [] },
     { id: "presets", name: isCouscousMode ? "Type de Couscous" : "La Grillade", options: isCouscousMode ? (menuCategories.find(c => c.id === 'couscous_type')?.options || []) : (menuCategories.find(c => c.id === 'presets')?.options || []) },
     { id: "meats", name: "Mélange Mix Grill", options: menuCategories.find(c => c.id === 'meats')?.options || [] },
     { id: "steaks", name: "Nombre de Steaks", options: menuCategories.find(c => c.id === 'steaks_qty')?.options || [] },
-    { id: "removals", name: "Ingrédients à retirer", options: [] }, 
     { id: "sauces", name: "Les Sauces", options: menuCategories.find(c => c.id === 'sauces')?.options || [] },
     { id: "extras", name: "Les Suppléments", options: menuCategories.find(c => c.id === 'extras')?.options || [] },
     { id: "drinks", name: "Les Boissons", options: menuCategories.find(c => c.id === 'drinks')?.options || [] },
@@ -94,10 +97,94 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     setStep(0);
   };
 
+  const handleBack = () => {
+    if (step === 1) setStep(0);
+    else if (step === 2) setStep(0);
+    else if (step === 3) setStep(isCouscousMode ? 2 : 1);
+    else if (step === 4) setStep(3);
+    else if (step === 5) setStep(3);
+    else if (step === 6) {
+      if (config.preset_sandwich?.id === 'p4') setStep(4);
+      else if (config.preset_sandwich?.id === 'p5') setStep(5);
+      else setStep(3);
+    }
+    else if (step === 7) setStep(6);
+    else if (step === 8) setStep(isCouscousMode ? 3 : 7);
+    else if (step === 9) setStep(8);
+  };
+
+  const handleNext = () => {
+    if (step === 8) {
+      const fId = config.formula?.id || '';
+      let q = ['menu_standard', 'menu_student', 'menu_kids'].includes(fId) ? 1 : 0;
+      if (fId.startsWith('COUSCOUS_')) q = fId === 'COUSCOUS_S1' ? 2 : fId === 'COUSCOUS_S2' ? 3 : 4;
+      
+      const currentDrinks = config.drinks || [];
+      const hasBottle = currentDrinks.some(d => d.option.name.includes('1.5L') && d.quantity > 0);
+      const totalDrinksQty = currentDrinks.reduce((acc, d) => acc + d.quantity, 0);
+      
+      if (q > 0) {
+        if (fId === 'COUSCOUS_S3' && hasBottle) {
+          if (totalDrinksQty < 1) {
+            alert("Cette formule inclut 1 bouteille (1.5L) ou 4 canettes !");
+            return;
+          }
+        } else if (totalDrinksQty < q) {
+          alert(`Cette formule inclut ${q} boisson(s) !`);
+          return;
+        }
+      }
+    }
+    setStep(step + 1);
+  };
+
   const isNextDisabled = () => {
-    if (step === 1 && !config.formula) return true;
-    if (step === 2 && !config.formula) return true;
-    if (step === 3 && !config.preset_sandwich) return true;
+    if (step === 4 && (config.meats || []).length < 2) return true;
+    return false;
+  };
+
+  const handleBack = () => {
+    if (step === 1) setStep(0);
+    else if (step === 2) setStep(0);
+    else if (step === 3) setStep(isCouscousMode ? 2 : 1);
+    else if (step === 4) setStep(3);
+    else if (step === 5) setStep(3);
+    else if (step === 6) {
+      if (config.preset_sandwich?.id === 'p4') setStep(4);
+      else if (config.preset_sandwich?.id === 'p5') setStep(5);
+      else setStep(3);
+    }
+    else if (step === 7) setStep(6);
+    else if (step === 8) setStep(isCouscousMode ? 3 : 7);
+    else if (step === 9) setStep(8);
+  };
+
+  const handleNext = () => {
+    if (step === 8) {
+      const fId = config.formula?.id || '';
+      let q = ['menu_standard', 'menu_student', 'menu_kids'].includes(fId) ? 1 : 0;
+      if (fId.startsWith('COUSCOUS_')) q = fId === 'COUSCOUS_S1' ? 2 : fId === 'COUSCOUS_S2' ? 3 : 4;
+      
+      const currentDrinks = config.drinks || [];
+      const hasBottle = currentDrinks.some(d => d.option.name.includes('1.5L') && d.quantity > 0);
+      const totalDrinksQty = currentDrinks.reduce((acc, d) => acc + d.quantity, 0);
+      
+      if (q > 0) {
+        if (fId === 'COUSCOUS_S3' && hasBottle) {
+          if (totalDrinksQty < 1) {
+            alert("Cette formule inclut 1 bouteille (1.5L) ou 4 canettes !");
+            return;
+          }
+        } else if (totalDrinksQty < q) {
+          alert(`Cette formule inclut ${q} boisson(s) !`);
+          return;
+        }
+      }
+    }
+    setStep(step + 1);
+  };
+
+  const isNextDisabled = () => {
     if (step === 4 && (config.meats || []).length < 2) return true;
     return false;
   };
@@ -106,8 +193,14 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     const catId = currentCategory.id;
     
     if (catId === "order_type") {
-      setOrderType(option.id as 'on_site' | 'takeaway');
-      setStep(1);
+      if (option.id === 'couscous') {
+        setIsCouscousMode(true);
+        setStep(2);
+      } else {
+        setOrderType(option.id as 'on_site' | 'takeaway');
+        setIsCouscousMode(false);
+        setStep(1);
+      }
     } else if (catId === "formula") {
       setConfig({ ...config, formula: option });
       setIsCouscousMode(false);
@@ -117,7 +210,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       setStep(3);
     } else if (catId === "presets") {
       setConfig({ ...config, preset_sandwich: option, removed_ingredients: [] });
-      if (isCouscousMode) setStep(9);
+      if (isCouscousMode) setStep(8);
       else {
         if (option.id === 'p4') setStep(4);
         else if (option.id === 'p5') setStep(5);
@@ -249,19 +342,16 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     setStep(0);
   };
 
-  const toggleIngredientRemoval = (ing: string) => {
-    const curr = config.removed_ingredients || [];
-    setConfig({ ...config, removed_ingredients: curr.includes(ing) ? curr.filter(i => i !== ing) : [...curr, ing] });
-  };
-
   if (!isOpen) return null;
 
+  const stepsAutoAdvance = [0, 1, 2, 3, 5];
+
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md text-white font-sans">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl text-white font-sans">
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-secondary/90 w-full max-w-5xl rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex h-[85vh]">
         
         {/* Left Side: Basket Summary */}
-        <div className="w-80 bg-black/40 border-r border-white/5 flex flex-col p-8">
+        <div className="w-80 bg-black border-r border-white/5 flex flex-col p-8">
           <div className="flex items-center gap-3 mb-8">
             <div className="bg-primary p-2 rounded-xl text-black"><ShoppingCart size={20} /></div>
             <h2 className="text-xl font-black uppercase tracking-widest italic">Panier</h2>
@@ -297,10 +387,10 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
 
         {/* Right Side: Step Builder */}
         <div className="flex-1 flex flex-col relative overflow-hidden bg-background">
-          <header className="p-8 border-b border-white/5 flex justify-between items-center">
+          <header className="p-8 border-b border-white/5 flex justify-between items-center bg-black/40 backdrop-blur-md">
             <div>
               <p className="text-[10px] text-primary font-black uppercase tracking-[0.4em] mb-1 italic">Prise de commande manuelle</p>
-              <h3 className="text-2xl font-serif font-black italic text-white">{currentCategory.name}</h3>
+              <h3 className="text-2xl font-serif font-black italic text-white uppercase tracking-widest">{currentCategory.name}</h3>
             </div>
             <button onClick={onClose} className="p-4 rounded-2xl bg-white/5 hover:bg-red-500/10 hover:text-red-500 transition-all border border-white/5 text-gray-500"><X size={20} /></button>
           </header>
@@ -309,107 +399,93 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
             <AnimatePresence mode="wait">
               <motion.div key={step} initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-6">
                 
-                {currentCategory.id === "removals" ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {["Salade", "Tomate", "Oignon", "Frites", "Viande"].map(ing => {
-                      const isRemoved = (config.removed_ingredients || []).includes(ing);
-                      return (
-                        <button key={ing} onClick={() => toggleIngredientRemoval(ing)} className={cn("p-5 rounded-3xl border transition-all text-left flex items-center justify-between", isRemoved ? "border-red-500/50 bg-red-500/10" : "border-white/5 bg-white/[0.02] hover:border-white/20")}>
-                          <span className={cn("text-[11px] font-black uppercase tracking-widest", isRemoved ? "text-red-500" : "text-gray-300")}>SANS {ing}</span>
-                          {isRemoved && <AlertCircle size={14} className="text-red-500" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : currentCategory.id === "formula" ? (
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {currentCategory.options.map(opt => (
-                        <button key={opt.id} onClick={() => handleOptionToggle(opt)} className="p-6 rounded-3xl border border-white/5 bg-white/[0.02] hover:border-primary/50 transition-all text-left flex items-center gap-5">
-                          <div className="bg-white/5 p-3 rounded-2xl text-gray-500"><Plus size={18} /></div>
-                          <div>
-                            <p className="text-[11px] font-black uppercase tracking-widest text-white">{opt.name}</p>
-                            <p className="text-[10px] text-gray-500 font-mono mt-0.5">{opt.price.toFixed(2)}€</p>
-                          </div>
-                        </button>
-                      ))}
-                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {currentCategory.id === "order_type" && (
-                      <button onClick={() => { setIsCouscousMode(true); setStep(2); }} className="p-5 rounded-3xl border border-primary/20 bg-primary/5 hover:border-primary/50 transition-all text-left flex flex-col justify-between h-40">
-                          <div className="bg-primary p-3 rounded-2xl text-black w-fit"><Utensils size={18} /></div>
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Réserver un Couscous</p>
-                            <p className="text-[10px] text-gray-500 font-mono">Tunnel Spécifique</p>
-                          </div>
-                      </button>
-                    )}
-                    {currentCategory.options.map(opt => {
-                      const isSel = (currentCategory.id === "drinks" || currentCategory.id === "desserts") 
-                        ? (config[currentCategory.id as 'drinks' | 'desserts'] || []).some(i => i.option.id === opt.id)
-                        : (currentCategory.id === "meats")
-                          ? (config.meats || []).some(m => m.id === opt.id)
-                          : (currentCategory.id === "sauces")
-                            ? (config.sauces || []).some(s => s.id === opt.id)
-                            : (currentCategory.id === "extras")
-                              ? (config.extras || []).some(e => e.id === opt.id)
-                              : config.preset_sandwich?.id === opt.id;
-                      
-                      const qty = (currentCategory.id === "drinks" || currentCategory.id === "desserts") 
-                        ? (config[currentCategory.id as 'drinks' | 'desserts'] || []).find(i => i.option.id === opt.id)?.quantity || 0
-                        : 0;
-
-                      const isSauceStep = currentCategory.id === "sauces";
-                      const currentSaucesCount = (config.sauces || []).length;
-                      const sauceSurcharge = (isSauceStep && currentSaucesCount >= 2 && !isSel) ? 0.5 : 0;
-
-                      return (
-                        <div key={opt.id} className={cn("p-5 rounded-3xl border transition-all text-left flex flex-col justify-between h-40", isSel ? "border-primary bg-primary/5 shadow-inner" : "border-white/5 bg-white/[0.02] hover:border-white/20")}>
-                          <div onClick={() => handleOptionToggle(opt)} className="cursor-pointer flex-1">
-                            <p className={cn("text-[10px] font-black uppercase tracking-widest mb-1", isSel ? "text-primary" : "text-gray-400")}>{opt.name}</p>
-                            <p className="text-[10px] font-mono text-gray-600">
-                              {isSauceStep 
-                                ? (sauceSurcharge > 0 ? `+${sauceSurcharge.toFixed(2)}€` : "INCLUS")
-                                : (opt.price > 0 ? `+${opt.price.toFixed(2)}€` : opt.price < 0 ? `${opt.price.toFixed(2)}€` : "INCLUS")
-                              }
-                            </p>
-                          </div>
-                          
-                          {(currentCategory.id === "drinks" || currentCategory.id === "desserts") ? (
-                            <div className="flex items-center justify-between bg-black/40 p-2 rounded-2xl border border-white/5">
-                              <button onClick={() => updateQuantity(currentCategory.id as any, opt, -1)} className="p-1 hover:text-primary transition-colors text-gray-600"><Minus size={14} /></button>
-                              <span className="text-xs font-black text-white font-mono">{qty}</span>
-                              <button onClick={() => updateQuantity(currentCategory.id as any, opt, 1)} className="p-1 hover:text-primary transition-colors text-gray-600"><Plus size={14} /></button>
-                            </div>
-                          ) : isSel && <Check size={14} className="text-primary self-end" />}
-                        </div>
-                      );
-                    })}
+                {currentCategory.id === "meats" && (
+                  <div className="col-span-full bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-primary text-center">
+                      2 viandes incluses <span className="opacity-60 font-medium">(+2€ par viande supp.)</span>
+                    </p>
                   </div>
                 )}
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {currentCategory.options.map(opt => {
+                    const isSel = (currentCategory.id === "drinks" || currentCategory.id === "desserts") 
+                      ? (config[currentCategory.id as 'drinks' | 'desserts'] || []).some(i => i.option.id === opt.id)
+                      : (currentCategory.id === "meats")
+                        ? (config.meats || []).some(m => m.id === opt.id)
+                        : (currentCategory.id === "sauces")
+                          ? (config.sauces || []).some(s => s.id === opt.id)
+                          : (currentCategory.id === "extras")
+                            ? (config.extras || []).some(e => e.id === opt.id)
+                            : (currentCategory.id === "order_type")
+                              ? (opt.id === 'couscous' ? isCouscousMode : orderType === opt.id && !isCouscousMode)
+                              : (currentCategory.id === "formula" || currentCategory.id === "couscous_size")
+                                ? config.formula?.id === opt.id
+                                : config.preset_sandwich?.id === opt.id;
+                    
+                    const qty = (currentCategory.id === "drinks" || currentCategory.id === "desserts") 
+                      ? (config[currentCategory.id as 'drinks' | 'desserts'] || []).find(i => i.option.id === opt.id)?.quantity || 0
+                      : 0;
+
+                    return (
+                      <div 
+                        key={opt.id} 
+                        onClick={() => handleOptionToggle(opt)}
+                        className={cn(
+                          "p-5 rounded-3xl border transition-all text-left flex flex-col justify-between h-40 cursor-pointer group", 
+                          isSel ? "border-primary bg-primary/10 shadow-[0_0_30px_rgba(239,68,68,0.1)]" : "border-white/5 bg-white/[0.02] hover:border-white/20"
+                        )}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className={cn("p-3 rounded-2xl transition-all", isSel ? "bg-primary text-black" : "bg-white/5 text-gray-500 group-hover:bg-white/10")}>
+                            {currentCategory.id === "order_type" && opt.id === 'couscous' ? <Utensils size={18} /> : <Plus size={18} />}
+                          </div>
+                          {isSel && currentCategory.id !== "drinks" && currentCategory.id !== "desserts" && <Check size={16} className="text-primary" strokeWidth={4} />}
+                        </div>
+
+                        <div>
+                          <p className={cn("text-[11px] font-black uppercase tracking-widest", isSel ? "text-white" : "text-gray-400")}>{opt.name}</p>
+                          {opt.price !== 0 && <p className="text-[9px] font-mono text-gray-600 mt-1">{opt.price > 0 ? `+${opt.price.toFixed(2)}€` : `${opt.price.toFixed(2)}€`}</p>}
+                        </div>
+                        
+                        {(currentCategory.id === "drinks" || currentCategory.id === "desserts") && isSel && (
+                          <div className="flex items-center justify-between bg-black/60 p-1.5 rounded-2xl border border-white/10 mt-2" onClick={(e) => e.stopPropagation()}>
+                            <button onClick={() => updateQuantity(currentCategory.id as any, opt, -1)} className="p-1 hover:text-primary transition-colors text-gray-500"><Minus size={14} /></button>
+                            <span className="text-[10px] font-black text-white font-mono">{qty}</span>
+                            <button onClick={() => updateQuantity(currentCategory.id as any, opt, 1)} className="p-1 hover:text-primary transition-colors text-gray-500"><Plus size={14} /></button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
 
-          <footer className="p-8 border-t border-white/5 bg-black/20 flex justify-between items-center gap-6">
+          <footer className="p-8 border-t border-white/5 bg-black/40 backdrop-blur-md flex justify-between items-center gap-6">
             <div className="flex gap-4">
-              <input type="text" placeholder="Nom du client" value={clientInfo.name} onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})} className="px-6 py-4 rounded-2xl bg-white/5 border border-white/5 text-[11px] font-bold text-white focus:border-primary/50 outline-none w-48" />
-              <input type="tel" placeholder="N° Téléphone" value={clientInfo.phone} onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})} className="px-6 py-4 rounded-2xl bg-white/5 border border-white/5 text-[11px] font-bold text-white focus:border-primary/50 outline-none w-48" />
+              <input type="text" placeholder="NOM CLIENT" value={clientInfo.name} onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})} className="px-6 py-4 rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white focus:border-primary/50 outline-none w-48 placeholder:text-gray-700" />
+              <input type="tel" placeholder="TÉLÉPHONE" value={clientInfo.phone} onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})} className="px-6 py-4 rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white focus:border-primary/50 outline-none w-48 placeholder:text-gray-700" />
             </div>
 
             <div className="flex gap-4 items-center">
-              <button onClick={() => setStep(Math.max(0, step - 1))} className={cn("p-4 rounded-2xl bg-white/5 border border-white/5 text-gray-500 hover:text-white transition-all", step === 0 && "opacity-0")}>
+              <button onClick={handleBack} className={cn("p-4 rounded-2xl bg-white/5 border border-white/5 text-gray-500 hover:text-white transition-all", step === 0 && "opacity-0")}>
                 <ArrowLeft size={20} />
               </button>
               
-              {(step === 10 || (isCouscousMode && step === 9)) ? (
-                <button onClick={addItemToBasket} className="px-10 py-4 bg-green-500 text-white font-black rounded-2xl uppercase text-[11px] tracking-widest flex items-center gap-4 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-green-500/20">
-                   Ajouter au panier <ArrowRight size={18} />
-                </button>
-              ) : (
-                <button disabled={isNextDisabled()} onClick={() => setStep(step + 1)} className="px-10 py-4 bg-white text-black font-black rounded-2xl uppercase text-[11px] tracking-widest flex items-center gap-4 hover:bg-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed">
-                  Suivant <ArrowRight size={18} />
-                </button>
+              {!stepsAutoAdvance.includes(step) && (
+                <>
+                  {step === 9 ? (
+                    <button onClick={addItemToBasket} className="px-10 py-4 bg-primary text-black font-black rounded-2xl uppercase text-[11px] tracking-widest flex items-center gap-4 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20">
+                       Ajouter au panier <ArrowRight size={18} />
+                    </button>
+                  ) : (
+                    <button disabled={isNextDisabled()} onClick={handleNext} className="px-10 py-4 bg-white text-black font-black rounded-2xl uppercase text-[11px] tracking-widest flex items-center gap-4 hover:bg-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed">
+                      Suivant <ArrowRight size={18} />
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </footer>
