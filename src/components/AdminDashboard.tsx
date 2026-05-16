@@ -221,32 +221,14 @@ export default function AdminDashboard() {
       {!isKitchenMode && (
         <>
           <header className="flex justify-between items-center mb-12 bg-secondary/20 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
-            <div className="flex items-center gap-8">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-                <div className="relative bg-primary text-white p-5 rounded-2xl shadow-xl shadow-primary/10">
-                  <LayoutDashboard size={32} strokeWidth={2.5} />
-                </div>
-              </div>
-              <div>
-                <h1 className="text-4xl font-serif font-black italic text-fire-gradient">Centre de Commande</h1>
-                <div className="flex items-center gap-3 mt-2">
-                  <div className={cn("w-2 h-2 rounded-full animate-pulse", isOpen ? "bg-green-500" : "bg-red-500")} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">{isOpen ? "Camion Ouvert" : "Camion Fermé"}</span>
-                </div>
-              </div>
-            </div>
+            <button 
+              onClick={() => setIsManualModalOpen(true)}
+              className="flex items-center gap-4 px-10 py-5 rounded-3xl bg-white text-black text-[13px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-white/5 hover:scale-[1.02] active:scale-95 transition-all border-b-4 border-gray-200"
+            >
+              <Plus size={22} strokeWidth={4} className="text-red-500" /> Commande Téléphone
+            </button>
 
             <div className="flex items-center gap-6">
-              <button 
-                onClick={() => setIsManualModalOpen(true)}
-                className="flex items-center gap-4 px-10 py-5 rounded-3xl bg-white text-black text-[13px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-white/5 hover:scale-[1.02] active:scale-95 transition-all border-b-4 border-gray-200"
-              >
-                <Plus size={22} strokeWidth={4} className="text-red-500" /> Commande Téléphone
-              </button>
-              
-              <div className="w-[1px] h-12 bg-white/10 mx-2" />
-
                <button 
                 onClick={toggleTruckStatus}
                 className={cn(
