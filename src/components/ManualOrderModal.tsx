@@ -262,15 +262,26 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       created_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('orders').insert([newOrder]);
-    if (error) { alert("Erreur: " + error.message); return; }
+    try {
+      const { error: dbError } = await supabase.from('orders').insert([newOrder]);
+      
+      if (dbError) {
+        alert("Erreur base de données : " + dbError.message);
+        return;
+      }
 
-    onOrderCreated(newOrder);
-    onClose();
-    resetCurrentConfig();
-    setBasket([]);
-    setClientInfo({ name: "", phone: "", notes: "" });
-    setStep('ORDER_TYPE');
+      // Succès
+      onOrderCreated(newOrder);
+      onClose();
+      resetCurrentConfig();
+      setBasket([]);
+      setClientInfo({ name: "", phone: "", notes: "" });
+      setStep('ORDER_TYPE');
+
+    } catch (err) {
+      console.error("Critical Network Error:", err);
+      alert("Problème de connexion (Failed to fetch). Vérifiez votre internet et recliquez sur Encaisser.");
+    }
   };
 
   if (!isOpen) return null;
