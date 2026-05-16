@@ -31,6 +31,20 @@ export async function POST(req: Request) {
       android_sound: 'ding_ding',
       ios_sound: 'ding_ding.wav',
     };
+  } else if (type === 'NEW_ORDER') {
+    notification = {
+      contents: {
+        en: `New order received from ${clientName}! 🌯 Check your dashboard.`,
+        fr: `Nouvelle commande de ${clientName} ! 🌯 Vérifiez votre tableau de bord.`,
+      },
+      headings: {
+        en: 'New Order!',
+        fr: 'Nouvelle Commande !',
+      },
+      included_segments: ['Subscribed Users'],
+      android_sound: 'order_alert',
+      ios_sound: 'order_alert.wav',
+    };
   } else if (type === 'ORDER_READY') {
     notification = {
       contents: {

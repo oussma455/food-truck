@@ -256,6 +256,20 @@ export function useSandwichBuilder() {
     const { error } = await supabase.from('orders').insert([newOrder]);
     if (error) { alert("Erreur validation."); setIsProcessing(false); return; }
 
+    // Trigger Notification for Admin
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'NEW_ORDER',
+          clientName: orderInfo.name
+        })
+      });
+    } catch (e) {
+      console.error("Failed to send notification:", e);
+    }
+
     setTimeout(() => {
       setIsProcessing(false);
       setShowConfetti(true);

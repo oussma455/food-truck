@@ -34,13 +34,13 @@ export default function LegalsPage() {
         <section className="space-y-4">
           <h2 className="text-xl text-primary font-black uppercase tracking-widest text-[12px]">1. Éditeur du site</h2>
           <div className="bg-secondary/10 p-6 rounded-2xl border border-gray-800/50 space-y-2 text-sm text-gray-300">
-            <p><strong className="text-white">Nom de l&apos;entreprise :</strong> ***NOM DE VOTRE FOOD TRUCK***</p>
-            <p><strong className="text-white">Forme juridique :</strong> ***STATUT JURIDIQUE (ex: Auto-entreprise, SASU, SARL)***</p>
-            <p><strong className="text-white">SIRET :</strong> ***VOTRE NUMÉRO SIRET***</p>
-            <p><strong className="text-white">Siège social :</strong> ***VOTRE ADRESSE POSTALE COMPLÈTE***</p>
-            <p><strong className="text-white">Email de contact :</strong> ***VOTRE ADRESSE EMAIL***</p>
-            <p><strong className="text-white">Téléphone :</strong> ***VOTRE NUMÉRO DE TÉLÉPHONE***</p>
-            <p><strong className="text-white">Directeur de la publication :</strong> ***VOTRE NOM ET PRÉNOM***</p>
+            <p><strong className="text-white">Nom de l&apos;entreprise :</strong> LA GRILLADE O&apos; CHARBON (BOUAZA AHMED)</p>
+            <p><strong className="text-white">Forme juridique :</strong> Entrepreneur individuel</p>
+            <p><strong className="text-white">SIRET :</strong> 989 763 644 00014</p>
+            <p><strong className="text-white">Siège social :</strong> 53 RUE JULES CESAR, 45500 GIEN</p>
+            <p><strong className="text-white">Email de contact :</strong> contact@lagrilladeocharbon.fr</p>
+            <p><strong className="text-white">Téléphone :</strong> 06 00 00 00 00</p>
+            <p><strong className="text-white">Directeur de la publication :</strong> M. Ahmed BOUAZA</p>
           </div>
         </section>
 
