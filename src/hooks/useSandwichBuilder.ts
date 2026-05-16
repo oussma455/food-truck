@@ -253,32 +253,42 @@ export function useSandwichBuilder() {
       created_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('orders').insert([newOrder]);
-    if (error) { alert("Erreur validation."); setIsProcessing(false); return; }
-
-    // Trigger Notification for Admin
-    try {
-      await fetch('/api/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'NEW_ORDER',
-          clientName: orderInfo.name
-        })
-      });
-    } catch (e) {
-      console.error("Failed to send notification:", e);
+    const { error: dbError } = await supabase.from('orders').insert([newOrder]);
+    
+    if (dbError) {
+      console.error("Supabase Error:", dbError);
+      alert("Erreur de connexion. Vérifiez votre internet et réessayez.");
+      setIsProcessing(false);
+      return;
     }
+
+    // FAIL-SAFE: Trigger Notification in background without blocking the UI
+    fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'NEW_ORDER',
+        clientName: orderInfo.name
+      })
+    }).catch(e => console.warn("Notification non envoyée (silencieux):", e));
 
     setTimeout(() => {
       setIsProcessing(false);
       setShowConfetti(true);
       setTimeout(() => {
-        setStep('ORDER_TYPE'); setActiveTab('menu'); setCart([]); 
-        setCurrentConfig({ sauces: [], extras: [], drinks: [], desserts: [] });
+        setStep('ORDER_TYPE'); 
+        setActiveTab('menu'); 
+        setCart([]); 
+        setCurrentConfig({ 
+          sauces: [], 
+          extras: [], 
+          drinks: [], 
+          desserts: [],
+          removed_ingredients: [], 
+        });
         setShowConfetti(false);
-      }, 2000);
-    }, 2500);
+      }, 3000);
+    }, 500);
   };
 
   return {
