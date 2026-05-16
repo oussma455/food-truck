@@ -1,16 +1,29 @@
 {
-  "name": "Gourmet Truck Admin",
-  "short_name": "GourmetAdmin",
-  "description": "Gestion des commandes pour Gourmet Truck",
-  "start_url": "/admin",
+  "name": "La Grillade O'Charbon",
+  "short_name": "Grillade",
+  "description": "Système de commande Premium pour La Grillade O'Charbon",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#D4AF37",
+  "theme_color": "#ef4444",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64",
-      "type": "image/x-icon"
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
