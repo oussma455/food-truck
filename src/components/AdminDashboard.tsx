@@ -32,10 +32,12 @@ export default function AdminDashboard() {
   const [notificationSound, setNotificationSound] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    setNotificationSound(new Audio('/order-alert.mp3'));
+    const audio = new Audio('/order-alert.mp3');
+    setNotificationSound(audio);
     
     const fetchData = async () => {
-      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      const { data: ordersData, error: ordersError } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      if (ordersError) console.error("Error fetching orders:", ordersError);
       if (ordersData) setOrders(ordersData);
 
       const { data: settingsData } = await supabase.from('settings').select('*').eq('id', 'truck_settings').single();
@@ -56,20 +58,31 @@ export default function AdminDashboard() {
             if (prev.some(o => o.id === newOrder.id)) return prev;
             return [newOrder, ...prev];
           });
-          notificationSound?.play().catch(e => console.log("Audio play blocked", e));
+          audio.play().catch(e => console.log("Audio play blocked", e));
         } else if (payload.eventType === 'UPDATE') {
-          setOrders(prev => prev.map(o => o.id === payload.new.id ? payload.new as Order : o));
+          const updatedOrder = payload.new as Order;
+          setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
         } else if (payload.eventType === 'DELETE') {
           setOrders(prev => prev.filter(o => o.id !== payload.old.id));
         }
       }).subscribe();
 
     return () => { supabase.removeChannel(ordersSub); };
-  }, [notificationSound]);
+  }, []);
 
   const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+    // Optimistic update
+    const previousOrders = [...orders];
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+
     const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-    if (error) console.error("Error updating status:", error);
+    
+    if (error) {
+      console.error("Error updating status:", error);
+      alert("Erreur lors de la mise à jour : " + error.message);
+      setOrders(previousOrders); // Rollback
+      return;
+    }
     
     if (newStatus === 'ready') {
       const order = orders.find(o => o.id === orderId);
@@ -77,6 +90,7 @@ export default function AdminDashboard() {
         try {
           await fetch('/api/notifications', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'ORDER_READY',
               clientName: order.client_name,
@@ -88,15 +102,16 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleNextStatus = (order: Order) => {
-    if (order.status === 'pending') updateOrderStatus(order.id, 'preparing');
-    else if (order.status === 'preparing') updateOrderStatus(order.id, 'ready');
-    else if (order.status === 'ready') updateOrderStatus(order.id, 'completed');
-  };
-
   const cancelOrder = async (id: string) => {
     if (window.confirm("Annuler cette commande ?")) {
-      await supabase.from('orders').delete().eq('id', id);
+      const previousOrders = [...orders];
+      setOrders(prev => prev.filter(o => o.id !== id));
+      
+      const { error } = await supabase.from('orders').delete().eq('id', id);
+      if (error) {
+        alert("Erreur lors de l'annulation : " + error.message);
+        setOrders(previousOrders);
+      }
     }
   };
 

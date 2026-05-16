@@ -268,7 +268,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     switch (step) {
       case 'ORDER_TYPE':
         return (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 max-w-2xl mx-auto">
             {ORDER_TYPES.map(type => (
               <ModalOptionCard 
                 key={type.id} 
@@ -294,7 +294,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         );
       case 'COUSCOUS':
         return (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 max-w-2xl mx-auto">
             {getAvailableOptions('couscous_size').map(size => (
               <ModalOptionCard key={size.id} option={size} isSelected={currentConfig.formula?.id === size.id} onClick={() => { setCurrentConfig({...currentConfig, formula: size}); handleNext('COUSCOUS'); }} />
             ))}
@@ -302,7 +302,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         );
       case 'COUSCOUS_MEAT':
         return (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 max-w-2xl mx-auto">
             {getAvailableOptions('couscous_type').map(type => (
               <ModalOptionCard key={type.id} option={type} isSelected={currentConfig.preset_sandwich?.id === type.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: type}); handleNext('COUSCOUS_MEAT'); }} />
             ))}
@@ -310,7 +310,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         );
       case 'FORMULA':
         return (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 max-w-2xl mx-auto">
             {[...FORMULAS].sort((a, b) => a.price - b.price).map(f => (
               <ModalOptionCard key={f.id} option={f} isSelected={currentConfig.formula?.id === f.id} onClick={() => { setCurrentConfig({...currentConfig, formula: f}); handleNext('FORMULA', f.id); }} />
             ))}
@@ -318,7 +318,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         );
       case 'PRESETS':
         return (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 max-w-2xl mx-auto">
             {getAvailableOptions('presets').sort((a, b) => a.price - b.price).map(p => {
               const surchargeVal = Math.max(0, p.price - 12);
               return (
@@ -336,7 +336,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         );
       case 'KIDS_MENU':
         return (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 max-w-2xl mx-auto">
             {getAvailableOptions('kids_menu').sort((a, b) => a.price - b.price).map(k => (
               <ModalOptionCard key={k.id} option={k} isSelected={currentConfig.preset_sandwich?.id === k.id} onClick={() => { setCurrentConfig({...currentConfig, preset_sandwich: k}); handleNext('KIDS_MENU'); }} hidePrice={true} />
             ))}
@@ -345,7 +345,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
       case 'MEATS':
         const currentMeatsCount = (currentConfig.meats || []).length;
         return (
-          <div className="space-y-4">
+          <div className="space-y-4 max-w-2xl mx-auto">
             <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-primary text-center">
                 2 viandes incluses <span className="opacity-60 font-medium">(+2€ par viande supp.)</span>
@@ -378,7 +378,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         );
       case 'STEAKS':
         return (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 max-w-2xl mx-auto">
             {getAvailableOptions('steaks_qty').map(s => (
               <ModalOptionCard key={s.id} option={s} isSelected={currentConfig.steaks_qty?.id === s.id} onClick={() => { setCurrentConfig({...currentConfig, steaks_qty: s}); handleNext('STEAKS'); }} />
             ))}
@@ -390,7 +390,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         const isSauce = step === 'SAUCES';
         const currentList = currentConfig[catId] as Option[] || [];
         return (
-          <div className="space-y-4">
+          <div className="space-y-4 max-w-2xl mx-auto">
             {isSauce && (
               <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-2 flex items-center gap-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -431,7 +431,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         if (isCouscousMode) quota = fId === 'COUSCOUS_S1' ? 2 : fId === 'COUSCOUS_S2' ? 3 : 4;
 
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-2xl mx-auto">
             {type === 'drinks' && quota > 0 && (
               <div className="bg-primary/10 border border-primary/20 p-5 rounded-3xl flex items-center gap-4 animate-pulse mb-6">
                 <CupSoda className="text-primary" size={20} />
@@ -488,7 +488,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
         );
       case 'CHECKOUT':
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-2xl mx-auto">
             <div className="bg-primary/5 border border-primary/20 p-6 rounded-3xl">
               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-4">Résumé de l&apos;article</h4>
               <div className="space-y-3">
@@ -513,52 +513,55 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
     }
   };
 
+  const showSidebar = basket.length > 0 || step === 'CHECKOUT';
+
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl text-white font-sans overflow-hidden">
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-secondary/90 w-full max-w-6xl rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex h-[90vh]">
         
         {/* Left Side: Basket Summary (Fixed Mirror) */}
-        <div className="w-96 bg-black border-r border-white/5 flex flex-col p-10">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="bg-primary p-3 rounded-2xl text-black shadow-[0_0_20px_rgba(239,68,68,0.3)]"><ShoppingCart size={24} /></div>
-            <div>
-              <h2 className="text-2xl font-serif font-black uppercase tracking-widest italic leading-none">PANIER</h2>
-              <p className="text-[8px] text-gray-500 font-black uppercase tracking-[0.4em] mt-1">Commandes en cours</p>
+        {showSidebar && (
+          <motion.div 
+            initial={{ width: 0, opacity: 0 }} 
+            animate={{ width: 320, opacity: 1 }}
+            className="bg-black border-r border-white/5 flex flex-col p-10 overflow-hidden"
+          >
+            <div className="flex items-center gap-4 mb-10 shrink-0">
+              <div className="bg-primary p-3 rounded-2xl text-black shadow-[0_0_20px_rgba(239,68,68,0.3)]"><ShoppingCart size={24} /></div>
+              <div>
+                <h2 className="text-xl font-serif font-black uppercase tracking-widest italic leading-none">PANIER</h2>
+                <p className="text-[8px] text-gray-500 font-black uppercase tracking-[0.4em] mt-1 whitespace-nowrap">Commandes en cours</p>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto space-y-6 custom-scrollbar pr-4">
-            {basket.map((item, idx) => (
-              <div key={idx} className="bg-white/[0.03] p-5 rounded-3xl border border-white/5 relative group hover:border-primary/30 transition-all">
-                <button onClick={() => setBasket(basket.filter((_, i) => i !== idx))} className="absolute -top-3 -right-3 bg-primary text-black p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:rotate-90"><Trash2 size={14} /></button>
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-[9px] text-primary font-black uppercase tracking-[0.2em]">{item.formula?.name}</p>
-                  <p className="text-xs font-mono text-white font-black">{calculateItemPrice(item).toFixed(2)}€</p>
+            
+            <div className="flex-1 overflow-y-auto space-y-6 custom-scrollbar pr-4">
+              {basket.map((item, idx) => (
+                <div key={idx} className="bg-white/[0.03] p-5 rounded-3xl border border-white/5 relative group hover:border-primary/30 transition-all">
+                  <button onClick={() => setBasket(basket.filter((_, i) => i !== idx))} className="absolute -top-3 -right-3 bg-primary text-black p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:rotate-90"><Trash2 size={14} /></button>
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-[9px] text-primary font-black uppercase tracking-[0.2em]">{item.formula?.name}</p>
+                    <p className="text-xs font-mono text-white font-black">{calculateItemPrice(item).toFixed(2)}€</p>
+                  </div>
+                  <p className="text-sm font-black text-gray-200 uppercase tracking-tight">{item.preset_sandwich?.name}</p>
                 </div>
-                <p className="text-sm font-black text-gray-200 uppercase tracking-tight">{item.preset_sandwich?.name}</p>
-                <div className="flex flex-wrap gap-1 mt-3">
-                   {item.sauces.map(s => <span key={s.id} className="text-[7px] bg-white/5 px-2 py-1 rounded-md text-gray-500 font-black uppercase tracking-widest">{s.name}</span>)}
-                </div>
-              </div>
-            ))}
-            {basket.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center opacity-10 text-center scale-75">
-                <ReceiptText size={64} className="mb-6" />
-                <p className="text-[10px] font-black uppercase tracking-[0.5em]">Panier Vide</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
 
-          <div className="pt-10 border-t border-white/10">
-            <div className="flex justify-between items-center mb-8">
-              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-500 italic">Total Global</span>
-              <span className="text-4xl font-black font-mono text-white tracking-tighter shadow-primary/20">{calculateTotal().toFixed(2)}€</span>
+            <div className="pt-10 border-t border-white/10 shrink-0">
+              <div className="flex justify-between items-center mb-8">
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-500 italic">Total Global</span>
+                <span className="text-3xl font-black font-mono text-white tracking-tighter shadow-primary/20">{calculateTotal().toFixed(2)}€</span>
+              </div>
+              <button 
+                onClick={handleSubmit} 
+                disabled={basket.length === 0 && (!currentConfig.formula || !currentConfig.preset_sandwich)} 
+                className="w-full py-6 bg-primary text-black font-black rounded-3xl uppercase text-[10px] tracking-[0.3em] shadow-[0_20px_50px_rgba(239,68,68,0.2)] disabled:opacity-10 transition-all hover:scale-[1.02] active:scale-95"
+              >
+                ENCAISSER
+              </button>
             </div>
-            <button onClick={handleSubmit} disabled={basket.length === 0 && (!currentConfig.formula || !currentConfig.preset_sandwich)} className="w-full py-6 bg-primary text-black font-black rounded-3xl uppercase text-xs tracking-[0.3em] shadow-[0_20px_50px_rgba(239,68,68,0.2)] disabled:opacity-10 transition-all hover:scale-[1.02] active:scale-95">
-              Encaisser la commande
-            </button>
-          </div>
-        </div>
+          </motion.div>
+        )}
 
         {/* Right Side: Exact Tunnel Mirror */}
         <div className="flex-1 flex flex-col relative overflow-hidden bg-background">
@@ -567,7 +570,7 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
               <p className="text-[10px] text-primary font-black uppercase tracking-[0.5em] mb-2 italic flex items-center gap-3">
                 <span className="w-10 h-[1px] bg-primary/30" /> PRISE DE COMMANDE MANUELLE
               </p>
-              <h3 className="text-4xl font-serif font-black italic text-white uppercase tracking-tighter">
+              <h3 className="text-4xl font-serif font-black italic text-white uppercase tracking-tighter leading-none">
                 {step.replace(/_/g, ' ')}
               </h3>
             </div>
@@ -601,10 +604,12 @@ export default function ManualOrderModal({ isOpen, onClose, onOrderCreated, menu
                 <ArrowLeft size={24} />
               </button>
               
-              <div className="bg-white/[0.03] px-10 py-5 rounded-[2rem] border border-white/5">
-                <p className="text-[7px] text-gray-600 font-black uppercase tracking-[0.4em] mb-1">Total Article</p>
-                <p className="text-2xl font-black font-mono text-primary tracking-tighter">{calculateItemPrice(currentConfig).toFixed(2)}€</p>
-              </div>
+              {!showSidebar && (
+                <div className="bg-white/[0.03] px-10 py-5 rounded-[2rem] border border-white/5">
+                  <p className="text-[7px] text-gray-600 font-black uppercase tracking-[0.4em] mb-1">Total Actuel</p>
+                  <p className="text-2xl font-black font-mono text-primary tracking-tighter">{calculateItemPrice(currentConfig).toFixed(2)}€</p>
+                </div>
+              )}
             </div>
           </footer>
         </div>
